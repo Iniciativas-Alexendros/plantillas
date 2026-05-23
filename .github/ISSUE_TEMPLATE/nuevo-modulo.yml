@@ -1,34 +1,34 @@
 name: Nuevo módulo
- description: Propón un nuevo módulo para el sistema de plantillas
- title: "[modulo] "
- labels: ["new-module"]
- body:
-   - type: input
-     attributes:
-       label: Nombre del módulo
-       description: kebab-case (ej: prompts, memory)
-     validations:
-       required: true
-   - type: textarea
-     attributes:
-       label: Descripción
-       description: ¿Qué componente de Claude Code cubre?
-     validations:
-       required: true
-   - type: textarea
-     attributes:
-       label: Archivos esperados
-       description: ¿Qué archivos tendría la plantilla y el ejemplo?
-       value: |
-         plantilla_X/
-         └── ...
-         ejemplo_X/
-         └── ...
-     validations:
-       required: true
-   - type: checkboxes
-     attributes:
-       label: Checklist
-       options:
-         - label: He leído CONTRIBUTING.md.
-         - label: Estoy dispuesto a implementar el validador y CI/CD.
+description: Propón un nuevo módulo para el sistema de plantillas
+title: "[modulo] "
+labels: ["new-module"]
+body:
+  - type: input
+    attributes:
+      label: Nombre del módulo
+      description: "kebab-case (ej: prompts, memory)"
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Descripción
+      description: ¿Qué componente de Claude Code cubre?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Archivos esperados
+      description: ¿Qué archivos tendría la plantilla y el ejemplo?
+      value: |
+        plantilla_X/
+        └── ...
+        ejemplo_X/
+        └── ...
+    validations:
+      required: true
+  - type: checkboxes
+    attributes:
+      label: Checklist
+      options:
+        - label: He leído CONTRIBUTING.md.
+        - label: Estoy dispuesto a implementar el validador y CI/CD.

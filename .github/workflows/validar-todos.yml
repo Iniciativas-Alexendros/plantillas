@@ -88,7 +88,7 @@ jobs:
             if module_is_special "${{ matrix.modulo }}"; then
               python "$SCRIPT_PY" "$PLANTILLA" || true
             else
-              python "$SCRIPT_PY" "$PLANTILLA" || true
+              python "$SCRIPT_PY" "$PLANTILLA" --strict || true
             fi
             echo "::endgroup::"
           fi

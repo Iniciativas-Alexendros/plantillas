@@ -38,6 +38,7 @@ jobs:
       - name: Ejecutar lychee
         id: lychee
         run: |
+          EXIT_CODE=0
           lychee \
             --exclude-path '.git' \
             --exclude-path 'artefactos' \
@@ -52,9 +53,9 @@ jobs:
             --no-progress \
             --format markdown \
             --output /tmp/lychee-report.md \
-            '**/*.md' || true
+            '**/*.md' || EXIT_CODE=$?
 
-          if [ -s /tmp/lychee-report.md ]; then
+          if [ "$EXIT_CODE" -ne 0 ] && [ -s /tmp/lychee-report.md ]; then
             echo "has_broken=true" >> "$GITHUB_OUTPUT"
           else
             echo "has_broken=false" >> "$GITHUB_OUTPUT"

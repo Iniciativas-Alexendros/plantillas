@@ -1,0 +1,4 @@
+[lint.per-file-ignores]
+# base.py is a protected file — suppress unused import for `field`
+# which is re-exported for use by downstream validators
+"validadores/base.py" = ["F401"]

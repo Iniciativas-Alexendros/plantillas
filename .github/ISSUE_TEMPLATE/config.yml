@@ -1,8 +1,8 @@
 blank_issues_enabled: false
- contact_links:
-   - name: Documentación
-     url: https://github.com/alexendros/plantillas/blob/main/INDEX.md
-     about: Lee el índice maestro antes de abrir un issue.
-   - name: Discusiones
-     url: https://github.com/alexendros/plantillas/discussions
-     about: Para preguntas de uso y brainstorming.
+contact_links:
+  - name: Documentación
+    url: https://github.com/alexendros/plantillas/blob/main/INDEX.md
+    about: Lee el índice maestro antes de abrir un issue.
+  - name: Discusiones
+    url: https://github.com/alexendros/plantillas/discussions
+    about: Para preguntas de uso y brainstorming.

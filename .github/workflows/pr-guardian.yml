@@ -80,6 +80,7 @@ jobs:
             "CONTRIBUTING.md"
             "CODE_OF_CONDUCT.md"
             "ROADMAP.md"
+            "CHANGELOG.md"
             "INTEGRACION.md"
             "install.sh"
             "claude-init"
@@ -92,7 +93,19 @@ jobs:
           CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
             "${{ github.event.pull_request.head.sha }}")
 
+          # CHANGELOG.md is allowed when module directories are also changed
+          HAS_MODULE_CHANGES=false
+          for mod in agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto validadores; do
+            if echo "$CHANGED" | grep -q "^${mod}/"; then
+              HAS_MODULE_CHANGES=true
+              break
+            fi
+          done
+
           for f in "${PROTECTED[@]}"; do
+            if [ "$f" = "CHANGELOG.md" ] && [ "$HAS_MODULE_CHANGES" = true ]; then
+              continue
+            fi
             if echo "$CHANGED" | grep -qx "$f"; then
               echo "⚠️ Archivo protegido modificado: $f"
               EXIT=1

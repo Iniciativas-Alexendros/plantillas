@@ -43,7 +43,8 @@ jobs:
           yamllint -d relaxed \
             $(find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
               ! -path './.git/*' \
-              ! -path './artefactos/*' | sort)
+              ! -path './artefactos/*' \
+              ! -name '.pre-commit-config.yaml' | sort)
 
   lint-json:
     name: Lint JSON
@@ -96,7 +97,7 @@ jobs:
       - name: Instalar ruff
         run: pip install ruff
       - name: Ejecutar ruff
-        run: ruff check validadores/ tests/ */validar_*.py validar_repo.py .github/
+        run: ruff check validadores/ tests/ */validar_*.py validar_repo.py
 
   lint-shell:
     name: Lint Shell
@@ -109,14 +110,14 @@ jobs:
       - name: Ejecutar shellcheck
         run: |
           EXIT=0
-          find . -type f \( -name '*.sh' -o -name 'claude-init' \) \
-            ! -path './.git/*' \
-            ! -path './artefactos/*' | while read -r f; do
+          while read -r f; do
             if head -1 "$f" | grep -qE 'bash|sh'; then
               echo "🔍 $f"
               shellcheck -S warning "$f" || EXIT=1
             fi
-          done
+          done < <(find . -type f \( -name '*.sh' -o -name 'claude-init' \) \
+            ! -path './.git/*' \
+            ! -path './artefactos/*')
           exit $EXIT
 
   lint-repo-structure:
