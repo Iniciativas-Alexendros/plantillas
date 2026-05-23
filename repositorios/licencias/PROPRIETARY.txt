@@ -1,0 +1,18 @@
+Copyright © {{YEAR}} {{COPYRIGHT_HOLDER}}.
+Todos los derechos reservados.
+
+Acceso restringido. No se concede licencia de uso, copia, modificación,
+distribución, transmisión, publicación o creación de obras derivadas
+respecto del presente código y de la documentación asociada,
+salvo autorización expresa y por escrito del titular de los derechos.
+
+El presente repositorio contiene material privado, confidencial y
+sometido a secreto profesional. Toda persona con acceso autorizado
+queda obligada por deber de confidencialidad. La distribución no
+autorizada puede dar lugar a responsabilidad civil y penal conforme
+al ordenamiento jurídico español, en particular el Real Decreto
+Legislativo 1/1996 (Texto Refundido de la Ley de Propiedad Intelectual)
+y la Ley Orgánica 10/1995 del Código Penal.
+
+Para consultas sobre licencia o autorizaciones, escribir a
+{{CONTACT_EMAIL}}.

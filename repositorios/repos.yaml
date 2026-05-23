@@ -1,0 +1,200 @@
+# Fuente de verdad · canon de repositorios del operador Alexendros.
+# Cualquier modificación debe registrarse en propuesta_#X y bitácora del
+# cuaderno alexendros-code-core.
+#
+# Esquema:
+#   <slug>:
+#     owner: <github-owner>          # Iniciativas-Alexendros | Alexendros
+#     visibility: public | private
+#     archived: bool                 # default false
+#     default_branch: main           # o el real
+#     profile: web-nextjs | mcp-server | library-design-system | dotfiles-config | docs-only
+#     license: MIT | Apache-2.0 | AGPL-3.0 | CC-BY-4.0 | PROPRIETARY
+#     license_secondary: <SPDX>      # opcional · típicamente CC-BY-4.0 para contenido
+#     description: "..."
+#     homepage: "..."
+#     forgejo_mirror: "..."          # URL del mirror cuando aplique
+#     status: tier-1 | tier-2 | tier-3-archived
+#     notes: "..."
+
+defaults:
+  copyright_holder: "Alejandro · Iniciativas Alexendros"
+  contact_email: contacto@alexendros.me
+  security_email: security@alexendros.me
+  pgp_fingerprint: "PENDIENTE_PUBLICAR_WKD"
+  year: "2026"
+  next_year: "2027"
+
+repos:
+
+  # ============================================================
+  # Tier-1 · objetivo del plan (transferir y aplicar canon)
+  # ============================================================
+
+  mi-website-personal:
+    owner: Alexendros               # post-transfer
+    legacy_owner: Iniciativas-Alexendros
+    legacy_name: PersonaWeb
+    visibility: public
+    default_branch: main
+    profile: web-nextjs
+    license: MIT
+    license_secondary: CC-BY-4.0    # contenido marketing
+    description: "Sitio web personal de Alexendros."
+    homepage: "alexendros.me"
+    status: tier-1
+    notes: "Renombre desde PersonaWeb. README marketing → SKIP por defecto."
+
+  mi-website-profesional:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    legacy_name: ProfesionalWeb
+    visibility: private
+    default_branch: main
+    profile: web-nextjs
+    license: MIT
+    license_secondary: CC-BY-4.0
+    description: "Sitio web profesional de Alexendros."
+    homepage: "alexendros.pro"
+    status: tier-1
+    notes: "Monorepo Turborepo. Gap CI severo (sin .github/workflows/)."
+
+  autobroker:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: web-nextjs              # incluye worker .NET en repos/, perfil web por mayoría
+    license: PROPRIETARY
+    description: "Broker autónomo · Revolut X Trader."
+    status: tier-1
+    notes: "Cuaderno autobroker activo. CI tiene jobs docker-build con errores CA1861."
+
+  ClaudeCode-ObsidianMemoryVault:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: docs-only
+    license: CC-BY-4.0               # decisión a confirmar; alternativa PROPRIETARY
+    description: "Vault Obsidian con la memoria sintetizada del operador."
+    status: tier-1
+    notes: "Confirmar licencia con operador antes de Fase 3."
+
+  design-system_vergina-imperial:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    visibility: public
+    default_branch: main
+    profile: library-design-system
+    license: MIT
+    description: "Vergina Imperial v0.2.0 · sistema de diseño público."
+    status: tier-1
+    notes: "Ya tiene LICENSE y CHANGELOG. Mantener; aplicar el resto del canon."
+
+  Controlink:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: web-nextjs
+    license: PROPRIETARY
+    description: "Dashboard de control del ecosistema del operador."
+    homepage: "controlink.alexendros.me"
+    status: tier-1
+    notes: "LIVE en producción. Cuidado al aplicar canon (no romper deploy)."
+
+  dotClaudeMatrixMap:
+    owner: Alexendros
+    legacy_owner: Iniciativas-Alexendros
+    visibility: private
+    archived: true                   # actualmente archivado
+    default_branch: home-config      # NO main · conservar
+    profile: dotfiles-config
+    license: MIT
+    description: "Configuración personal de Alexendros."
+    status: tier-1
+    notes: "Desarchivar temporalmente para canonizar. Decidir si re-archivar."
+
+  # ============================================================
+  # Tier-2 · resto activos (Fase 3.bis)
+  # ============================================================
+
+  proton-mail-mcp:
+    owner: Iniciativas-Alexendros
+    visibility: public
+    default_branch: main
+    profile: mcp-server
+    license: Apache-2.0
+    description: "Servidor MCP para Proton Mail vía Bridge IMAP/SMTP."
+    status: tier-2
+    notes: "Publicado en npm. CI release.yml falla en Dependabot PRs (#19, #20, #21). Investigar."
+
+  hostinger-mcp:
+    owner: Alexendros               # nuevo · creado en Fase 0.5
+    visibility: public
+    default_branch: main
+    profile: mcp-server
+    license: Apache-2.0
+    description: "Servidor MCP para la API de Hostinger (DNS, dominios, VPS)."
+    status: tier-2
+    notes: "Construir en Fase 0.5. Read-only por defecto."
+
+  Afiladocs:
+    owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: web-nextjs
+    license: PROPRIETARY
+    description: "Tienda de documentos legales con firma electrónica."
+    status: tier-2
+    notes: "Alta sensibilidad legal. Revisión humana de SECURITY antes de push."
+
+  Atlaps:
+    owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: web-nextjs              # tentativo · monorepo con design-system interno
+    license: PROPRIETARY
+    description: "Atlas SaaS de domótica · Iniciativa Alexendros, S.L."
+    status: tier-2
+    notes: "CI test fallando (RootLayout async Component issue React 19). Confirmar perfil."
+
+  cuaderno-notion:
+    owner: Alexendros
+    visibility: private
+    default_branch: main
+    profile: docs-only
+    license: PROPRIETARY
+    description: "Cuaderno personal sincronizado con Notion."
+    status: tier-2
+    notes: "Único repo bajo el usuario Alexendros previo al plan."
+
+  # ============================================================
+  # Tier-3 · archivados (NO se tocan, salvo dotClaudeMatrixMap)
+  # ============================================================
+
+  n8n-Plantillas:
+    owner: Iniciativas-Alexendros
+    archived: true
+    status: tier-3-archived
+
+  FileVibe-Lab:
+    owner: Iniciativas-Alexendros
+    archived: true
+    status: tier-3-archived
+
+  Lexactu-InterpreteLegal:
+    owner: Iniciativas-Alexendros
+    archived: true
+    status: tier-3-archived
+
+  Argus:
+    owner: Iniciativas-Alexendros
+    archived: true
+    status: tier-3-archived
+
+  GovLinuxES:
+    owner: Iniciativas-Alexendros
+    archived: true
+    status: tier-3-archived

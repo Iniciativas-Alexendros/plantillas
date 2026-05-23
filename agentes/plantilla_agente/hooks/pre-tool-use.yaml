@@ -1,0 +1,155 @@
+# hooks/pre-tool-use.yaml · Playbook de contenido
+#
+# Propósito: Define interceptores que se ejecutan ANTES de que el agente
+# use una tool. Permite: auditoría, validación de seguridad, backups,
+# clasificación de riesgo, y bloqueo condicional.
+#
+# Basado en: Claude Code Hooks Reference + OpenAI Agents SDK guardrails.
+#
+# INSTRUCCIONES: Adapta los triggers, reglas, y acciones a tu dominio.
+# Los hooks son la ÚLTIMA línea de defensa. No sustituyen permisos sólidos.
+# Elimina estos comentarios al final.
+
+hook: pre_tool_use
+
+# Descripción general de este hook
+description: >
+  Intercepta cada invocación de tool antes de ejecutarla.
+  Aplica reglas de seguridad, logging, y validación de contexto.
+
+# --- TRIGGERS ---
+# Cada trigger define: cuándo se activa, bajo qué condición, y qué acción tomar.
+triggers:
+  # Ejemplo: Todo uso de Bash pasa por auditoría
+  - tool: Bash
+    condition: always
+    action: audit_and_confirm
+
+  # Ejemplo: Todo uso de Edit requiere backup previo
+  - tool: Edit
+    condition: always
+    action: validate_backup
+
+  # Ejemplo: Todo uso de Write requiere backup previo
+  - tool: Write
+    condition: always
+    action: validate_backup
+
+  # Ejemplo: Spawn de subagentes a profundidad >2 genera warning
+  - tool: Agent
+    condition: depth > 2
+    action: block_and_warn
+
+  # Añade triggers específicos de tu dominio:
+  # - tool: [tool_name]
+  #   condition: [condición]
+  #   action: [acción]
+
+# --- REGLAS DETALLADAS ---
+rules:
+  # Clasificación de riesgo para comandos Bash
+  bash_risk_classification:
+    # Nivel GRAY: Solo lectura, sin riesgo
+    gray:
+      - "^git (status|log|diff|branch|show|grep|remote -v)"
+      - "^ls"
+      - "^cat"
+      - "^pwd"
+      - "^head"
+      - "^tail"
+      - "^find"
+      - "^wc"
+
+    # Nivel GREEN: Seguro, recuperable
+    green:
+      - "^npm (test|run|ci|list|outdated)"
+      - "^pnpm (test|run|install|exec|list)"
+      - "^yarn (test|run|install|list)"
+      - "^pytest"
+      - "^cargo (test|check|build|clippy)"
+      - "^go (test|build|vet)"
+      - "^make (test|build|check)"
+      - "^docker (ps|images|logs|inspect)"
+
+    # Nivel AMBER: Modifica estado, requiere confirmación
+    amber:
+      - "^git (add|commit|checkout|merge|rebase)"
+      - "^npm install"
+      - "^pnpm install"
+      - "^docker build"
+      - "^docker-compose up"
+      - "^rm -rf [^/]"  # Solo directorios relativos
+      - "^mkdir"
+      - "^touch"
+
+    # Nivel RED: Crítico, bloqueado sin excepción
+    red:
+      - "sudo\\s"
+      - "su\\s"
+      - "rm -rf /"
+      - ":\\(\\)\\{ :|:& };:"
+      - "mkfs\\."
+      - "dd if="
+      - "curl.*\\|.*sh"
+      - "wget.*\\|.*sh"
+      - "> /etc/"
+      - ">> /etc/"
+      - "chmod [-+]x"
+      - "git push"
+      - "git push --force"
+      - "git reset --hard"
+      - "docker .*(rm|stop|kill|system prune)"
+      - "npm publish"
+
+    # Acción por nivel de riesgo
+    action_per_level:
+      gray: allow           # Ejecutar sin interrupción
+      green: allow          # Ejecutar sin interrupción
+      amber: confirm        # Pausar y pedir confirmación al usuario
+      red: block_and_escalate  # Bloquear y reportar al orquestador
+
+  # Regla de backup antes de modificaciones
+  file_backup:
+    before_edit: true       # Hacer backup antes de Edit
+    before_write: true      # Hacer backup antes de Write (si archivo existe)
+    backup_dir: ".claude/backups"
+    retention_days: 7       # Cuánto tiempo conservar backups
+    naming_pattern: "{timestamp}_{filename}_{hash}"
+
+  # Regla de audit log
+  audit_log:
+    enabled: true
+    format: jsonl           # jsonl | csv | syslog
+    fields:                 # Qué campos registrar
+      - timestamp
+      - session_id
+      - tool
+      - args_hash          # Hash de argumentos (no loggear datos sensibles)
+      - risk_level
+      - decision           # allow | confirm | block
+      - reasoning          # Por qué se tomó la decisión
+    destination: ".claude/logs/tool-audit.jsonl"
+    rotation: daily         # Rotación de logs
+
+  # Regla de rate limiting (opcional)
+  rate_limit:
+    bash:
+      max_calls_per_minute: 30
+      action_on_exceed: warn
+    agent:
+      max_spawns_per_session: 20
+      action_on_exceed: block
+
+# --- ACCIONES PERSONALIZADAS ---
+# Puedes definir acciones adicionales aquí:
+custom_actions:
+  notify_slack:
+    description: "Envía notificación a Slack cuando se bloquea un comando red"
+    condition: "risk_level == 'red'"
+    webhook: "${SLACK_SECURITY_WEBHOOK}"
+    message_template: "🚨 Bloqueo de seguridad en {session_id}: {tool} {args_summary}"
+
+  format_on_save:
+    description: "Ejecuta formatter después de Edit/Write"
+    condition: "tool in ['Edit', 'Write'] and file_extension in ['.py', '.ts', '.js']"
+    command: "prettier --write {file_path}"

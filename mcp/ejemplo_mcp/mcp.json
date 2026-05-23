@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "timestamp": {
+      "command": "python",
+      "args": ["${HOME}/.claude/mcp-servers/timestamp/server.py"],
+      "description": "Devuelve fecha/hora actual en varios formatos"
+    }
+  }
+}

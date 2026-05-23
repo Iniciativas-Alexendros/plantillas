@@ -1,0 +1,90 @@
+# Pre-commit hooks para el sistema de plantillas
+# Instalación: pip install pre-commit && pre-commit install
+#
+# Estos hooks aseguran que "fallar en local = fallar en CI".
+# Requiere: pip install ruff yamllint pyyaml
+# Opcional: apt install shellcheck (para hooks de shell)
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+
+  - repo: local
+    hooks:
+      - id: detect-placeholders
+        name: Detectar placeholders sin rellenar
+        entry: python -c "
+import sys, re
+placeholder = re.compile(r'\[AS[IÍ]\]|\[nombre-.+?\]|\[descripción .+?\]|\[tool[0-9]*\]|\[skill[0-9]*\]|\[Paso [0-9]+\]|\[propósito\]|\[qué .+?\]|\[cuándo .+?\]|\[cómo .+?\]')
+files = sys.argv[1:]
+err = 0
+for f in files:
+    if f.endswith(('.md','.json','.yaml','.yml','.txt')):
+        txt = open(f).read()
+        clean = re.sub(r'```[\s\S]*?```', '', txt)
+        clean = re.sub(r'`[^`]+`', '', clean)
+        m = placeholder.search(clean)
+        if m:
+            print(f'PLACEHOLDER: {f} → {m.group()}')
+            err = 1
+sys.exit(err)
+"
+        language: system
+        files: \.(md|json|yaml|yml|txt)$
+        pass_filenames: true
+
+      - id: lint-python
+        name: Lint Python (ruff)
+        entry: ruff check
+        language: system
+        files: \.py$
+        pass_filenames: true
+
+      - id: lint-yaml
+        name: Lint YAML (yamllint)
+        entry: yamllint -d relaxed
+        language: system
+        files: \.(yaml|yml)$
+        pass_filenames: true
+
+      - id: lint-shell
+        name: Lint Shell (shellcheck)
+        entry: shellcheck -S warning
+        language: system
+        files: \.(sh|bash)$
+        pass_filenames: true
+
+      - id: validate-modules
+        name: Validar ejemplos de módulos
+        entry: bash -c '
+          cd "$(git rev-parse --show-toplevel)"
+          python agentes/validar_agente.py agentes/ejemplo_agente/ --strict
+          python skills/validar_skill.py skills/ejemplo_skill/ --strict
+          python commands/validar_command.py commands/ejemplo_command/ --strict
+          python hooks/validar_hook.py hooks/ejemplo_hook/ --strict
+          python mcp/validar_mcp.py mcp/ejemplo_mcp/ --strict
+          python plugins/validar_plugin.py plugins/ejemplo_plugin/ --strict
+          python dot-claude/validar_dot_claude.py dot-claude/ejemplo_dot_claude/ --strict
+          python repositorios/validar_repositorio.py repositorios/ejemplo_repositorio/ --strict --visibility public
+          python modulo/validar_modulo.py modulo/ --strict
+          python proyecto/validar_proyecto.py proyecto/ --strict
+        '
+        language: system
+        pass_filenames: false
+        always_run: true
+
+      - id: validate-repo-structure
+        name: Validar estructura del repositorio
+        entry: python validar_repo.py --strict
+        language: system
+        pass_filenames: false
+        always_run: true

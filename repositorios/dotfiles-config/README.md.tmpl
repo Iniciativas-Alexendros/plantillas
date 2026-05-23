@@ -1,0 +1,41 @@
+<!-- canon-managed: true -->
+# {{REPO_NAME}}
+
+> {{DESCRIPTION}}
+
+## Qué es
+
+Configuración personal del operador para entorno {{HOMEPAGE}}. No está
+pensada para ser consumida por terceros, pero la liberamos para que sirva
+de inspiración.
+
+## Stack
+
+- Bash, fish o zsh según el componente.
+- GNU Stow (opcional) para enlaces simbólicos.
+- systemd user units cuando aplica.
+
+## Instala
+
+```bash
+git clone git@github.com:{{REPO_OWNER}}/{{REPO_NAME}}.git ~/.dotfiles
+cd ~/.dotfiles
+./install.sh   # revisa antes lo que toca
+```
+
+## Estructura
+
+```
+.config/         · archivos en ~/.config/
+home/            · archivos directamente en $HOME
+scripts/         · utilidades sueltas
+systemd/         · units user
+```
+
+## Licencia
+
+MIT. Úsalo como punto de partida, no esperes soporte.
+
+## Contacto
+
+{{CONTACT_EMAIL}}

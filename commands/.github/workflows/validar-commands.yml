@@ -1,0 +1,94 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Validación de Commands Claude Code
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Validar Commands Claude Code
+
+on:
+  pull_request:
+    paths:
+      - "commands/**"
+      - ".claude/commands/**"
+      - "plantillas/commands/**"
+      - "commands/validar_command.py"
+      - ".github/workflows/validar-commands.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "commands/**"
+      - ".claude/commands/**"
+      - "plantillas/commands/**"
+      - "commands/validar_command.py"
+  workflow_dispatch:
+    inputs:
+      command:
+        description: "Directorio específico del comando a validar (opcional)"
+        required: false
+        default: ""
+
+jobs:
+  descubrir:
+    name: Descubrir commands
+    runs-on: ubuntu-latest
+    outputs:
+      commands: ${{ steps.discover.outputs.commands }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          CMDS=()
+          for base in "commands" ".claude/commands"; do
+            if [ -d "$base" ]; then
+              for dir in "$base"/*; do
+                if [ -d "$dir" ] && [ -f "$dir/COMMAND.md" ]; then
+                  CMDS+=("$dir")
+                fi
+              done
+            fi
+          done
+          if [ -n "${{ github.event.inputs.command }}" ]; then
+            CMDS=("${{ github.event.inputs.command }}")
+          fi
+          if [ ${#CMDS[@]} -eq 0 ]; then
+            echo 'commands=[]' >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          JSON=$(printf '%s\n' "${CMDS[@]}" | jq -R . | jq -s .)
+          echo "commands=$JSON" >> $GITHUB_OUTPUT
+
+  validar:
+    name: Validar ${{ matrix.command }}
+    runs-on: ubuntu-latest
+    needs: descubrir
+    if: ${{ needs.descubrir.outputs.commands != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        command: ${{ fromJson(needs.descubrir.outputs.commands) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - run: |
+          echo "::group::Validando ${{ matrix.command }}"
+          python commands/validar_command.py "${{ matrix.command }}" --strict
+          echo "::endgroup::"
+
+  resumen:
+    name: Resumen
+    runs-on: ubuntu-latest
+    needs: validar
+    if: always()
+    steps:
+      - run: |
+          if [ "${{ needs.validar.result }}" == "success" ]; then
+            echo "✅ TODOS LOS COMMANDS PASARON"
+            exit 0
+          else
+            echo "❌ ALGUNOS COMMANDS FALLARON"
+            exit 1
+          fi

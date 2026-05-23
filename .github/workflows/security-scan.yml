@@ -1,0 +1,135 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Security Scan · Detección de Secrets y Archivos Prohibidos
+#
+# Propósito: Evitar que secrets, tokens, claves privadas o archivos personales
+# lleguen al historial del repositorio, incluso si alguien fuerza `git add -f`.
+#
+# Se ejecuta en:
+#   - Cada Pull Request
+#   - Push a main
+#   - Manualmente (workflow_dispatch)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Security Scan
+
+on:
+  pull_request:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  detect-secrets:
+    name: Detectar Secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Necesario para scan completo
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Scan de secrets con regex
+        run: |
+          EXIT=0
+          python3 << 'PYEOF'
+          import re
+          from pathlib import Path
+
+          PATRONES = [
+              re.compile(r"gh[pousr]_[A-Za-z0-9_]{36,}"),
+              re.compile(r"sk-[a-zA-Z0-9]{20,}"),
+              re.compile(r"AKIA[0-9A-Z]{16}"),
+              re.compile(r"[0-9a-f]{32}-[0-9a-f]{32}"),
+              re.compile(r"private[_-]?key\s*[:=]\s*['\"]?[\w/+]{20,}"),
+              re.compile(r"api[_-]?key\s*[:=]\s*['\"]?[\w/+]{20,}", re.IGNORECASE),
+              re.compile(r"password\s*[:=]\s*['\"]?[^\s'\"]{8,}", re.IGNORECASE),
+              re.compile(r"token\s*[:=]\s*['\"]?[\w-]{20,}", re.IGNORECASE),
+          ]
+
+          BASE = Path(".")
+          errores = 0
+          for p in BASE.rglob("*"):
+              if not p.is_file():
+                  continue
+              if ".git" in p.parts:
+                  continue
+              if p.stat().st_size > 2 * 1024 * 1024:
+                  continue
+              try:
+                  text = p.read_text(encoding="utf-8")
+              except (UnicodeDecodeError, OSError):
+                  continue
+              for pat in PATRONES:
+                  m = pat.search(text)
+                  if m:
+                      print(f"::error file={p}::Posible secret detectado: {m.group()[:30]}...")
+                      errores += 1
+                      break
+          exit(errores if errores > 0 else 0)
+          PYEOF
+          EXIT=$?
+          exit $EXIT
+
+  gitignore-check:
+    name: Verificar .gitignore
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detectar archivos que deberían estar ignorados
+        run: |
+          EXIT=0
+
+          # Lista de patrones que NUNCA deben estar en el repo
+          CHECKS=(
+            ".env"
+            ".env.local"
+            "*.pem"
+            "*.key"
+            "id_rsa"
+            "secrets"
+          )
+
+          for pattern in "${CHECKS[@]}"; do
+            if [ "${pattern:0:1}" = "*" ]; then
+              ext="${pattern:1}"
+              matches=$(find . -type f -name "*${ext}" ! -path './.git/*' | head -20)
+            else
+              matches=$(find . -type f -name "${pattern}" ! -path './.git/*' | head -20)
+            fi
+
+            if [ -n "$matches" ]; then
+              echo "❌ Archivos que violan .gitignore:"
+              echo "$matches"
+              EXIT=1
+            fi
+          done
+
+          # Directorios prohibidos explícitos
+          for dir in cuaderno-plantilla artefactos/operador vap; do
+            if [ -d "$dir" ]; then
+              echo "⚠️ Directorio prohibido detectado en el repo: $dir/"
+              echo "   Asegúrate de que .gitignore lo excluye y no fue forzado con git add -f"
+              EXIT=1
+            fi
+          done
+
+          exit $EXIT
+
+  trufflehog:
+    name: TruffleHog Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Ejecutar TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          extra_args: --debug --only-verified

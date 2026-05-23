@@ -1,0 +1,89 @@
+<!-- canon-managed: true -->
+# {{REPO_NAME}}
+
+> {{DESCRIPTION}}
+
+[![CI](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml/badge.svg)](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml)
+
+## Qué es
+
+Servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io)
+que expone {{DESCRIPTION}} a clientes compatibles (Claude Desktop, Claude
+Code, Cursor, Continue, etc.).
+
+## Stack
+
+- TypeScript estricto
+- `@modelcontextprotocol/sdk`
+- pnpm 9 · Node.js LTS
+- Vitest
+
+## Instala
+
+```bash
+pnpm install
+pnpm build
+```
+
+## Configura
+
+Variables de entorno requeridas (revisa `src/auth.ts`):
+
+```
+EXAMPLE_API_TOKEN=...
+```
+
+Para clientes MCP locales, añade el bloque correspondiente a tu archivo
+`mcp.json` o `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "{{REPO_NAME}}": {
+      "command": "node",
+      "args": ["/ruta/absoluta/{{REPO_NAME}}/dist/index.js"],
+      "env": {
+        "EXAMPLE_API_TOKEN": "${EXAMPLE_API_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+## Smoke test
+
+```bash
+npx @modelcontextprotocol/inspector node ./dist/index.js
+```
+
+## Comandos
+
+| Comando | Propósito |
+|---------|-----------|
+| `pnpm build` | Compila a `dist/`. |
+| `pnpm dev` | Desarrollo con `tsx --watch`. |
+| `pnpm lint` | ESLint. |
+| `pnpm typecheck` | TypeScript estricto. |
+| `pnpm test` | Vitest. |
+| `pnpm package` | Empaqueta MCPB para distribución. |
+
+## Tools y resources expuestos
+
+Documentados en [`ARCHITECTURE.md`](ARCHITECTURE.md). Resumen:
+
+- (lista de tools cuando se implementen)
+
+## Documentación
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) · diseño del servidor.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · cómo contribuir.
+- [`SECURITY.md`](SECURITY.md) · política de seguridad.
+- [`CHANGELOG.md`](CHANGELOG.md) · cambios destacables.
+
+## Licencia
+
+Apache License 2.0. Ver [`LICENSE`](LICENSE).
+
+## Contacto
+
+{{CONTACT_EMAIL}}

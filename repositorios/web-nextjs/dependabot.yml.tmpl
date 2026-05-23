@@ -1,0 +1,44 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 10
+    labels:
+      - dependencies
+      - npm
+    groups:
+      prod-deps:
+        applies-to: version-updates
+        dependency-type: production
+        update-types:
+          - minor
+          - patch
+      dev-deps:
+        applies-to: version-updates
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+    commit-message:
+      prefix: "build(deps)"
+      include: scope
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: "04:00"
+      timezone: Europe/Madrid
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github-actions
+    commit-message:
+      prefix: "build(ci)"
+      include: scope

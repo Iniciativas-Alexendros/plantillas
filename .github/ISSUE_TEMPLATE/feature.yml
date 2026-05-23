@@ -1,0 +1,29 @@
+name: Feature
+ description: Propón una nueva funcionalidad o mejora
+ title: "[feat] "
+ labels: ["feature"]
+ body:
+   - type: textarea
+     attributes:
+       label: Descripción
+       description: ¿Qué quieres lograr?
+     validations:
+       required: true
+   - type: textarea
+     attributes:
+       label: Motivación
+       description: ¿Por qué es necesario? ¿Qué problema resuelve?
+     validations:
+       required: true
+   - type: textarea
+     attributes:
+       label: Propuesta
+       description: Describe tu idea de implementación.
+     validations:
+       required: true
+   - type: checkboxes
+     attributes:
+       label: Checklist
+       options:
+         - label: He revisado el ROADMAP.md y no hay duplicados.
+         - label: Estoy dispuesto a contribuir con la implementación.

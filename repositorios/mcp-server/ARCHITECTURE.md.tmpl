@@ -1,0 +1,61 @@
+# Arquitectura de {{REPO_NAME}}
+
+Servidor MCP que envuelve una API externa y la expone a clientes que
+soportan el [Model Context Protocol](https://modelcontextprotocol.io).
+
+## Visión general
+
+```mermaid
+flowchart LR
+  cliente[Claude Code / Desktop] -- stdio --> server[{{REPO_NAME}}]
+  server --> http[API externa]
+  server --> auth[Bearer / OAuth]
+```
+
+## Componentes
+
+### `src/index.ts`
+
+Entrypoint stdio. Registra tools, resources y prompts. Maneja errores y
+cierres.
+
+### `src/client.ts`
+
+Cliente HTTP basado en `fetch`. Gestiona reintentos exponenciales y
+serialización JSON.
+
+### `src/auth.ts`
+
+Lectura del token desde el entorno. Falla rápido si falta.
+
+### `src/tools/`
+
+Cada archivo expone un grupo lógico de tools. Las tools devuelven
+estructuras serializables y declaran su esquema con Zod.
+
+### `src/resources/`
+
+Recursos navegables (URIs `mcp://...`).
+
+## Decisiones cardinales
+
+- **TypeScript estricto** para detectar errores antes del runtime.
+- **stdio transport** por compatibilidad amplia con clientes MCP locales.
+- **Read-only por defecto**: las tools de escritura requieren un flag
+  explícito para evitar acciones destructivas en modo agente.
+- **Apache 2.0**: cláusula de patentes protege ante un fork corporativo.
+
+Más detalle en `docs/adr/`.
+
+## Manejo de errores
+
+- Errores de red: reintento exponencial 3 veces.
+- 401/403: el server reporta `auth-required` al cliente y termina.
+- 429: respeta `Retry-After`.
+- 5xx: registra y reporta como error transitorio.
+
+## Riesgos conocidos
+
+- Cambios no anunciados en la API externa pueden romper tools.
+- El cliente MCP debe respetar el modo read-only; documentamos cómo
+  configurarlo.

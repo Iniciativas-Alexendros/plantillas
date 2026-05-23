@@ -1,0 +1,40 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Builds
+dist/
+build/
+.out/
+.next/
+
+# Entorno
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+*.tgz
+.cache/
+temp/
+tmp/

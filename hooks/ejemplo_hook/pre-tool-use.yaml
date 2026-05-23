@@ -1,0 +1,96 @@
+hook: pre_tool_use
+description: >
+  Intercepta cada invocación de tool antes de ejecutarla.
+  Aplica reglas de seguridad, logging, y validación de contexto.
+
+triggers:
+  - tool: Bash
+    condition: always
+    action: audit_and_confirm
+
+  - tool: Edit
+    condition: always
+    action: validate_backup
+
+  - tool: Write
+    condition: always
+    action: validate_backup
+
+  - tool: Agent
+    condition: depth > 2
+    action: block_and_warn
+
+rules:
+  bash_risk_classification:
+    gray:
+      - "^git (status|log|diff|branch|show|grep|remote -v)"
+      - "^ls"
+      - "^cat"
+      - "^pwd"
+      - "^head"
+      - "^tail"
+      - "^find"
+      - "^wc"
+
+    green:
+      - "^npm (test|run|ci|list|outdated)"
+      - "^pnpm (test|run|install|exec|list)"
+      - "^yarn (test|run|install|list)"
+      - "^pytest"
+      - "^cargo (test|check|build|clippy)"
+      - "^go (test|build|vet)"
+      - "^make (test|build|check)"
+      - "^docker (ps|images|logs|inspect)"
+
+    amber:
+      - "^git (add|commit|checkout|merge|rebase)"
+      - "^npm install"
+      - "^pnpm install"
+      - "^docker build"
+      - "^docker-compose up"
+      - "^rm -rf [^/]"
+      - "^mkdir"
+      - "^touch"
+
+    red:
+      - "sudo\\s"
+      - "su\\s"
+      - "rm -rf /"
+      - ":\\(\\)\\{ :|:& };:"
+      - "mkfs\\."
+      - "dd if="
+      - "curl.*\\|.*sh"
+      - "wget.*\\|.*sh"
+      - "> /etc/"
+      - ">> /etc/"
+      - "chmod [-+]x"
+      - "git push"
+      - "git push --force"
+      - "git reset --hard"
+      - "docker .*(rm|stop|kill|system prune)"
+      - "npm publish"
+
+    action_per_level:
+      gray: allow
+      green: allow
+      amber: confirm
+      red: block_and_escalate
+
+  file_backup:
+    before_edit: true
+    backup_dir: ".claude/backups"
+    retention_days: 7
+
+  audit_log:
+    enabled: true
+    format: jsonl
+    fields:
+      - timestamp
+      - session_id
+      - tool
+      - args_hash
+      - risk_level
+      - decision
+      - reasoning
+    destination: ".claude/logs/tool-audit.jsonl"
+    rotation: daily

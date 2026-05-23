@@ -1,0 +1,29 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Validación del template de Proyecto
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Validar Proyecto
+
+on:
+  pull_request:
+    paths:
+      - "proyecto/**"
+      - ".github/workflows/validar-proyecto.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "proyecto/**"
+  workflow_dispatch:
+
+jobs:
+  validar:
+    name: Validar proyecto/
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install pyyaml
+      - name: Ejecutar validador
+        run: python proyecto/validar_proyecto.py proyecto/ --strict

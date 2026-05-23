@@ -1,0 +1,94 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Validación de Skills Claude Code
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Validar Skills Claude Code
+
+on:
+  pull_request:
+    paths:
+      - "skills/**"
+      - ".claude/skills/**"
+      - "plantillas/skills/**"
+      - "skills/validar_skill.py"
+      - ".github/workflows/validar-skills.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "skills/**"
+      - ".claude/skills/**"
+      - "plantillas/skills/**"
+      - "skills/validar_skill.py"
+  workflow_dispatch:
+    inputs:
+      skill:
+        description: "Directorio específico de la skill a validar (opcional)"
+        required: false
+        default: ""
+
+jobs:
+  descubrir:
+    name: Descubrir skills
+    runs-on: ubuntu-latest
+    outputs:
+      skills: ${{ steps.discover.outputs.skills }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: discover
+        run: |
+          SKILLS=()
+          for base in "skills" ".claude/skills"; do
+            if [ -d "$base" ]; then
+              for dir in "$base"/*; do
+                if [ -d "$dir" ] && [ -f "$dir/SKILL.md" ]; then
+                  SKILLS+=("$dir")
+                fi
+              done
+            fi
+          done
+          if [ -n "${{ github.event.inputs.skill }}" ]; then
+            SKILLS=("${{ github.event.inputs.skill }}")
+          fi
+          if [ ${#SKILLS[@]} -eq 0 ]; then
+            echo 'skills=[]' >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          JSON=$(printf '%s\n' "${SKILLS[@]}" | jq -R . | jq -s .)
+          echo "skills=$JSON" >> $GITHUB_OUTPUT
+
+  validar:
+    name: Validar ${{ matrix.skill }}
+    runs-on: ubuntu-latest
+    needs: descubrir
+    if: ${{ needs.descubrir.outputs.skills != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        skill: ${{ fromJson(needs.descubrir.outputs.skills) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+      - run: |
+          echo "::group::Validando ${{ matrix.skill }}"
+          python skills/validar_skill.py "${{ matrix.skill }}" --strict
+          echo "::endgroup::"
+
+  resumen:
+    name: Resumen
+    runs-on: ubuntu-latest
+    needs: validar
+    if: always()
+    steps:
+      - run: |
+          if [ "${{ needs.validar.result }}" == "success" ]; then
+            echo "✅ TODAS LAS SKILLS PASARON"
+            exit 0
+          else
+            echo "❌ ALGUNAS SKILLS FALLARON"
+            exit 1
+          fi

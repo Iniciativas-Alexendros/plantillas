@@ -1,0 +1,177 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# PR Guardian · Control de calidad de Pull Requests
+#
+# Propósito: Evitar que PRs con títulos incorrectos, tamaño excesivo,
+# modificaciones a archivos protegidos, o sin CHANGELOG entren al repo.
+#
+# Se ejecuta en:
+#   - Cada Pull Request (opened, synchronize, reopened, edited)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: PR Guardian
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  conventional-title:
+    name: Título Conventional Commit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validar título del PR
+        run: |
+          TITLE="${{ github.event.pull_request.title }}"
+          REGEX="^(feat|fix|docs|style|refactor|test|ci|chore)(\(.+\))?!?: .+"
+
+          if echo "$TITLE" | grep -qE "$REGEX"; then
+            echo "✅ Título válido: $TITLE"
+            exit 0
+          else
+            echo "❌ Título inválido: $TITLE"
+            echo ""
+            echo "El título debe seguir Conventional Commits:"
+            echo "  tipo(alcance)?: descripción"
+            echo ""
+            echo "Tipos permitidos: feat, fix, docs, style, refactor, test, ci, chore"
+            echo "Ejemplo: feat(agentes): añade validador de subagentes"
+            exit 1
+          fi
+
+  pr-size:
+    name: Tamaño del PR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Contar líneas cambiadas
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch origin "$BASE" --depth=1
+
+          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | \
+            awk '{added+=$1; removed+=$2} END {print added+removed}')
+
+          echo "📊 Líneas cambiadas: $LINES"
+
+          if [ "$LINES" -gt 500 ]; then
+            echo "⚠️ PR muy grande ($LINES líneas). Considera dividirlo en PRs menores."
+            exit 1
+          else
+            echo "✅ Tamaño aceptable"
+          fi
+
+  protected-files:
+    name: Archivos Protegidos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detectar archivos protegidos modificados
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch origin "$BASE" --depth=1
+
+          PROTECTED=(
+            "INDEX.md"
+            "README.md"
+            "CONTRIBUTING.md"
+            "CODE_OF_CONDUCT.md"
+            "ROADMAP.md"
+            "CHANGELOG.md"
+            "INTEGRACION.md"
+            "install.sh"
+            "claude-init"
+            "update.sh"
+            "validadores/base.py"
+            ".pre-commit-config.yaml"
+          )
+
+          EXIT=0
+          for f in "${PROTECTED[@]}"; do
+            if git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | grep -qx "$f"; then
+              echo "⚠️ Archivo protegido modificado: $f"
+              EXIT=1
+            fi
+          done
+
+          if [ $EXIT -eq 1 ]; then
+            echo ""
+            echo "Estos archivos definen el contrato del sistema de plantillas."
+            echo "Si necesitas modificarlos, abre un issue primero y discútelo."
+            exit 1
+          fi
+
+  changelog-check:
+    name: CHANGELOG Actualizado
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verificar CHANGELOG.md
+        run: |
+          BASE="${{ github.event.pull_request.base.sha }}"
+          HEAD="${{ github.event.pull_request.head.sha }}"
+          git fetch origin "$BASE" --depth=1
+
+          # Si el PR modifica módulos o validadores, requiere CHANGELOG
+          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD")
+
+          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto)/'; then
+            if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
+              echo "✅ CHANGELOG.md actualizado"
+              exit 0
+            else
+              echo "❌ Falta actualizar CHANGELOG.md"
+              echo "Este PR modifica módulos o validadores. Añade una entrada en CHANGELOG.md."
+              exit 1
+            fi
+          else
+            echo "ℹ️ No requiere CHANGELOG (no modifica módulos)"
+          fi
+
+  placeholder-check:
+    name: Placeholders en Ejemplos
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validar que ejemplos no tengan placeholders
+        run: |
+          EXIT=0
+          for dir in agentes skills commands hooks mcp plugins dot-claude repositorios; do
+            ejemplo="${dir}/ejemplo_${dir}"
+            if [ "$dir" = "dot-claude" ]; then
+              ejemplo="${dir}/ejemplo_dot_claude"
+            fi
+            if [ -d "$ejemplo" ]; then
+              script="${dir}/validar_${dir}.py"
+              if [ "$dir" = "dot-claude" ]; then
+                script="${dir}/validar_dot_claude.py"
+              elif [ "$dir" = "agentes" ]; then
+                script="${dir}/validar_agente.py"
+              elif [ "$dir" = "skills" ]; then
+                script="${dir}/validar_skill.py"
+              elif [ "$dir" = "commands" ]; then
+                script="${dir}/validar_command.py"
+              elif [ "$dir" = "hooks" ]; then
+                script="${dir}/validar_hook.py"
+              elif [ "$dir" = "mcp" ]; then
+                script="${dir}/validar_mcp.py"
+              elif [ "$dir" = "plugins" ]; then
+                script="${dir}/validar_plugin.py"
+              elif [ "$dir" = "repositorios" ]; then
+                script="${dir}/validar_repositorio.py"
+              fi
+
+              if [ -f "$script" ]; then
+                python "$script" "$ejemplo" --strict || EXIT=1
+              fi
+            fi
+          done
+          exit $EXIT

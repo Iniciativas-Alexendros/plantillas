@@ -1,0 +1,63 @@
+{
+  "_comment": "CONFIGURACIÓN GLOBAL DE CLAUDE CODE · Playbook de contenido",
+  "_purpose": "Este archivo configura el comportamiento global de Claude Code.\nSe aplica a TODAS las sesiones del usuario.\n\nINSTRUCCIONES: Adapta cada sección a tus preferencias.\nElimina estos comentarios al final.",
+
+  "skillListingBudgetFraction": 0.07,
+
+  "permissions": {
+    "_comment": "Lista de comandos Bash permitidos con regex.\nFormato: 'Bash(comando:argumentos)'",
+    "allow": [
+      "Agent",
+      "Bash(bash -n:*)",
+      "Bash(chmod +x:*)",
+      "Bash(cp:*)",
+      "Bash(env)",
+      "Bash(git:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(node --version)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(python3 --version)",
+      "Bash(rm:*)",
+      "Bash(touch:*)",
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit",
+      "Write",
+      "TodoWrite"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf /)",
+      "Bash(curl *|*sh)",
+      "Bash(wget *|*sh)"
+    ]
+  },
+
+  "hooks": {
+    "_comment": "Hooks globales que aplican a todas las sesiones",
+    "enabled": true,
+    "sources": [
+      "hooks/"
+    ]
+  },
+
+  "skills": {
+    "_comment": "Configuración de descubrimiento de skills",
+    "autoDiscover": true,
+    "preload": []
+  },
+
+  "mcp": {
+    "_comment": "Servidores MCP globales",
+    "servers": {}
+  },
+
+  "output": {
+    "_comment": "Estilo de output por defecto",
+    "language": "es",
+    "style": "concise"
+  }
+}

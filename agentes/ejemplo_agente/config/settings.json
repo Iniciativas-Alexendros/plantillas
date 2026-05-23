@@ -1,0 +1,40 @@
+{
+  "agent": {
+    "name": "ejemplo-agente",
+    "version": "1.0.0",
+    "model": "sonnet",
+    "max_tokens": 200000,
+    "temperature": 0.2,
+    "thinking": {
+      "enabled": true,
+      "budget_tokens": 32000
+    }
+  },
+  "context": {
+    "auto_compact_threshold": 0.85,
+    "memory_file": "memory/context.md",
+    "learnings_file": "memory/learnings.md"
+  },
+  "execution": {
+    "parallel_tool_calls": true,
+    "max_subagent_depth": 3,
+    "default_subagent_timeout": 300,
+    "require_approval_for": [
+      "git_push",
+      "git_force_push",
+      "sudo",
+      "rm -rf",
+      "docker system prune"
+    ]
+  },
+  "mcp": {
+    "servers_config": "tools/mcp.json",
+    "auto_discover": true,
+    "tool_search_enabled": true
+  },
+  "observability": {
+    "tracing": true,
+    "session_storage": "local",
+    "cost_tracking": true
+  }
+}

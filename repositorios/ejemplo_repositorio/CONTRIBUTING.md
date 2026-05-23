@@ -1,0 +1,67 @@
+# Cómo contribuir a ejemplo-repositorio
+
+Gracias por interesarte en el proyecto. En este documento describimos cómo
+trabajamos para mantener el código limpio, las decisiones trazables y las
+revisiones rápidas.
+
+## Antes de empezar
+
+- Lee el [Código de Conducta](CODE_OF_CONDUCT.md). Esperamos su cumplimiento
+  íntegro de toda persona que interactúe con el proyecto.
+- Revisa los issues abiertos para evitar duplicar trabajo. Si vas a abordar
+  algo nuevo, abre primero un issue describiendo el problema y la solución
+  propuesta.
+- Si tu aportación afecta a la arquitectura o a una decisión transversal,
+  documenta la decisión en `docs/adr/` siguiendo MADR 4.0.0.
+
+## Entorno de desarrollo
+
+Usamos las siguientes herramientas:
+
+- Node.js LTS y `pnpm` 9 como gestor de paquetes (cuando aplique).
+- Conventional Commits para los mensajes (`feat:`, `fix:`, `chore:`,
+  `docs:`, `refactor:`, `test:`, `build:`, `ci:`).
+- Firmas de commit obligatorias (SSH o GPG).
+
+Pasos típicos:
+
+```bash
+git clone git@github.com:alexendros/ejemplo-repositorio.git
+cd ejemplo-repositorio
+pnpm install
+pnpm test
+```
+
+## Flujo de ramas
+
+- `main` está protegida. No aceptamos pushes directos.
+- Las ramas siguen el patrón `<tipo>/<scope>-<slug-corto>`. Tipos válidos:
+  `feat`, `fix`, `chore`, `docs`, `refactor`, `test`, `build`, `ci`.
+- Cada PR se mergea con squash. El mensaje del squash respeta Conventional
+  Commits y referencia el issue cerrado mediante `Cierra #N` cuando aplique.
+
+## Pull Requests
+
+- Abre el PR con la plantilla por defecto (rellena los apartados Qué,
+  Por qué, Cómo probar y la lista de comprobación).
+- El CI debe quedar verde antes del merge. No nos saltamos hooks ni firmas.
+- Pide revisión a `@alexendros` o a la persona designada en
+  `.github/CODEOWNERS`.
+
+## Commits firmados
+
+Los commits deben ir firmados. Configuramos SSH como método por defecto:
+
+```bash
+git config --global commit.gpgsign true
+git config --global gpg.format ssh
+git config --global user.signingkey ~/.ssh/id_ed25519.pub
+```
+
+## Reportar vulnerabilidades
+
+No las publiques en issues. Sigue lo descrito en [SECURITY.md](SECURITY.md).
+
+## Contacto
+
+Para dudas sobre el proceso de contribución escribe a contacto@alexendros.me.

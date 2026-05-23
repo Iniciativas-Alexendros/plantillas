@@ -1,0 +1,64 @@
+<!-- canon-managed: true -->
+# {{REPO_NAME}}
+
+> {{DESCRIPTION}}
+
+## Qué es
+
+Sistema de diseño compartido por las apps del operador. Define tokens
+OKLCH, tipografía, iconografía y componentes primitivos.
+
+## Stack
+
+- TypeScript estricto
+- Tailwind v4 + CSS variables
+- Geist Sans / Geist Mono
+- Lucide para iconografía
+- Vitest para validación de tokens y contraste WCAG
+
+## Instala
+
+```bash
+pnpm install
+pnpm build
+```
+
+## Tokens
+
+Los tokens viven en `src/tokens/`. Categorías:
+
+- `color/` · paleta principal y semánticos.
+- `typography/` · escalas y familias.
+- `radius/`, `spacing/`, `shadow/` · sistema modular.
+- `motion/` · curvas y duraciones.
+
+## Cómo consumir
+
+Desde una app del operador:
+
+```ts
+import "{{REPO_NAME}}/styles.css"; // tokens base
+```
+
+```html
+<html data-mode="dark" data-accent="gold">...</html>
+```
+
+## Validación
+
+- `pnpm test` ejecuta tests de tokens (suma, conversión OKLCH, etc.).
+- `pnpm validate:contrast` verifica WCAG 2.2 AA.
+
+## Documentación
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) · diseño interno.
+- [`CHANGELOG.md`](CHANGELOG.md) · cambios destacables.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · contribución.
+
+## Licencia
+
+MIT (consumo público) o PROPRIETARY (privado, ver `COPYRIGHT.md`).
+
+## Contacto
+
+{{CONTACT_EMAIL}}

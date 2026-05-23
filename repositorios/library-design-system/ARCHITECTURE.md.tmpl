@@ -1,0 +1,37 @@
+# Arquitectura de {{REPO_NAME}}
+
+Sistema de diseño que provee tokens y primitives consumibles por cualquier
+app web del operador.
+
+## Visión general
+
+```mermaid
+flowchart LR
+  tokens[Tokens OKLCH] --> css[CSS variables]
+  css --> components[Primitives]
+  components --> apps[Apps]
+```
+
+## Componentes
+
+- `src/tokens/` · fuente de verdad. Generamos CSS a partir de aquí.
+- `src/components/` · primitives en React headless (sin estilos
+  inferidos del consumidor).
+- `src/utils/` · helpers (conversión OKLCH ↔ HEX, pares de contraste).
+
+## Decisiones cardinales
+
+- **OKLCH** por uniformidad perceptual frente a HEX/HSL.
+- **CSS variables** como capa de salida; los consumidores conmutan modo
+  con `data-mode` y acento con `data-accent`.
+- **Validación de contraste en CI** para garantizar WCAG 2.2 AA.
+
+## Versionado
+
+SemVer estricto. MAJOR rompe el contrato de tokens (renaming, retirada de
+variables). MINOR añade tokens o componentes. PATCH solo arregla bugs.
+
+## Riesgos conocidos
+
+- Tailwind v4 todavía está estabilizándose. Cualquier cambio mayor
+  requerirá ajuste de la pipeline de tokens.

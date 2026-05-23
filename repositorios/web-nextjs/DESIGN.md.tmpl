@@ -1,0 +1,60 @@
+# Diseño de {{REPO_NAME}}
+
+Este documento describe cómo {{REPO_NAME}} consume el sistema de diseño
+**Vergina Imperial v0.2.0**.
+
+## Principios
+
+- Una atmósfera única (púrpura pretoriana) con dos acentos (oro · titanio).
+- Modo oscuro y claro mediante el atributo `data-mode` en `<html>`.
+- Acento conmutable mediante `data-accent="gold"` o `data-accent="titanium"`.
+- Tipografía Geist Sans para texto, Geist Mono para código.
+- Iconografía Lucide.
+- Tokens OKLCH para asegurar contraste consistente.
+
+## Tokens
+
+Los tokens canónicos viven en el repositorio
+`Iniciativas-Alexendros/design-system_vergina-imperial` (o su sucesor).
+
+Mapeo de tokens consumidos en este proyecto:
+
+| Token | Uso |
+|-------|-----|
+| `--vi-bg` | fondo base |
+| `--vi-fg` | texto primario |
+| `--vi-accent-gold` | acento decisional |
+| `--vi-accent-titanium` | acento neutro |
+| `--vi-border` | separadores |
+| `--vi-muted` | texto secundario |
+
+## Componentes
+
+- Botones, inputs, tablas y tarjetas siguen el componente equivalente del
+  design system. No reimplementamos primitives; si falta uno, lo elevamos
+  al design system.
+- Los iconos se importan desde `lucide-react`. Tamaño por defecto 20 px.
+- Las gráficas (si aplica) usan recharts con tokens del design system.
+
+## Accesibilidad
+
+- WCAG 2.2 AA es objetivo mínimo.
+- Contraste mínimo 4.5:1 en texto normal, 3:1 en texto grande.
+- Foco visible siempre. Atributos ARIA cuando un patrón nativo no exista.
+- Verificación con `axe-core` en runtime durante desarrollo.
+
+## Navegación
+
+- Header pegajoso con logotipo y navegación primaria.
+- Footer mínimo con marca, enlace legal y RSS si aplica.
+
+## Dark / light mode
+
+- Toggle `data-mode="dark|light"` con persistencia en `localStorage`.
+- Sin parpadeo: aplicar el modo antes del primer paint mediante un
+  pequeño script inlined en el `<head>`.
+
+## Migraciones desde versiones anteriores
+
+Vergina Imperial v0.2.0 sustituye a v0.1.x (Abisal). Si encuentras tokens
+`--abisal-*`, migra a sus equivalentes `--vi-*` y elimínalos.

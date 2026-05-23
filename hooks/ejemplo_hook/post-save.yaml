@@ -1,0 +1,29 @@
+hook: post_save
+description: >
+  Formatea automáticamente archivos después de guardarlos.
+  Aplica prettier a JS/TS/CSS/HTML y black a Python.
+
+triggers:
+  - tool: Write
+    condition: always
+    action: allow
+
+rules:
+  format_on_save:
+    enabled: true
+    formatters:
+      - pattern: "\\.(js|ts|tsx|jsx|css|html|json|md)$"
+        command: "npx prettier --write {file}"
+      - pattern: "\\.py$"
+        command: "python -m black {file}"
+      - pattern: "\\.sh$"
+        command: "shfmt -w {file}"
+    exclude:
+      - "node_modules/"
+      - "dist/"
+      - ".git/"
+      - "*.min.*"
+
+  git_stage_formatted:
+    enabled: false
+    description: "Opcional: auto-stage archivos formateados"

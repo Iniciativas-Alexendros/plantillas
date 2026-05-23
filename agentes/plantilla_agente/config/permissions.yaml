@@ -1,0 +1,181 @@
+# permissions.yaml · Playbook de contenido
+#
+# Propósito: Define guardrails de seguridad granular para el agente.
+# Basado en: OpenAI Agents SDK guardrails + Claude Code permission modes.
+#
+# INSTRUCCIONES: Adapta TODAS las secciones a tu dominio y nivel de riesgo.
+# El principio es MÍNIMO PRIVILEGIO: deniega todo, permite solo lo necesario.
+# Elimina estos comentarios al final.
+
+agent:
+  # Mode general del agente:
+  #   unrestricted = puede hacer cualquier cosa (NO recomendado)
+  #   restricted   = aplica las reglas de este archivo (recomendado)
+  #   ask          = pregunta antes de cada acción
+  mode: restricted
+
+  # --- TOOLS PERMITIDAS ---
+  # Lista de tools nativas de Claude Code que este agente PUEDE usar.
+  # Solo incluye las que NECESITA. Cada tool extra es un vector de riesgo.
+  allowed_tools:
+    - Read
+    - Grep
+    - Glob
+    - Edit
+    - Write
+    - Bash
+    - Agent
+    - TodoWrite
+
+  # Tools explícitamente PROHIBIDAS (toma precedencia sobre allowed).
+  # Útil para overrides temporales o prohibiciones absolutas.
+  denied_tools:
+    # - ShellTool  # Ejemplo: si usas sandboxed Bash, prohíbe ShellTool sin sandbox
+
+  # --- BASH: ALLOWLIST / DENYLIST ---
+  # Patrones regex de comandos permitidos y prohibidos.
+  # IMPORTANTE: La denylist tiene PRIORIDAD sobre la allowlist.
+  bash:
+    # Comandos SIEMPRE permitidos (solo-lectura o seguros)
+    allowlist:
+      # Git solo-lectura
+      - "^git (status|log|diff|branch|show|grep|remote -v)"
+      # Listado y lectura
+      - "^ls"
+      - "^cat"
+      - "^pwd"
+      - "^head"
+      - "^tail"
+      # Package managers (solo install/read, no publish)
+      - "^npm (test|run|ci|list|outdated)"
+      - "^pnpm (test|run|install|exec|list)"
+      - "^yarn (test|run|install|list)"
+      # Version checks
+      - "^node --version"
+      - "^python[0-9]* --version"
+      - "^python[0-9]* -m pytest"
+      - "^python[0-9]* -m unittest"
+      # Build tools
+      - "^cargo (test|check|build|clippy)"
+      - "^go (test|build|vet)"
+      - "^make (test|build|check)"
+      # Docker solo-lectura
+      - "^docker (ps|images|logs|inspect)"
+
+    # Comandos EXPRESAMENTE PROHIBIDOS (bloqueados sin excepción)
+    denylist:
+      # Escalada de privilegios
+      - "sudo\\s"
+      - "su\\s"
+      # Destrucción de sistema
+      - "rm -rf /"
+      - ":\\(\\)\\{ :|:& };:"
+      - "mkfs\\."
+      - "dd if="
+      # Remote code execution vía pipe
+      - "curl.*\\|.*sh"
+      - "wget.*\\|.*sh"
+      - "fetch.*\\|.*sh"
+      # Modificación de sistema
+      - "> /etc/"
+      - ">> /etc/"
+      - "chmod [-+]x"
+      # Git destructivo (requiere confirmación manual)
+      - "git push"
+      - "git push --force"
+      - "git reset --hard"
+      - "git clean -fd"
+      # Docker destructivo
+      - "docker .*(rm|stop|kill|system prune)"
+      # Publicación
+      - "npm publish"
+      - "yarn publish"
+      # Borrado recursivo
+      - "rm -rf"
+
+    # Comandos que requieren CONFIRMACIÓN EXPLÍCITA del usuario
+    # (aunque estén en allowlist, se pausará para aprobación)
+    require_confirmation:
+      - "git push"
+      - "git reset --hard"
+      - "git clean -fd"
+      - "git rebase"
+      - "git merge"
+      - "docker .*(rm|stop|kill)"
+      - "docker-compose .*(down)"
+      - "npm publish"
+      - "rm -rf"
+      - "docker system prune"
+
+  # --- FILESYSTEM RESTRICTIONS ---
+  filesystem:
+    # Paths donde el agente PUEDE leer/escribir
+    allowed_paths:
+      - "${PROJECT_ROOT}"
+      - "${HOME}/.claude/"
+      # Añade paths específicos de tu proyecto aquí:
+      # - "${PROJECT_ROOT}/src/"
+      # - "${PROJECT_ROOT}/docs/"
+
+    # Paths donde el agente NUNCA debe tocar (bloqueados)
+    denied_paths:
+      - "/etc/"
+      - "/usr/local/bin/"
+      - "/usr/bin/"
+      - "${HOME}/.ssh/"
+      - "${HOME}/.gnupg/"
+      - "${HOME}/.aws/"
+      - "${HOME}/.kube/"
+      - ".env.production"
+      - ".env.prod"
+      - "*.pem"
+      - "*.key"
+      - "*.p12"
+      - "id_rsa"
+      - "id_ed25519"
+
+  # --- GIT PROTECTION ---
+  git:
+    # Auto-commit al finalizar tarea (NO recomendado para agentes autónomos)
+    auto_commit: false
+
+    # Protección de branches sensibles
+    require_branch_protection: true
+    protected_branches:
+      - main
+      - master
+      - production
+      - prod
+      - release/*
+
+  # --- MCP RESTRICTIONS ---
+  mcp:
+    # Servidores MCP explícitamente permitidos
+    allowed_servers:
+      - filesystem
+      - git
+      - github
+      # Añade los tuyos:
+      # - postgres
+      # - slack
+
+    # Timeout para tool calls MCP (segundos)
+    tool_timeout_seconds: 30
+
+    # Tamaño máximo de resultado MCP (en tokens)
+    max_result_size_tokens: 10000
+
+# --- SUBAGENT CONFIGURATION ---
+subagents:
+  # ¿Los subagentes heredan los permisos del padre?
+  #   false = cada subagente tiene su propio permissions.yaml
+  #   true  = heredan (menos seguro, más simple)
+  inherit_permissions: false
+
+  # Máximo de subagentes concurrentes
+  max_concurrent: 6
+
+  # Modelo por defecto para subagentes
+  #   Tip: Usa haiku para tareas simples/paralelas (más barato)
+  #        Usa sonnet para tareas complejas (más capaz)
+  default_model: haiku

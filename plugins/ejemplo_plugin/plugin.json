@@ -1,0 +1,21 @@
+{
+  "name": "github-integration",
+  "version": "1.0.0",
+  "description": "Plugin de integración con GitHub: PR reviews, issue tracking, y releases.",
+  "author": "alexendros",
+  "license": "MIT",
+  "components": {
+    "agents": ["pr-reviewer"],
+    "skills": ["github-commands"],
+    "hooks": ["pre-push-audit"],
+    "mcpServers": ["github"]
+  },
+  "dependencies": {
+    "plugins": [],
+    "mcpServers": ["github"]
+  },
+  "install": {
+    "command": "npm install -g @anthropic-ai/mcp-server-github",
+    "postInstall": "echo 'Configura GITHUB_TOKEN en tu entorno'"
+  }
+}

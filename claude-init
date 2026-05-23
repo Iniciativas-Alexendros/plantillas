@@ -1,0 +1,174 @@
+#!/usr/bin/env bash
+# claude-init · Inicializador de módulos y proyectos Claude Code
+#
+# Uso:
+#   claude-init --list              # Lista módulos disponibles
+#   claude-init --modulo agentes    # Copia plantilla de agentes
+#   claude-init --proyecto          # Inicializa .claude/ en proyecto actual
+#   claude-init --repositorio       # Inicializa repo GitHub profesional
+
+set -euo pipefail
+
+PLANTILLAS_DIR="${PLANTILLAS_DIR:-$HOME/.claude/plantillas}"
+
+colors() {
+  RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
+  BLUE='\033[0;34m'; CYAN='\033[0;36m'; NC='\033[0m'
+}
+[[ -t 1 ]] && colors
+
+log()   { printf "${BLUE}[init]${NC} %s\n" "$*"; }
+ok()    { printf "${GREEN}[init]${NC} %s\n" "$*"; }
+warn()  { printf "${YELLOW}[init]${NC} %s\n" "$*"; }
+error() { printf "${RED}[init]${NC} %s\n" "$*" >&2; exit 1; }
+
+usage() {
+  cat << 'HELP'
+Uso: claude-init [COMANDO] [OPCIONES]
+
+Comandos:
+  --list, -l                Lista módulos disponibles
+  --modulo <nombre>         Copia plantilla_<nombre> a destino
+  --ejemplo <nombre>        Copia ejemplo_<nombre> a destino
+  --proyecto                Inicializa .claude/ en directorio actual
+  --repositorio             Inicializa estructura de repo profesional
+  --destino <dir>           Directorio de destino (default: ./)
+  --nombre <nombre>         Nombre para la instancia (ej: mi-agente)
+  -h, --help                Muestra esta ayuda
+
+Ejemplos:
+  claude-init --modulo agentes --nombre mi-agente
+  claude-init --modulo skills --nombre testing-pytest
+  claude-init --proyecto
+  claude-init --repositorio --nombre mi-nuevo-repo
+HELP
+  exit 0
+}
+
+# ─── Dependencias ──────────────────────────────────────────────────────────
+[[ -d "$PLANTILLAS_DIR" ]] || error "Plantillas no encontradas en: $PLANTILLAS_DIR\nEjecuta install.sh primero."
+
+# ─── Args ──────────────────────────────────────────────────────────────────
+COMMAND=""
+MODULO=""
+DESTINO="."
+NOMBRE=""
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --list|-l)      COMMAND="list"; shift ;;
+    --modulo)       COMMAND="modulo"; MODULO="$2"; shift 2 ;;
+    --ejemplo)      COMMAND="ejemplo"; MODULO="$2"; shift 2 ;;
+    --proyecto)     COMMAND="proyecto"; shift ;;
+    --repositorio)  COMMAND="repositorio"; shift ;;
+    --destino)      DESTINO="$2"; shift 2 ;;
+    --nombre)       NOMBRE="$2"; shift 2 ;;
+    -h|--help)      usage ;;
+    *) error "Argumento desconocido: $1" ;;
+  esac
+done
+
+# ─── Listar ────────────────────────────────────────────────────────────────
+if [[ "$COMMAND" == "list" ]]; then
+  echo "${CYAN}Módulos disponibles:${NC}"
+  for dir in "$PLANTILLAS_DIR"/*/; do
+    base=$(basename "$dir")
+    # Ignorar directorios que no son módulos
+    [[ "$base" == "validadores" ]] && continue
+    [[ "$base" == "modulo" ]] && continue
+    [[ "$base" == "proyecto" ]] && continue
+    [[ "$base" == ".github" ]] && continue
+    [[ "$base" == "tests" ]] && continue
+    if [[ -d "$dir/plantilla_$base" || -d "$dir/ejemplo_$base" ]]; then
+      printf "  • %s\n" "$base"
+    fi
+  done
+  echo
+  echo "${CYAN}Otros:${NC}"
+  echo "  • proyecto    → Inicializa .claude/ en un proyecto"
+  echo "  • repositorio → Inicializa repo GitHub profesional"
+  exit 0
+fi
+
+# ─── Módulo ────────────────────────────────────────────────────────────────
+if [[ "$COMMAND" == "modulo" ]]; then
+  [[ -z "$MODULO" ]] && error "Falta --modulo <nombre>"
+  SRC="$PLANTILLAS_DIR/$MODULO/plantilla_${MODULO}"
+  [[ -d "$SRC" ]] || error "Módulo no encontrado: $MODULO"
+
+  [[ -z "$NOMBRE" ]] && read -rp "Nombre de la instancia: " NOMBRE
+  [[ -z "$NOMBRE" ]] && error "Nombre requerido"
+
+  DST="$DESTINO/$NOMBRE"
+  [[ -d "$DST" ]] && error "Ya existe: $DST"
+
+  cp -r "$SRC" "$DST"
+  ok "Plantilla de '$MODULO' copiada a: $DST"
+  echo
+  echo "Próximos pasos:"
+  echo "  1. Edita los archivos en $DST y reemplaza los placeholders [ASÍ]."
+  echo "  2. Valida: python $PLANTILLAS_DIR/$MODULO/validar_${MODULO%.sh}.py $DST --strict"
+  exit 0
+fi
+
+# ─── Ejemplo ───────────────────────────────────────────────────────────────
+if [[ "$COMMAND" == "ejemplo" ]]; then
+  [[ -z "$MODULO" ]] && error "Falta --ejemplo <nombre>"
+  SRC="$PLANTILLAS_DIR/$MODULO/ejemplo_${MODULO}"
+  [[ -d "$SRC" ]] || error "Ejemplo no encontrado: $MODULO"
+
+  [[ -z "$NOMBRE" ]] && NOMBRE="ejemplo_${MODULO}"
+  DST="$DESTINO/$NOMBRE"
+  [[ -d "$DST" ]] && error "Ya existe: $DST"
+
+  cp -r "$SRC" "$DST"
+  ok "Ejemplo de '$MODULO' copiado a: $DST"
+  exit 0
+fi
+
+# ─── Proyecto ──────────────────────────────────────────────────────────────
+if [[ "$COMMAND" == "proyecto" ]]; then
+  DST="$DESTINO/.claude"
+  if [[ -d "$DST" ]]; then
+    warn "Ya existe .claude/ en el directorio actual."
+    read -rp "¿Sobrescribir? [y/N] " resp
+    [[ "$resp" =~ ^[Yy]$ ]] || { log "Cancelado."; exit 0; }
+  fi
+
+  mkdir -p "$DST"
+  cp "$PLANTILLAS_DIR/proyecto/CLAUDE.md" "$DST/CLAUDE.md"
+  cp "$PLANTILLAS_DIR/proyecto/settings.json" "$DST/settings.json"
+  mkdir -p "$DST/.github/workflows"
+  cp "$PLANTILLAS_DIR/proyecto/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
+
+  ok ".claude/ inicializado en: $DST"
+  echo
+  echo "Archivos creados:"
+  echo "  • CLAUDE.md      ← Contexto del proyecto"
+  echo "  • settings.json  ← Configuración de Claude"
+  echo "  • .github/workflows/ci.yml ← CI/CD mínimo"
+  exit 0
+fi
+
+# ─── Repositorio ───────────────────────────────────────────────────────────
+if [[ "$COMMAND" == "repositorio" ]]; then
+  [[ -z "$NOMBRE" ]] && read -rp "Nombre del repositorio: " NOMBRE
+  [[ -z "$NOMBRE" ]] && error "Nombre requerido"
+
+  DST="$DESTINO/$NOMBRE"
+  [[ -d "$DST" ]] && error "Ya existe: $DST"
+
+  cp -r "$PLANTILLAS_DIR/repositorios/ejemplo_repositorio" "$DST"
+
+  ok "Repositorio profesional inicializado en: $DST"
+  echo
+  echo "Próximos pasos:"
+  echo "  1. cd $DST && git init"
+  echo "  2. Reemplaza placeholders (alexendros, ejemplo-repositorio, etc.)"
+  echo "  3. git add . && git commit -m 'feat: inicializa repositorio con canon'"
+  echo "  4. Valida: python $PLANTILLAS_DIR/repositorios/validar_repositorio.py . --strict"
+  exit 0
+fi
+
+# Sin comando
+usage

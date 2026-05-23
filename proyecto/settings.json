@@ -1,0 +1,27 @@
+{
+  "skillListingBudgetFraction": 0.07,
+  "permissions": {
+    "allow": [
+      "Read",
+      "Grep",
+      "Glob",
+      "Edit",
+      "Write",
+      "TodoWrite",
+      "Bash(ls:*)",
+      "Bash(git:*)"
+    ],
+    "deny": [
+      "Bash(sudo:*)",
+      "Bash(rm -rf /)"
+    ]
+  },
+  "skills": {
+    "autoDiscover": true,
+    "preload": []
+  },
+  "output": {
+    "language": "es",
+    "style": "concise"
+  }
+}
