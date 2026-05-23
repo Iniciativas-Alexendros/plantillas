@@ -70,8 +70,6 @@ class HookValidator(BaseValidator):
         if not hook_md.exists():
             return resultados
 
-        content = hook_md.read_text(encoding="utf-8")
-
         # Verificar archivos yaml que tengan campo 'hook' o 'event'
         for p in self._archivos("*.yaml") + self._archivos("*.yml"):
             if not HAS_YAML:
