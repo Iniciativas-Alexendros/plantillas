@@ -91,37 +91,59 @@ if [[ "$COMMAND" == "list" ]]; then
 fi
 
 # ─── Módulo ────────────────────────────────────────────────────────────────
+# Soporta tanto dir canon (`plantilla_<mod>/`) como single-file canon
+# (`plantilla_<mod>.<ext>`, ej. .md o .sh.template tras la reforma
+# canon-runtime 2026-05-23).
 if [[ "$COMMAND" == "modulo" ]]; then
   [[ -z "$MODULO" ]] && error "Falta --modulo <nombre>"
-  SRC="$PLANTILLAS_DIR/$MODULO/plantilla_${MODULO}"
-  [[ -d "$SRC" ]] || error "Módulo no encontrado: $MODULO"
+  SRC_DIR="$PLANTILLAS_DIR/$MODULO/plantilla_${MODULO}"
+  SRC_FILE="$(ls "$PLANTILLAS_DIR/$MODULO/plantilla_${MODULO}".* 2>/dev/null | head -1 || true)"
 
   [[ -z "$NOMBRE" ]] && read -rp "Nombre de la instancia: " NOMBRE
   [[ -z "$NOMBRE" ]] && error "Nombre requerido"
 
-  DST="$DESTINO/$NOMBRE"
-  [[ -d "$DST" ]] && error "Ya existe: $DST"
+  if [[ -d "$SRC_DIR" ]]; then
+    DST="$DESTINO/$NOMBRE"
+    [[ -e "$DST" ]] && error "Ya existe: $DST"
+    cp -r "$SRC_DIR" "$DST"
+  elif [[ -f "$SRC_FILE" ]]; then
+    EXT="${SRC_FILE##*plantilla_${MODULO}}"   # ej. ".md" o ".sh.template"
+    DST="$DESTINO/${NOMBRE}${EXT}"
+    [[ -e "$DST" ]] && error "Ya existe: $DST"
+    cp "$SRC_FILE" "$DST"
+  else
+    error "Módulo no encontrado: $MODULO (sin plantilla_${MODULO}/ ni plantilla_${MODULO}.*)"
+  fi
 
-  cp -r "$SRC" "$DST"
   ok "Plantilla de '$MODULO' copiada a: $DST"
   echo
   echo "Próximos pasos:"
-  echo "  1. Edita los archivos en $DST y reemplaza los placeholders [ASÍ]."
+  echo "  1. Edita $DST y reemplaza los placeholders en MAYÚSCULAS-CON-GUION o [ASÍ]."
   echo "  2. Valida: python $PLANTILLAS_DIR/$MODULO/validar_${MODULO%.sh}.py $DST --strict"
   exit 0
 fi
 
 # ─── Ejemplo ───────────────────────────────────────────────────────────────
+# Mismo patrón file-or-dir que el bloque de módulo.
 if [[ "$COMMAND" == "ejemplo" ]]; then
   [[ -z "$MODULO" ]] && error "Falta --ejemplo <nombre>"
-  SRC="$PLANTILLAS_DIR/$MODULO/ejemplo_${MODULO}"
-  [[ -d "$SRC" ]] || error "Ejemplo no encontrado: $MODULO"
-
+  SRC_DIR="$PLANTILLAS_DIR/$MODULO/ejemplo_${MODULO}"
+  SRC_FILE="$(ls "$PLANTILLAS_DIR/$MODULO/ejemplo_${MODULO}".* 2>/dev/null | head -1 || true)"
   [[ -z "$NOMBRE" ]] && NOMBRE="ejemplo_${MODULO}"
-  DST="$DESTINO/$NOMBRE"
-  [[ -d "$DST" ]] && error "Ya existe: $DST"
 
-  cp -r "$SRC" "$DST"
+  if [[ -d "$SRC_DIR" ]]; then
+    DST="$DESTINO/$NOMBRE"
+    [[ -e "$DST" ]] && error "Ya existe: $DST"
+    cp -r "$SRC_DIR" "$DST"
+  elif [[ -f "$SRC_FILE" ]]; then
+    EXT="${SRC_FILE##*ejemplo_${MODULO}}"
+    DST="$DESTINO/${NOMBRE}${EXT}"
+    [[ -e "$DST" ]] && error "Ya existe: $DST"
+    cp "$SRC_FILE" "$DST"
+  else
+    error "Ejemplo no encontrado: $MODULO (sin ejemplo_${MODULO}/ ni ejemplo_${MODULO}.*)"
+  fi
+
   ok "Ejemplo de '$MODULO' copiado a: $DST"
   exit 0
 fi

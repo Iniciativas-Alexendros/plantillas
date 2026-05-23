@@ -1,0 +1,48 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Validación del módulo cuadernos
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Validar Cuadernos
+
+on:
+  pull_request:
+    paths:
+      - "cuadernos/**"
+      - "validadores/**"
+      - ".github/workflows/validar-cuadernos.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "cuadernos/**"
+      - "validadores/**"
+  workflow_dispatch:
+
+jobs:
+  validar:
+    name: Validar plantilla + ejemplo
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyyaml
+
+      - name: Validar ejemplo (strict)
+        run: |
+          echo "::group::ejemplo_cuadernos.md"
+          python cuadernos/validar_cuadernos.py cuadernos/ejemplo_cuadernos.md --strict
+          echo "::endgroup::"
+
+      - name: Validar plantilla (no-strict, placeholders permitidos)
+        run: |
+          echo "::group::plantilla_cuadernos.md"
+          python cuadernos/validar_cuadernos.py cuadernos/plantilla_cuadernos.md || true
+          echo "::endgroup::"

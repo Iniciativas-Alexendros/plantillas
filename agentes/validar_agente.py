@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
 """
-Validador de Agentes Claude Code · v2.0.0
+Validador de Agentes Claude Code · v3.0.0 (canon-runtime alignment)
 
-Usa el motor de validación reusable del sistema de plantillas.
+Acepta el formato single-file `<nombre-agente>.md` con frontmatter
+runtime (name, description, tools, model) + cuerpo en secciones canon
+(System, Persona, Tasks, Tools MCP, Memory, Subagents, References).
 
 Uso:
-    python validar_agente.py ~/.claude/agents/mi-agente
-    python validar_agente.py ~/.claude/agents/mi-agente --strict
+    python validar_agente.py agentes/ejemplo_agente.md
+    python validar_agente.py agentes/ejemplo_agente.md --strict
+    python validar_agente.py ~/.claude/agents/code-reviewer.md --strict
+
+Compatibilidad: si se pasa un directorio (estructura legado), se valida
+buscando `AGENT.md` dentro y se emite warning indicando migración pendiente.
 
 Referencia:
     - Claude Code Subagents: https://code.claude.com/docs/en/sub-agents.md
-    - MCP Spec: https://modelcontextprotocol.io/specification/2025-11-25/index.md
+    - MCP Spec: https://modelcontextprotocol.io/specification/
 """
 
 import argparse
@@ -25,13 +31,7 @@ from validadores import (
     Resultado,
     Nivel,
     check_yaml_frontmatter,
-    check_json_parseable,
-    check_yaml_parseable,
-    check_placeholders,
-    check_archivos_vacios,
-    check_estructura,
 )
-
 
 try:
     import yaml
@@ -41,221 +41,187 @@ except ImportError:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# CONFIGURACIÓN ESPECÍFICA DE AGENTES
+# CONFIGURACIÓN
 # ═══════════════════════════════════════════════════════════════════════════════
 
-REQUIRED_DIRS = [
-    "config",
-    "prompts",
-    "prompts/tasks",
-    "tools",
-    "tools/custom",
-    "skills",
-    "memory",
-    "hooks",
-    "subagents",
-    "references",
+FRONTMATTER_REQUIRED = ["name", "description", "tools", "model"]
+FRONTMATTER_OPTIONAL = ["effort", "permission_scope", "primary_skill", "skills"]
+
+VALID_MODELS = {"opus", "sonnet", "haiku", "opusplan"}
+
+VALID_TOOLS = {
+    "Read", "Grep", "Glob", "Edit", "Write", "Bash",
+    "Agent", "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList",
+    "WebFetch", "WebSearch", "NotebookEdit", "LSP",
+}
+
+REQUIRED_SECTIONS = [
+    "## System",
+    "## Persona",
+    "## Tasks",
+    "## Tools MCP",
+    "## Memory",
+    "## Subagents",
+    "## References",
 ]
 
-REQUIRED_FILES = [
-    "AGENT.md",
-    "README.md",
-    "config/settings.json",
-    "config/permissions.yaml",
-    "prompts/system.md",
-    "prompts/persona.md",
-    "tools/mcp.json",
-    "memory/context.md",
-]
-
-JSON_FILES = [
-    "config/settings.json",
-    "tools/mcp.json",
-]
-
-YAML_FILES = [
-    "config/permissions.yaml",
-]
-
-PLAYBOOK_FILES = {"PLAYBOOK_INICIO.md"}
+KEBAB_RE = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# VALIDADOR DE AGENTES
+# VALIDADOR
 # ═══════════════════════════════════════════════════════════════════════════════
 
 class AgentValidator(BaseValidator):
-    """Validador específico para módulos de agentes."""
+    """Validador para agentes single-file (formato canon-runtime)."""
 
-    def __init__(self, agent_dir: Path, strict: bool = False):
-        super().__init__(agent_dir, strict)
+    def __init__(self, archivo: Path, strict: bool = False):
+        # Usamos el directorio padre como `ruta` para reusar helpers de BaseValidator
+        # pero todos los checks operan sobre `self.archivo`.
+        super().__init__(archivo.parent, strict)
+        self.archivo = archivo.resolve()
+        self.es_plantilla = self.archivo.name.startswith("plantilla_")
         self.checks = [
-            Check("estructura", self._check_estructura),
+            Check("formato", self._check_formato),
             Check("frontmatter", self._check_frontmatter),
-            Check("json", self._check_json),
-            Check("yaml", self._check_yaml),
-            Check("placeholder", self._check_placeholders),
-            Check("skills", self._check_skills_consistency),
-            Check("subagentes", self._check_subagents_consistency),
-            Check("vacio", self._check_empty_files),
-            Check("readme", self._check_readme),
-            Check("permisos", self._check_permissions),
+            Check("modelo", self._check_modelo),
+            Check("tools", self._check_tools),
+            Check("name_kebab", self._check_name_kebab),
+            Check("secciones", self._check_secciones),
+            Check("placeholders", self._check_placeholders),
+            Check("longitud", self._check_longitud),
         ]
 
-    # ──────────────────────────────────────────────────────────────────────────
+    # ──────────────────────────────────────────────────────────────────────
 
-    def _check_estructura(self):
-        return check_estructura(self, REQUIRED_DIRS, REQUIRED_FILES)
+    def _rel_archivo(self) -> str:
+        try:
+            return str(self.archivo.relative_to(self.ruta))
+        except ValueError:
+            return self.archivo.name
+
+    def _frontmatter_data(self):
+        """Extrae el frontmatter YAML como dict, o None si falla."""
+        if not HAS_YAML:
+            return None
+        content = self.archivo.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            return None
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return None
+        try:
+            data = yaml.safe_load(parts[1])
+            return data if isinstance(data, dict) else None
+        except Exception:
+            return None
+
+    def _cuerpo(self) -> str:
+        """Devuelve el cuerpo del archivo sin el frontmatter."""
+        content = self.archivo.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            return content
+        parts = content.split("---", 2)
+        return parts[2] if len(parts) >= 3 else content
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Checks
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _check_formato(self):
+        if not self.archivo.is_file():
+            return [Resultado(Nivel.ERROR, "formato",
+                              f"{self._rel_archivo()} no es un archivo")]
+        if self.archivo.suffix != ".md":
+            return [Resultado(Nivel.ERROR, "formato",
+                              f"{self._rel_archivo()} no termina en .md")]
+        return []
 
     def _check_frontmatter(self):
+        if not self.archivo.is_file():
+            return []
+        return check_yaml_frontmatter(self, self.archivo, FRONTMATTER_REQUIRED)
+
+    def _check_modelo(self):
+        data = self._frontmatter_data()
+        if not data or "model" not in data:
+            return []
+        model = data["model"]
+        if model not in VALID_MODELS:
+            return [Resultado(Nivel.WARNING, "modelo",
+                              f"model '{model}' no reconocido (válidos: {sorted(VALID_MODELS)})")]
+        return []
+
+    def _check_tools(self):
+        data = self._frontmatter_data()
+        if not data or "tools" not in data:
+            return []
+        tools = data["tools"]
+        if not isinstance(tools, list):
+            return [Resultado(Nivel.ERROR, "tools",
+                              "campo 'tools' debe ser una lista")]
         resultados = []
-        for rel_path in ["AGENT.md"] + self._glob("subagents/*.md"):
-            p = self.ruta / rel_path
-            if not p.exists():
+        for tool in tools:
+            if not isinstance(tool, str):
+                resultados.append(Resultado(Nivel.ERROR, "tools",
+                                            f"tool inválido: {tool!r}"))
                 continue
-
-            campos = ("name", "description", "model") if rel_path == "AGENT.md" else ("name", "description")
-            resultados.extend(check_yaml_frontmatter(self, p, campos))
-
-        # Validación adicional: modelo reconocido en AGENT.md
-        agent_md = self.ruta / "AGENT.md"
-        if HAS_YAML and agent_md.exists():
-            content = agent_md.read_text(encoding="utf-8")
-            if "---" in content:
-                parts = content.split("---", 2)
-                if len(parts) >= 3:
-                    try:
-                        data = yaml.safe_load(parts[1])
-                        if isinstance(data, dict) and "model" in data:
-                            model = data["model"]
-                            if model not in ("opus", "sonnet", "haiku", "opusplan"):
-                                self.agregar_warning(
-                                    "frontmatter",
-                                    f"AGENT.md 'model' no reconocido: '{model}'",
-                                    "AGENT.md"
-                                )
-                    except Exception:
-                        pass
-
+            base = tool.split("(")[0]  # acepta Bash(git:*) etc
+            if base not in VALID_TOOLS and not base.startswith("mcp__"):
+                resultados.append(Resultado(Nivel.WARNING, "tools",
+                                            f"tool '{tool}' no está en la lista canon"))
         return resultados
 
-    def _check_json(self):
-        resultados = []
-        for rel_path in JSON_FILES:
-            p = self.ruta / rel_path
-            if p.exists():
-                resultados.extend(check_json_parseable(self, p))
-        return resultados
+    def _check_name_kebab(self):
+        data = self._frontmatter_data()
+        if not data or "name" not in data:
+            return []
+        name = data["name"]
+        if not isinstance(name, str) or not KEBAB_RE.match(name):
+            # Plantillas usan placeholders en MAYÚSCULAS → solo warning
+            nivel = Nivel.WARNING if self.es_plantilla else Nivel.ERROR
+            return [Resultado(nivel, "name_kebab",
+                              f"name '{name}' no es kebab-case válido"
+                              + (" (esperado en plantilla)" if self.es_plantilla else ""))]
+        # Verificar que el filename coincide con el name (excepto plantilla/ejemplo)
+        expected = f"{name}.md"
+        if self.archivo.name not in (expected, "plantilla_agente.md", "ejemplo_agente.md"):
+            return [Resultado(Nivel.WARNING, "name_kebab",
+                              f"archivo '{self.archivo.name}' no coincide con name '{name}'")]
+        return []
 
-    def _check_yaml(self):
+    def _check_secciones(self):
+        cuerpo = self._cuerpo()
         resultados = []
-        if not HAS_YAML:
-            self.agregar_warning("yaml", "Instala 'pyyaml' para validar archivos YAML")
-            return resultados
-
-        for rel_path in YAML_FILES + self._glob("hooks/*.yaml") + self._glob("hooks/*.yml"):
-            p = self.ruta / rel_path
-            if p.exists():
-                resultados.extend(check_yaml_parseable(self, p))
+        for seccion in REQUIRED_SECTIONS:
+            if seccion not in cuerpo:
+                resultados.append(Resultado(Nivel.ERROR, "secciones",
+                                            f"falta sección obligatoria: '{seccion}'"))
         return resultados
 
     def _check_placeholders(self):
-        return check_placeholders(self, archivos_ignorados=list(PLAYBOOK_FILES))
-
-    def _check_skills_consistency(self):
+        # En plantillas, los placeholders son esperados; se omite el check.
+        if self.es_plantilla:
+            return []
+        cuerpo = self._cuerpo()
+        cuerpo_sin_codeblock = self._extraer_fuera_codeblock(cuerpo)
         resultados = []
-        agent_md = self.ruta / "AGENT.md"
-        if not agent_md.exists() or not HAS_YAML:
-            return resultados
-
-        content = agent_md.read_text(encoding="utf-8")
-        if "---" not in content:
-            return resultados
-
-        parts = content.split("---", 2)
-        if len(parts) < 3:
-            return resultados
-
-        try:
-            data = yaml.safe_load(parts[1])
-        except Exception:
-            return resultados
-
-        if not isinstance(data, dict):
-            return resultados
-
-        skills = data.get("skills", [])
-        if not skills:
-            return resultados
-
-        skills_dir = self.ruta / "skills"
-        existing_skills = {d.name for d in skills_dir.iterdir() if d.is_dir()} if skills_dir.exists() else set()
-
-        for skill in skills:
-            if skill not in existing_skills:
-                resultados.append(
-                    Resultado(
-                        Nivel.ERROR, "skills",
-                        f"AGENT.md referencia skill '{skill}' pero no existe en skills/"
-                    )
-                )
+        for pattern in self.PLACEHOLDER_PATTERNS:
+            if pattern.search(cuerpo_sin_codeblock):
+                resultados.append(Resultado(Nivel.WARNING, "placeholders",
+                                            f"contiene placeholders sin rellenar (patrón: {pattern.pattern})"))
+                break
         return resultados
 
-    def _check_subagents_consistency(self):
-        resultados = []
-        subagents_dir = self.ruta / "subagents"
-        if not subagents_dir.exists():
-            return resultados
-
-        for subagent_file in subagents_dir.glob("*.md"):
-            content = subagent_file.read_text(encoding="utf-8")
-            if not content.startswith("---"):
-                resultados.append(
-                    Resultado(
-                        Nivel.ERROR, "subagentes",
-                        f"{subagent_file.name} no tiene frontmatter YAML",
-                        self._rel(subagent_file)
-                    )
-                )
-        return resultados
-
-    def _check_empty_files(self):
-        return check_archivos_vacios(self, min_bytes=50, archivos_ignorados=list(PLAYBOOK_FILES))
-
-    def _check_readme(self):
-        resultados = []
-        readme = self.ruta / "README.md"
-        if not readme.exists():
-            return resultados
-
-        content = readme.read_text(encoding="utf-8")
-        required_sections = ["## Qué es", "## Uso", "## Arquitectura"]
-        for section in required_sections:
-            if section not in content:
-                resultados.append(
-                    Resultado(Nivel.WARNING, "readme", f"README.md falta sección '{section}'")
-                )
-        return resultados
-
-    def _check_permissions(self):
-        resultados = []
-        perms = self.ruta / "config/permissions.yaml"
-        if not perms.exists():
-            return resultados
-
-        content = perms.read_text(encoding="utf-8")
-        if "denylist" not in content.lower():
-            resultados.append(
-                Resultado(Nivel.WARNING, "permisos", "permissions.yaml no tiene sección 'denylist'")
-            )
-        if "require_confirmation" not in content.lower():
-            resultados.append(
-                Resultado(Nivel.WARNING, "permisos", "permissions.yaml no tiene 'require_confirmation'")
-            )
-        return resultados
-
-    def _glob(self, pattern: str):
-        return [str(p.relative_to(self.ruta)) for p in self.ruta.glob(pattern)]
+    def _check_longitud(self):
+        size = self.archivo.stat().st_size
+        if size < 800:
+            return [Resultado(Nivel.WARNING, "longitud",
+                              f"archivo demasiado corto ({size} bytes); cuerpo del agente posiblemente incompleto")]
+        if size > 30_000:
+            return [Resultado(Nivel.WARNING, "longitud",
+                              f"archivo demasiado largo ({size} bytes); considera dividir en subagentes")]
+        return []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -264,25 +230,30 @@ class AgentValidator(BaseValidator):
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Valida un agente Claude Code según el sistema de plantillas."
+        description="Valida un agente Claude Code single-file (canon-runtime)."
     )
-    parser.add_argument("agent_dir", help="Directorio del agente a validar")
-    parser.add_argument(
-        "--strict",
-        action="store_true",
-        help="Tratar warnings como errores (para CI/CD)",
-    )
+    parser.add_argument("ruta", help="Ruta al archivo .md del agente (o dir legado)")
+    parser.add_argument("--strict", action="store_true",
+                        help="Tratar warnings como errores (CI/CD)")
     args = parser.parse_args()
 
-    agent_path = Path(args.agent_dir)
-    if not agent_path.exists():
-        print(f"❌ El directorio no existe: {agent_path}")
-        return 1
-    if not agent_path.is_dir():
-        print(f"❌ No es un directorio: {agent_path}")
+    ruta = Path(args.ruta).resolve()
+    if not ruta.exists():
+        print(f"❌ No existe: {ruta}")
         return 1
 
-    validator = AgentValidator(agent_path, strict=args.strict)
+    # Compatibilidad legado: si es dir, buscar AGENT.md dentro
+    if ruta.is_dir():
+        legacy = ruta / "AGENT.md"
+        if not legacy.is_file():
+            print(f"❌ Dir sin AGENT.md: {ruta}")
+            return 1
+        print(f"⚠️  Modo legado: validando {legacy} (migrar a single-file)")
+        archivo = legacy
+    else:
+        archivo = ruta
+
+    validator = AgentValidator(archivo, strict=args.strict)
     return validator.run()
 
 

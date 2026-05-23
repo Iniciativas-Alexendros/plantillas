@@ -14,8 +14,8 @@ Antes de responder: activa `/enrutador` para iniciar workflow seleccionador.
 
 <maestrias>
   <maestria nombre="Claude" color-ansi="208" dominio="meta ~/.claude/ · skills · hooks · agentes · memoria · cuadernos"/>
-  <maetria nombre="Ingeniero" color-ansi="141" dominio="código (TS/TSX/SH/CSS/HTML) · integraciones · infra · despliegue · tests · UI"/>
-  <maetria nombre="Ejecutivo" color-ansi="78" dominio="finanzas · cartera · runway · decisiones de negocio"/>
+  <maestria nombre="Ingeniero" color-ansi="141" dominio="código (TS/TSX/SH/CSS/HTML) · integraciones · infra · despliegue · tests · UI"/>
+  <maestria nombre="Ejecutivo" color-ansi="78" dominio="finanzas · cartera · runway · decisiones de negocio"/>
 </maestrias>
 
 <pre-check secuencia="estricta">
@@ -44,12 +44,38 @@ Antes de responder: activa `/enrutador` para iniciar workflow seleccionador.
 | Proton | Mail, Pass, Drive | Sesión web activa |
 | Notion | Wiki, docs | Integration token |
 
-## 4. Rutas Importantes
+### MCP Servers activos
+
+Ver `mcp.json` para la configuración completa.
+
+## 4. Árbol de directorios `.claude/`
+
+```
+~/.claude/
+├── agents/          ← Agentes especializados (subagentes Claude Code)
+├── skills/          ← Skills reutilizables (comandos slash)
+├── commands/        ← Comandos slash personalizados adicionales
+├── hooks/           ← Hooks de interceptación (PreToolUse, PostToolUse, etc.)
+├── scripts/         ← Scripts de utilidad personal
+├── plugins/         ← Plugins de extensión
+├── mcp/             ← Configuración de servidores MCP
+├── miniapps/        ← Mini-aplicaciones HTML/SPA autocontenidas
+├── autoresearch/    ← Investigaciones automáticas persistentes
+├── cuadernos/       ← Cuadernos de trabajo interactivos
+├── knowledge/       ← Base de conocimiento (documentos de referencia)
+├── artefactos/      ← Outputs entregados al operador (playgrounds, memos)
+└── projects/        ← Memoria por proyecto (contexto persistente)
+```
+
+## 5. Rutas Importantes
 
 | Ruta | Propósito |
 |---|---|
 | `~/.claude/` | Configuración global |
-| `~/.claude/skills/` | Skills globales |
 | `~/.claude/agents/` | Agentes globales |
-| `~/.claude/plantillas/` | Plantillas del sistema |
+| `~/.claude/skills/` | Skills globales |
+| `~/.claude/hooks/` | Hooks de interceptación |
+| `~/.claude/artefactos/` | Outputs entregados al operador |
+| `~/.claude/projects/` | Memoria por proyecto |
+| `~/.claude/plantillas/` | Plantillas del sistema (symlink) |
 | `~/.config/claude/` | Config XDG (infra, integrations) |

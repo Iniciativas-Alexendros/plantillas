@@ -1,0 +1,67 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Hook Claude Code · Plantilla canon-runtime alignment
+# =============================================================================
+# name: NOMBRE-HOOK-KEBAB
+# matcher: PreToolUse | PostToolUse | SessionStart | SessionEnd | UserPromptSubmit | Stop
+# tool_pattern: glob que activa el hook (ej. "Bash(*)" o "Write(*.md)")
+# description: >
+#   Una a tres líneas describiendo qué intercepta este hook y qué decisión
+#   toma. Claude Code muestra este texto en logs y en el UI de permisos.
+# version: 0.1.0
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# ENTRADA
+# El runtime de Claude Code inyecta un objeto JSON por stdin con el contexto
+# del evento. Leerlo en una variable para procesarlo.
+# Formato típico (PreToolUse):
+#   {
+#     "tool_name": "Bash",
+#     "tool_input": { "command": "ls -la" },
+#     "session_id": "...",
+#     "transcript_path": "/tmp/..."
+#   }
+# =============================================================================
+input="$(cat)"
+
+# ─── Extrae campos relevantes (ajusta según el evento del hook) ───────────────
+# Requiere `jq` instalado; si no está disponible, degradar con `python3 -c ...`
+tool_name="$(printf '%s' "$input" | jq -r '.tool_name // "unknown"' 2>/dev/null || echo "unknown")"
+# tool_input="$(printf '%s' "$input" | jq -c '.tool_input // {}' 2>/dev/null || echo '{}')"
+
+# =============================================================================
+# LÓGICA DEL HOOK
+# ─── Rellena aquí tu condición de activación ─────────────────────────────────
+#
+# Ejemplo de patrón básico:
+#
+#   if [[ "<condición>" ]]; then
+#     decision="deny"
+#     reason="Razón legible para el operador."
+#   else
+#     decision="allow"
+#     reason="Sin incidencias detectadas."
+#   fi
+#
+# Valores permitidos para `decision`:
+#   "allow"    — deja continuar sin interrumpir
+#   "deny"     — bloquea la acción (PreToolUse) o la ignora (PostToolUse)
+#   "continue" — equivale a allow; solo válido en PostToolUse
+# =============================================================================
+
+decision="allow"
+reason="Hook plantilla: sin lógica activa. Rellena la sección LÓGICA DEL HOOK."
+
+# ─── Aquí va tu lógica ────────────────────────────────────────────────────────
+# TODO: reemplazar el bloque de abajo con tu condición real.
+: "${tool_name}"   # evita error de variable no usada hasta que añadas lógica
+
+# =============================================================================
+# SALIDA
+# Escribir JSON en stdout. El runtime lee SOLO stdout; stderr es visible en
+# el log de Claude Code pero no afecta a la decisión.
+# =============================================================================
+printf '{"decision":"%s","reason":"%s"}\n' "$decision" "$reason"

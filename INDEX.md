@@ -2,106 +2,178 @@
 
 > **Punto de entrada universal** para el ecosistema de plantillas.
 > Selecciona el módulo que necesitas y accede directamente.
+>
+> 📢 **2026-05-23 · Canon-Runtime Alignment (BREAKING)** — los módulos
+> `agentes`, `commands` y `hooks` colapsan a single-file (`.md` o
+> `.sh.template`); 4 módulos canon nuevos añadidos: `miniapps`,
+> `autoresearch`, `cuadernos`, `knowledge`. Detalle en `CHANGELOG.md`.
 
 ---
 
-## Módulos disponibles
+## Módulos canónicos (14)
 
-### 🤖 Agentes
+### Single-file `.md` con frontmatter runtime
+
+#### 🤖 Agentes
 > Construye agentes especializados con patrón orquestador-especialistas.
 
-| | Directorio | Para qué sirve |
+| | Archivo | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`agentes/plantilla_agente/`](./agentes/plantilla_agente/) | Kit de construcción instructivo (13 pasos) |
-| ✅ Ejemplo | [`agentes/ejemplo_agente/`](./agentes/ejemplo_agente/) | Agente hub-and-spoke funcional de referencia |
+| 📋 Plantilla | [`agentes/plantilla_agente.md`](./agentes/plantilla_agente.md) | Single-file con `name`/`description`/`tools`/`model` + 7 secciones canon |
+| ✅ Ejemplo | [`agentes/ejemplo_agente.md`](./agentes/ejemplo_agente.md) | Orquestador hub-and-spoke funcional (`dev-arquitectura`) |
 
-**TL;DR**: `cp -r agentes/plantilla_agente ~/.claude/agents/mi-agente`
+**TL;DR**: `cp agentes/plantilla_agente.md ~/.claude/agents/mi-agente.md`
 
 ---
 
-### 🛠️ Skills
+#### ⌨️ Commands
+> Define comandos slash personalizados (`/mi-comando`).
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`commands/plantilla_command.md`](./commands/plantilla_command.md) | Frontmatter `description`/`argument-hint`/`allowed-tools` + 6 secciones canon |
+| ✅ Ejemplo | [`commands/ejemplo_command.md`](./commands/ejemplo_command.md) | `/test-cobertura` multi-runner (Jest/Vitest/pytest) |
+
+**TL;DR**: `cp commands/plantilla_command.md ~/.claude/commands/mi-comando.md`
+
+---
+
+#### 🖥️ Miniapps · canon nuevo
+> SPA single-file tipo Claude.ai artifact (categorías: dashboard/explorer/tool/playbook).
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`miniapps/plantilla_miniapps.md`](./miniapps/plantilla_miniapps.md) | Frontmatter `category`/`runtime`/`version` + estructura HTML reducida |
+| ✅ Ejemplo | [`miniapps/ejemplo_miniapps.md`](./miniapps/ejemplo_miniapps.md) | `kpi-mensual` dashboard de KPIs financieros |
+
+**TL;DR**: `cp miniapps/plantilla_miniapps.md ~/.claude/miniapps/<slug>/<slug>.md`
+
+---
+
+#### 🔬 Autoresearch · canon nuevo
+> Cuadernos de investigación automatizada (pregunta → fuentes → veredicto).
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`autoresearch/plantilla_autoresearch.md`](./autoresearch/plantilla_autoresearch.md) | Frontmatter `topic`/`sources`/`status`/`confidence` + 5 secciones canon |
+| ✅ Ejemplo | [`autoresearch/ejemplo_autoresearch.md`](./autoresearch/ejemplo_autoresearch.md) | Prompt caching vs memory en la Claude API |
+
+**TL;DR**: `cp autoresearch/plantilla_autoresearch.md ~/.claude/autoresearch/<slug>/<slug>.md`
+
+---
+
+#### 📓 Cuadernos · canon nuevo
+> Notas estructuradas del operador (idea/log/decision/playbook).
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`cuadernos/plantilla_cuadernos.md`](./cuadernos/plantilla_cuadernos.md) | Frontmatter `kind`/`tags`/`status` + 3 secciones obligatorias y N recomendadas por kind |
+| ✅ Ejemplo | [`cuadernos/ejemplo_cuadernos.md`](./cuadernos/ejemplo_cuadernos.md) | Decisión: colapsar plantillas a single-file |
+
+**TL;DR**: `cp cuadernos/plantilla_cuadernos.md ~/.claude/cuadernos/<slug>/<slug>.md`
+
+---
+
+#### 📚 Knowledge · canon nuevo
+> Base de conocimiento referenciable (FAQs, runbooks indexados).
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`knowledge/plantilla_knowledge.md`](./knowledge/plantilla_knowledge.md) | Frontmatter `domain`/`references`/`authority`/`status` + 5 secciones canon |
+| ✅ Ejemplo | [`knowledge/ejemplo_knowledge.md`](./knowledge/ejemplo_knowledge.md) | Diferencia entre `tools` (agente) y `allowed-tools` (command) |
+
+**TL;DR**: `cp knowledge/plantilla_knowledge.md ~/.claude/knowledge/<slug>/<slug>.md`
+
+---
+
+### Single-file `.sh.template`
+
+#### ⚓ Hooks
+> Intercepta y controla el comportamiento del agente en eventos del runtime.
+
+| | Archivo | Para qué sirve |
+|---|---|---|
+| 📋 Plantilla | [`hooks/plantilla_hook.sh.template`](./hooks/plantilla_hook.sh.template) | Cabecera declarativa `# matcher`/`# tool_pattern` + body JSON `{decision, reason}` |
+| ✅ Ejemplo | [`hooks/ejemplo_hook.sh.template`](./hooks/ejemplo_hook.sh.template) | `pre-bash-secret-guard` (escanea GH/OpenAI/AWS tokens) |
+| 📄 Doc | [`hooks/HOOK.md`](./hooks/HOOK.md) | Eventos soportados + cómo instalar y probar |
+
+**TL;DR**: `cp hooks/plantilla_hook.sh.template ~/.claude/hooks/mi-hook.sh && chmod +x ~/.claude/hooks/mi-hook.sh`
+
+---
+
+### Dir canon multi-archivo
+
+#### 🛠️ Skills
 > Crea skills reutilizables que Claude invoca automáticamente.
 
 | | Directorio | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`skills/plantilla_skill/`](./skills/plantilla_skill/) | Estructura SKILL.md + progressive disclosure |
+| 📋 Plantilla | [`skills/plantilla_skill/`](./skills/plantilla_skill/) | Estructura `SKILL.md` + progressive disclosure |
 | ✅ Ejemplo | [`skills/ejemplo_skill/`](./skills/ejemplo_skill/) | Skill operativa de diagramas Mermaid |
 
 **TL;DR**: `cp -r skills/plantilla_skill ~/.claude/skills/mi-skill`
 
 ---
 
-### ⌨️ Commands
-> Define comandos slash personalizados (`/mi-comando`).
-
-| | Directorio | Para qué sirve |
-|---|---|---|
-| 📋 Playbook | [`commands/plantilla_command/`](./commands/plantilla_command/) | Estructura de comando slash |
-| ✅ Ejemplo | [`commands/ejemplo_command/`](./commands/ejemplo_command/) | Comando `/deploy` funcional |
-
-**TL;DR**: `cp -r commands/plantilla_command ~/.claude/commands/mi-comando.md`
-
----
-
-### ⚓ Hooks
-> Intercepta y controla el comportamiento del agente en puntos clave.
-
-| | Directorio | Para qué sirve |
-|---|---|---|
-| 📋 Playbook | [`hooks/plantilla_hook/`](./hooks/plantilla_hook/) | Eventos PreToolUse, PostToolUse, etc. |
-| ✅ Ejemplo | [`hooks/ejemplo_hook/`](./hooks/ejemplo_hook/) | Hook de auditoría + backup + rate limiting |
-
-**TL;DR**: `cp -r hooks/plantilla_hook ~/.claude/hooks/mi-hook.yaml`
-
----
-
-### 🔌 Plugins
+#### 🔌 Plugins
 > Empaqueta agentes, skills, hooks y MCP en unidades distribuibles.
 
 | | Directorio | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`plugins/plantilla_plugin/`](./plugins/plantilla_plugin/) | Estructura de plugin + marketplace |
+| 📋 Plantilla | [`plugins/plantilla_plugin/`](./plugins/plantilla_plugin/) | Estructura de plugin + marketplace |
 | ✅ Ejemplo | [`plugins/ejemplo_plugin/`](./plugins/ejemplo_plugin/) | Plugin de integración GitHub funcional |
 
 **TL;DR**: `cp -r plugins/plantilla_plugin ~/.claude/plugins/mi-plugin`
 
 ---
 
-### 🔗 MCP Servers
+#### 🔗 MCP Servers
 > Construye servidores MCP para exponer tools y recursos externos.
 
 | | Directorio | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`mcp/plantilla_mcp/`](./mcp/plantilla_mcp/) | Estructura de servidor MCP (Python/TS) |
+| 📋 Plantilla | [`mcp/plantilla_mcp/`](./mcp/plantilla_mcp/) | Estructura de servidor MCP (Python/TS) |
 | ✅ Ejemplo | [`mcp/ejemplo_mcp/`](./mcp/ejemplo_mcp/) | MCP server de filesystem funcional |
 
 **TL;DR**: `cp -r mcp/plantilla_mcp ~/mis-mcp-servers/mi-server`
 
 ---
 
-### 📦 Meta: dot-claude completo
-> Inicializa un directorio `.claude` completo (proyecto o home).
+#### 📦 dot-claude
+> Inicializa un directorio `.claude/` completo (proyecto o home).
 
 | | Directorio | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`dot-claude/plantilla_dot_claude/`](./dot-claude/plantilla_dot_claude/) | Estructura completa `.claude/` con todos los módulos |
-| ✅ Ejemplo | [`dot-claude/ejemplo_dot_claude/`](./dot-claude/ejemplo_dot_claude/) | `.claude/` funcional con contenido real |
+| 📋 Plantilla | [`dot-claude/plantilla_dot_claude/`](./dot-claude/plantilla_dot_claude/) | `CLAUDE.md` + `settings.json` (schema runtime) + `mcp.json` |
+| ✅ Ejemplo | [`dot-claude/ejemplo_dot_claude/`](./dot-claude/ejemplo_dot_claude/) | `.claude/` funcional con árbol plano post-reforma |
 
 **TL;DR**: `cp -r dot-claude/ejemplo_dot_claude ./.claude`
 
 ---
 
-### 🏛️ Repositorios
-> Estructura profesional y empresarial para repositorios GitHub al 120%.
+#### 🏛️ Repositorios
+> Estructura profesional y empresarial para repositorios GitHub.
 
 | | Directorio | Para qué sirve |
 |---|---|---|
-| 📋 Playbook | [`repositorios/plantilla_repositorio/`](./repositorios/plantilla_repositorio/) | Guía de construcción: metodología, estructura, flujo git |
+| 📋 Plantilla | [`repositorios/plantilla_repositorio/`](./repositorios/plantilla_repositorio/) | Guía: metodología, estructura, flujo git |
 | ✅ Ejemplo | [`repositorios/ejemplo_repositorio/`](./repositorios/ejemplo_repositorio/) | Repo completo con community health files, CI/CD, ADRs |
 
 **TL;DR**: `cp -r repositorios/ejemplo_repositorio ./mi-nuevo-repo`
 
-**Metodología**: [`METODOLOGIA.md`](./repositorios/plantilla_repositorio/METODOLOGIA.md) · **Guía LLM**: [`LLM_GUIDE.md`](./repositorios/plantilla_repositorio/LLM_GUIDE.md) · **Integración**: [`INTEGRACION.md`](./INTEGRACION.md)
+---
+
+#### 🧩 Módulo (meta-template)
+> Template para crear nuevos módulos en este sistema de plantillas.
+
+`modulo/` — raíz es la plantilla; usar `cp -r modulo mi-modulo`.
+
+---
+
+#### 📁 Proyecto (meta-template)
+> Template `.claude/` ligero para inicializar un proyecto.
+
+`proyecto/` — raíz es la plantilla; usar `claude-init --proyecto`.
 
 ---
 
@@ -109,7 +181,7 @@
 
 | Script | Para qué sirve | Uso rápido |
 |---|---|---|
-| [`install.sh`](./install.sh) | Instala el sistema de plantillas en `~/.claude/plantillas/` | `curl -fsSL .../install.sh \| bash` |
+| [`install.sh`](./install.sh) | Instala el sistema en `~/.claude/plantillas/` | `curl -fsSL .../install.sh \| bash` |
 | [`claude-init`](./claude-init) | Inicializa módulos, proyectos o repositorios | `claude-init --modulo agentes --nombre mi-agente` |
 | [`update.sh`](./update.sh) | Actualiza el sistema a la última versión | `./update.sh` |
 
@@ -117,8 +189,8 @@
 
 ## Integración entre módulos
 
-¿No sabes cómo combinar agentes + skills + hooks + MCP?
-→ Lee [`INTEGRACION.md`](./INTEGRACION.md) — mapa de relaciones, decision tree, y ejemplo completo de proyecto backend.
+¿No sabes cómo combinar agentes + skills + hooks + MCP + miniapps + cuadernos + knowledge?
+→ Lee [`INTEGRACION.md`](./INTEGRACION.md) — mapa de relaciones, decision tree, ejemplo completo.
 
 ---
 
@@ -126,12 +198,16 @@
 
 | Si quieres... | Ve a... | Comando rápido |
 |---|---|---|
-| Crear un agente nuevo | `agentes/plantilla_agente/` | `claude-init --modulo agentes --nombre X` |
+| Crear un agente nuevo | `agentes/plantilla_agente.md` | `claude-init --modulo agentes --nombre X` |
 | Crear una skill nueva | `skills/plantilla_skill/` | `claude-init --modulo skills --nombre X` |
-| Crear un comando slash | `commands/plantilla_command/` | `claude-init --modulo commands --nombre X` |
-| Crear un hook | `hooks/plantilla_hook/` | `claude-init --modulo hooks --nombre X` |
+| Crear un comando slash | `commands/plantilla_command.md` | `claude-init --modulo commands --nombre X` |
+| Crear un hook | `hooks/plantilla_hook.sh.template` | `claude-init --modulo hooks --nombre X` |
 | Crear un plugin | `plugins/plantilla_plugin/` | `claude-init --modulo plugins --nombre X` |
 | Crear un MCP server | `mcp/plantilla_mcp/` | `claude-init --modulo mcp --nombre X` |
+| Crear una mini-app | `miniapps/plantilla_miniapps.md` | `claude-init --modulo miniapps --nombre X` |
+| Crear un cuaderno de investigación | `autoresearch/plantilla_autoresearch.md` | `claude-init --modulo autoresearch --nombre X` |
+| Crear un cuaderno propio | `cuadernos/plantilla_cuadernos.md` | `claude-init --modulo cuadernos --nombre X` |
+| Crear un artículo KB | `knowledge/plantilla_knowledge.md` | `claude-init --modulo knowledge --nombre X` |
 | Inicializar `.claude/` completo | `dot-claude/ejemplo_dot_claude/` | `cp -r dot-claude/ejemplo_dot_claude ./.claude` |
 | Crear un repo GitHub profesional | `repositorios/ejemplo_repositorio/` | `claude-init --repositorio --nombre mi-repo` |
 | Inicializar `.claude/` en proyecto | `proyecto/` | `claude-init --proyecto` |
@@ -143,7 +219,7 @@
 
 Cada módulo tiene su propio validador y workflow de CI/CD. Todos usan el **motor de validación reusable** [`validadores/`](./validadores/).
 
-| Módulo | Validador | Workflow CI/CD |
+| Módulo | Validador | Workflow CI/CD per-módulo |
 |---|---|---|
 | 🤖 Agentes | [`validar_agente.py`](./agentes/validar_agente.py) | [`validar-agentes.yml`](./agentes/.github/workflows/validar-agentes.yml) |
 | 🛠️ Skills | [`validar_skill.py`](./skills/validar_skill.py) | [`validar-skills.yml`](./skills/.github/workflows/validar-skills.yml) |
@@ -153,10 +229,14 @@ Cada módulo tiene su propio validador y workflow de CI/CD. Todos usan el **moto
 | 🔗 MCP | [`validar_mcp.py`](./mcp/validar_mcp.py) | [`validar-mcp.yml`](./mcp/.github/workflows/validar-mcp.yml) |
 | 📦 dot-claude | [`validar_dot_claude.py`](./dot-claude/validar_dot_claude.py) | [`validar-dot-claude.yml`](./dot-claude/.github/workflows/validar-dot-claude.yml) |
 | 🏛️ Repositorios | [`validar_repositorio.py`](./repositorios/validar_repositorio.py) | [`validar-repositorios.yml`](./repositorios/.github/workflows/validar-repositorios.yml) |
+| 🖥️ Miniapps | [`validar_miniapps.py`](./miniapps/validar_miniapps.py) | [`validar-miniapps.yml`](./miniapps/.github/workflows/validar-miniapps.yml) |
+| 🔬 Autoresearch | [`validar_autoresearch.py`](./autoresearch/validar_autoresearch.py) | [`validar-autoresearch.yml`](./autoresearch/.github/workflows/validar-autoresearch.yml) |
+| 📓 Cuadernos | [`validar_cuadernos.py`](./cuadernos/validar_cuadernos.py) | [`validar-cuadernos.yml`](./cuadernos/.github/workflows/validar-cuadernos.yml) |
+| 📚 Knowledge | [`validar_knowledge.py`](./knowledge/validar_knowledge.py) | [`validar-knowledge.yml`](./knowledge/.github/workflows/validar-knowledge.yml) |
 | 🧩 Módulo (template) | [`validar_modulo.py`](./modulo/validar_modulo.py) | [`validar-modulo.yml`](./modulo/.github/workflows/validar-modulo.yml) |
 | 📁 Proyecto (template) | [`validar_proyecto.py`](./proyecto/validar_proyecto.py) | [`validar-proyecto.yml`](./proyecto/.github/workflows/validar-proyecto.yml) |
 
-**Workflow central** (todos los módulos): [`validar-todos.yml`](./.github/workflows/validar-todos.yml)
+**Workflow central** (todos los módulos en matriz declarativa): [`validar-todos.yml`](./.github/workflows/validar-todos.yml)
 
 ### CI/CD Global (protección del repositorio)
 
@@ -168,16 +248,22 @@ Cada módulo tiene su propio validador y workflow de CI/CD. Todos usan el **moto
 | 🔍 Validador Repo | Motor Python que valida estructura canónica completa | [`validar_repo.py`](./validar_repo.py) |
 
 ```bash
-# Validar cualquier módulo
-python agentes/validar_agente.py ~/.claude/agents/mi-agente --strict
+# Validar plantillas/ejemplos single-file
+python agentes/validar_agente.py agentes/ejemplo_agente.md --strict
+python commands/validar_command.py commands/ejemplo_command.md --strict
+python miniapps/validar_miniapps.py miniapps/ejemplo_miniapps.md --strict
+python autoresearch/validar_autoresearch.py autoresearch/ejemplo_autoresearch.md --strict
+python cuadernos/validar_cuadernos.py cuadernos/ejemplo_cuadernos.md --strict
+python knowledge/validar_knowledge.py knowledge/ejemplo_knowledge.md --strict
+python hooks/validar_hook.py hooks/ejemplo_hook.sh.template --strict
+
+# Validar dir canon
 python skills/validar_skill.py ~/.claude/skills/mi-skill --strict
-python commands/validar_command.py ~/.claude/commands/mi-cmd --strict
-python hooks/validar_hook.py ~/.claude/hooks/mi-hook --strict
 python plugins/validar_plugin.py ~/.claude/plugins/mi-plugin --strict
 python mcp/validar_mcp.py ~/mis-mcp-servers/mi-server --strict
 python dot-claude/validar_dot_claude.py ./.claude --strict
 
-# Validar estructura completa del repositorio
+# Validar estructura completa del repositorio (14 módulos canon)
 python validar_repo.py --strict
 ```
 
@@ -188,75 +274,82 @@ python validar_repo.py --strict
 ```
 plantillas/
 ├── INDEX.md                          ← ESTE ARCHIVO
-├── ROADMAP.md                        ← Plan de desarrollo
-├── CHANGELOG.md                      ← Historia de versiones
-├── CONTRIBUTING.md                   ← Guía para contribuidores
-├── CODE_OF_CONDUCT.md                ← Código de conducta
-├── INTEGRACION.md                    ← Integración cruzada entre módulos
-├── install.sh                        ← Instalador del sistema
-├── claude-init                       ← Inicializador de módulos/proyectos/repos
-├── update.sh                         ← Actualizador de versiones
-├── .pre-commit-config.yaml           ← Hooks de pre-commit (lint, validación)
-├── tests/                            ← Tests pytest + smoke
+├── ROADMAP.md
+├── CHANGELOG.md                      ← entrada [Unreleased] = canon-runtime alignment
+├── CONTRIBUTING.md
+├── CODE_OF_CONDUCT.md
+├── INTEGRACION.md
+├── install.sh · claude-init · update.sh
+├── .pre-commit-config.yaml
+├── validar_repo.py                   ← acepta file-or-dir + 14 módulos canon
+├── tests/
 │   ├── test_validadores.py
 │   └── test_smoke.py
 ├── validadores/                      ← Motor de validación reusable
-│   ├── __init__.py
-│   ├── base.py                       ← BaseValidator, Check, Resultado, Nivel
-│   ├── checks.py                     ← Checks reutilizables
-│   └── reporte.py                    ← Formateo de salida
-├── modulo/                           ← Template para crear nuevos módulos
-├── proyecto/                         ← Template .claude/ ligera para proyectos
+│   ├── base.py · checks.py · reporte.py · __init__.py
+├── modulo/ · proyecto/               ← Meta-templates
 ├── .github/workflows/
-│   └── validar-todos.yml             ← CI/CD central (todos los módulos)
+│   ├── validar-todos.yml             ← Matriz declarativa de 14 módulos
+│   ├── ci-global.yml · pr-guardian.yml · security-scan.yml
 │
 ├── agentes/
-│   ├── plantilla_agente/             ← 🤖 Kit de construcción
-│   └── ejemplo_agente/               ← 🤖 Referencia viva
-│
-├── skills/
-│   ├── plantilla_skill/              ← 🛠️ Kit de construcción
-│   └── ejemplo_skill/                ← 🛠️ Referencia viva
+│   ├── plantilla_agente.md           ← 🤖 Single-file canon
+│   ├── ejemplo_agente.md
+│   ├── validar_agente.py
+│   ├── _legacy_plantilla_agente_dir/  (preservado, retrocompat)
+│   └── _legacy_ejemplo_agente_dir/
 │
 ├── commands/
-│   ├── plantilla_command/            ← ⌨️ Kit de construcción
-│   └── ejemplo_command/              ← ⌨️ Referencia viva
+│   ├── plantilla_command.md          ← ⌨️ Single-file canon
+│   ├── ejemplo_command.md
+│   ├── validar_command.py
+│   └── _legacy_*_dir/
 │
 ├── hooks/
-│   ├── plantilla_hook/               ← ⚓ Kit de construcción
-│   └── ejemplo_hook/                 ← ⚓ Referencia viva
+│   ├── plantilla_hook.sh.template    ← ⚓ Single-file canon
+│   ├── ejemplo_hook.sh.template
+│   ├── HOOK.md
+│   ├── validar_hook.py
+│   └── _legacy_*_dir/
 │
-├── plugins/
-│   ├── plantilla_plugin/             ← 🔌 Kit de construcción
-│   └── ejemplo_plugin/               ← 🔌 Referencia viva
+├── miniapps/                         ← 🖥️ Canon nuevo
+│   ├── plantilla_miniapps.md
+│   ├── ejemplo_miniapps.md (kpi-mensual)
+│   ├── validar_miniapps.py
+│   └── README.md
 │
-├── mcp/
-│   ├── plantilla_mcp/                ← 🔗 Kit de construcción
-│   └── ejemplo_mcp/                  ← 🔗 Referencia viva
+├── autoresearch/                     ← 🔬 Canon nuevo
+│   ├── plantilla_autoresearch.md
+│   ├── ejemplo_autoresearch.md
+│   └── validar_autoresearch.py
 │
-├── dot-claude/
-│   ├── plantilla_dot_claude/         ← 📦 Meta-módulo
-│   └── ejemplo_dot_claude/           ← 📦 Referencia viva
+├── cuadernos/                        ← 📓 Canon nuevo
+│   ├── plantilla_cuadernos.md
+│   ├── ejemplo_cuadernos.md
+│   └── validar_cuadernos.py
 │
-└── repositorios/
-    ├── plantilla_repositorio/        ← 🏛️ Playbook de construcción
-    │   ├── REPOSITORIO.md
-    │   ├── METODOLOGIA.md
-    │   ├── LLM_GUIDE.md
-    │   └── ESTRUCTURA.md
-    ├── ejemplo_repositorio/          ← 🏛️ Referencia viva
-    │   ├── README.md, LICENSE, CHANGELOG, ...
-    │   ├── .github/workflows/ci.yml
-    │   ├── .github/ISSUE_TEMPLATE/
-    │   └── docs/adr/
-    ├── aplica-canon-repo.sh          ← Script de aplicación
-    ├── auditoria-canon-repo.sh       ← Script de auditoría
-    ├── repos.yaml                    ← Fuente de verdad
-    └── [perfiles por stack]/         ← web-nextjs, mcp-server, ...
+├── knowledge/                        ← 📚 Canon nuevo
+│   ├── plantilla_knowledge.md
+│   ├── ejemplo_knowledge.md
+│   └── validar_knowledge.py
+│
+├── skills/
+│   ├── plantilla_skill/              ← 🛠️ Dir canon
+│   └── ejemplo_skill/
+│
+├── plugins/                          ← 🔌 Dir canon
+├── mcp/                              ← 🔗 Dir canon
+├── dot-claude/                       ← 📦 Dir canon (settings.json schema runtime)
+├── repositorios/                     ← 🏛️ Dir canon
+└── artefactos/                       ← Plano (outputs operador, no canon)
 ```
 
 ---
 
-> **Regla de oro**: Cada módulo sigue el mismo patrón:
-> `plantilla_X/` = playbook instructivo (¿qué pongo aquí?)
-> `ejemplo_X/` = referencia funcional (¿cómo se ve terminado?)
+> **Regla de oro post-reforma**: cada módulo sigue uno de tres formatos:
+>
+> - **Single-file `.md`**: `plantilla_X.md` + `ejemplo_X.md` (canon nuevo).
+> - **Single-file `.sh.template`**: `plantilla_X.sh.template` + `ejemplo_X.sh.template` (hooks).
+> - **Dir multi-archivo**: `plantilla_X/` + `ejemplo_X/` (skills, plugins, mcp, dot-claude, repositorios).
+>
+> El validador global `validar_repo.py` reconoce los tres patrones vía glob por extensión.

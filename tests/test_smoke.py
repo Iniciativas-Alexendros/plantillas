@@ -12,6 +12,10 @@ from pathlib import Path
 
 PLANTILLAS = Path(__file__).resolve().parents[1]
 
+# (modulo, script, base_ejemplo) — base_ejemplo se resuelve dinámicamente:
+# si existe `<mod>/<base>` (dir canon legado) lo usa; si no, busca
+# `<mod>/<base>.<ext>` para los módulos single-file post canon-runtime
+# (`.md` o `.sh.template`). Se añaden los 4 módulos canon nuevos.
 MODULOS = [
     ("agentes", "validar_agente.py", "ejemplo_agente"),
     ("skills", "validar_skill.py", "ejemplo_skill"),
@@ -21,9 +25,35 @@ MODULOS = [
     ("plugins", "validar_plugin.py", "ejemplo_plugin"),
     ("dot-claude", "validar_dot_claude.py", "ejemplo_dot_claude"),
     ("repositorios", "validar_repositorio.py", "ejemplo_repositorio"),
-    ("modulo", "validar_modulo.py", "."),
-    ("proyecto", "validar_proyecto.py", "."),
+    ("modulo", "validar_modulo.py", "modulo"),
+    ("proyecto", "validar_proyecto.py", "proyecto"),
+    ("miniapps", "validar_miniapps.py", "ejemplo_miniapps"),
+    ("autoresearch", "validar_autoresearch.py", "ejemplo_autoresearch"),
+    ("cuadernos", "validar_cuadernos.py", "ejemplo_cuadernos"),
+    ("knowledge", "validar_knowledge.py", "ejemplo_knowledge"),
 ]
+
+
+def _resolve_ejemplo(modulo: str, base: str) -> Path:
+    """Devuelve el path al ejemplo aceptando dir o single-file.
+
+    Para módulos especiales (`modulo`, `proyecto`), su raíz ES la plantilla.
+    Para el resto se prueba primero el dir legacy `<mod>/<base>/`; si no
+    existe se busca `<mod>/<base>.<ext>` con cualquier extensión.
+    """
+    mod_dir = PLANTILLAS / modulo
+    if modulo in {"modulo", "proyecto"}:
+        return mod_dir
+    legacy = mod_dir / base
+    if legacy.is_dir():
+        return legacy
+    matches = sorted(
+        p for p in mod_dir.glob(f"{base}.*")
+        if p.is_file() and not p.name.endswith(".bak")
+    )
+    if matches:
+        return matches[0]
+    return mod_dir / base  # devolver el path inexistente para que el assert lo cace
 
 
 class TestSmoke:
@@ -31,7 +61,7 @@ class TestSmoke:
         """Cada ejemplo debe pasar su validador en modo strict."""
         for modulo, script, ejemplo in MODULOS:
             script_path = PLANTILLAS / modulo / script
-            ejemplo_path = PLANTILLAS / modulo / ejemplo
+            ejemplo_path = _resolve_ejemplo(modulo, ejemplo)
 
             assert script_path.exists(), f"Falta validador: {script_path}"
             assert ejemplo_path.exists(), f"Falta ejemplo: {ejemplo_path}"

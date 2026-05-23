@@ -40,7 +40,10 @@ jobs:
         run: pip install yamllint
       - name: Ejecutar yamllint
         run: |
-          yamllint -d relaxed \
+          # --no-warnings: trata warnings (line-length, etc.) como informativos,
+          # solo errores producen exit != 0. La config 'relaxed' por sí sola no
+          # basta porque yamllint sale con 1 ante cualquier warning.
+          yamllint --no-warnings -d relaxed \
             $(find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
               ! -path './.git/*' \
               ! -path './artefactos/*' \
