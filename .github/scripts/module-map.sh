@@ -15,7 +15,7 @@ set -euo pipefail
 
 # Lista canónica de módulos (usados por workflows que hacen source de este script)
 # shellcheck disable=SC2034
-MODULOS_CANONICOS=(agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto)
+MODULOS_CANONICOS=(agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto miniapps autoresearch cuadernos knowledge)
 
 # Módulos cuya raíz ES la plantilla (sin plantilla_*/ejemplo_*)
 # shellcheck disable=SC2034
@@ -33,6 +33,10 @@ module_singular() {
     repositorios) echo "repositorio" ;;
     modulo)       echo "modulo" ;;
     proyecto)     echo "proyecto" ;;
+    miniapps)     echo "miniapps" ;;
+    autoresearch) echo "autoresearch" ;;
+    cuadernos)    echo "cuadernos" ;;
+    knowledge)    echo "knowledge" ;;
     *)            echo "$1" ;;
   esac
 }

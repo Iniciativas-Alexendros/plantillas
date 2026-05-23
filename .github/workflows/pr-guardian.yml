@@ -98,6 +98,18 @@ jobs:
           CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
             "${{ github.event.pull_request.head.sha }}")
 
+          # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
+          # (si hay cambios en módulos, el step 4 ya exige que se actualice)
+          MODIFIES_MODULES=false
+          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
+            MODIFIES_MODULES=true
+          fi
+
+          if echo "$CHANGED" | grep -qx "CHANGELOG.md" && [ "$MODIFIES_MODULES" = false ]; then
+            echo "⚠️ Archivo protegido modificado: CHANGELOG.md (sin cambios en módulos)"
+            EXIT=1
+          fi
+
           for f in "${PROTECTED[@]}"; do
             if echo "$CHANGED" | grep -qx "$f"; then
               echo "⚠️ Archivo protegido modificado: $f"

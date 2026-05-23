@@ -49,7 +49,7 @@ jobs:
       - name: Lint YAML
         run: |
           echo "::group::yamllint"
-          yamllint -d relaxed \
+          yamllint --no-warnings -d relaxed \
             $(find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
               ! -path './.git/*' \
               ! -path './artefactos/*' | sort)
