@@ -45,7 +45,7 @@ jobs:
             FOUND=("${MODULOS_CANONICOS[@]}")
           fi
 
-          JSON=$(printf '%s\n' "${FOUND[@]}" | jq -R . | jq -s .)
+          JSON=$(printf '%s\n' "${FOUND[@]}" | jq -R . | jq -sc .)
           echo "modulos=$JSON" >> "$GITHUB_OUTPUT"
           echo "📦 Módulos detectados:"
           printf '%s\n' "${FOUND[@]}"
