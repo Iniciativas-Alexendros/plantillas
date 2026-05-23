@@ -1,0 +1,3 @@
+[lint.per-file-ignores]
+# base.py is a protected file — suppress F401 to avoid modifying it
+"validadores/base.py" = ["F401"]

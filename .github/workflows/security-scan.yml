@@ -20,21 +20,25 @@ on:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
-  detect-secrets:
-    name: Detectar Secrets
+  security:
+    name: Security
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Necesario para scan completo
+          fetch-depth: 0
+
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+
+      # ── 1. Detect Secrets (regex) ──────────────────────────────────────
       - name: Scan de secrets con regex
         run: |
-          EXIT=0
+          echo "::group::Detect Secrets"
           python3 << 'PYEOF'
           import re
           from pathlib import Path
@@ -71,19 +75,14 @@ jobs:
                       break
           exit(errores if errores > 0 else 0)
           PYEOF
-          EXIT=$?
-          exit $EXIT
+          echo "::endgroup::"
 
-  gitignore-check:
-    name: Verificar .gitignore
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # ── 2. .gitignore violations ───────────────────────────────────────
       - name: Detectar archivos que deberían estar ignorados
         run: |
+          echo "::group::Gitignore Check"
           EXIT=0
 
-          # Lista de patrones que NUNCA deben estar en el repo
           CHECKS=(
             ".env"
             ".env.local"
@@ -108,24 +107,17 @@ jobs:
             fi
           done
 
-          # Directorios prohibidos explícitos
           for dir in cuaderno-plantilla artefactos/operador vap; do
             if [ -d "$dir" ]; then
               echo "⚠️ Directorio prohibido detectado en el repo: $dir/"
-              echo "   Asegúrate de que .gitignore lo excluye y no fue forzado con git add -f"
               EXIT=1
             fi
           done
 
+          echo "::endgroup::"
           exit $EXIT
 
-  trufflehog:
-    name: TruffleHog Scan
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      # ── 3. TruffleHog ─────────────────────────────────────────────────
       - name: Ejecutar TruffleHog
         uses: trufflesecurity/trufflehog@main
         with:
@@ -133,3 +125,16 @@ jobs:
           base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --debug --only-verified
+
+      - name: Reportar estado
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          gh api "repos/${{ github.repository }}/statuses/$SHA" \
+            -f state="$STATE" \
+            -f context="Security Scan" \
+            -f description="detect-secrets + gitignore + TruffleHog"
