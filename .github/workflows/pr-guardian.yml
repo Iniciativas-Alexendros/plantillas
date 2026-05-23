@@ -117,8 +117,9 @@ jobs:
           HEAD="${{ github.event.pull_request.head.sha }}"
           git fetch origin "$BASE" --depth=1
 
-          # Si el PR modifica módulos o validadores, requiere CHANGELOG
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD")
+          # Si el PR modifica módulos o validadores, requiere CHANGELOG.
+          # Usamos el SHA fetched directamente (origin/main no se resuelve aquí).
+          CHANGES=$(git diff --name-only "$BASE" "$HEAD")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then

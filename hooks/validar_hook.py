@@ -34,11 +34,7 @@ from validadores import (
     Nivel,
 )
 
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
+# pyyaml no es necesario en este validador: los hooks son scripts shell, no YAML.
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

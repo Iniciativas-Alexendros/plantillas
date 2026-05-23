@@ -290,7 +290,7 @@ def main() -> int:
             return 1
         archivo = candidatos[0]
         print(f"⚠️  Se recibió un directorio; usando primer .md encontrado: {archivo.name}")
-        print(f"   Considera pasar la ruta del archivo directamente.")
+        print("   Considera pasar la ruta del archivo directamente.")
     else:
         archivo = ruta
 
