@@ -1,0 +1,22 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Composite Action · Setup del entorno de validación
+#
+# Reusable: Python 3.12 + pip cache + pyyaml
+# NOTA: Requiere actions/checkout@v4 ANTES de usar esta action.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Setup Validadores
+description: Configura Python 3.12 con pyyaml y cache de pip para los validadores
+
+runs:
+  using: composite
+  steps:
+    - uses: actions/setup-python@v5
+      with:
+        python-version: "3.12"
+        cache: pip
+    - name: Instalar dependencias de validación
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install pyyaml
