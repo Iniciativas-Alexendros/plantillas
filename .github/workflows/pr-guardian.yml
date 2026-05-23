@@ -24,15 +24,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Validar título del PR
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
           REGEX="^(feat|fix|docs|style|refactor|test|ci|chore)(\(.+\))?!?: .+"
 
-          if echo "$TITLE" | grep -qE "$REGEX"; then
-            echo "✅ Título válido: $TITLE"
+          if echo "$PR_TITLE" | grep -qE "$REGEX"; then
+            echo "✅ Título válido: $PR_TITLE"
             exit 0
           else
-            echo "❌ Título inválido: $TITLE"
+            echo "❌ Título inválido: $PR_TITLE"
             echo ""
             echo "El título debe seguir Conventional Commits:"
             echo "  tipo(alcance)?: descripción"
@@ -47,13 +48,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Contar líneas cambiadas
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
-          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | \
+          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}" | \
             awk '{added+=$1; removed+=$2} END {print added+removed}')
 
           echo "📊 Líneas cambiadas: $LINES"
@@ -70,19 +70,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Detectar archivos protegidos modificados
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
           PROTECTED=(
             "INDEX.md"
             "README.md"
             "CONTRIBUTING.md"
             "CODE_OF_CONDUCT.md"
             "ROADMAP.md"
-            "CHANGELOG.md"
             "INTEGRACION.md"
             "install.sh"
             "claude-init"
@@ -92,8 +89,11 @@ jobs:
           )
 
           EXIT=0
+          CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}")
+
           for f in "${PROTECTED[@]}"; do
-            if git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | grep -qx "$f"; then
+            if echo "$CHANGED" | grep -qx "$f"; then
               echo "⚠️ Archivo protegido modificado: $f"
               EXIT=1
             fi
@@ -111,14 +111,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Verificar CHANGELOG.md
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
-          # Si el PR modifica módulos o validadores, requiere CHANGELOG
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD")
+          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
@@ -141,37 +139,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
+      - name: Instalar dependencias
+        run: pip install pyyaml
       - name: Validar que ejemplos no tengan placeholders
         run: |
+          source .github/scripts/module-map.sh
           EXIT=0
-          for dir in agentes skills commands hooks mcp plugins dot-claude repositorios; do
-            ejemplo="${dir}/ejemplo_${dir}"
-            if [ "$dir" = "dot-claude" ]; then
-              ejemplo="${dir}/ejemplo_dot_claude"
+          for dir in "${MODULOS_CANONICOS[@]}"; do
+            if module_is_special "$dir"; then
+              continue
             fi
-            if [ -d "$ejemplo" ]; then
-              script="${dir}/validar_${dir}.py"
-              if [ "$dir" = "dot-claude" ]; then
-                script="${dir}/validar_dot_claude.py"
-              elif [ "$dir" = "agentes" ]; then
-                script="${dir}/validar_agente.py"
-              elif [ "$dir" = "skills" ]; then
-                script="${dir}/validar_skill.py"
-              elif [ "$dir" = "commands" ]; then
-                script="${dir}/validar_command.py"
-              elif [ "$dir" = "hooks" ]; then
-                script="${dir}/validar_hook.py"
-              elif [ "$dir" = "mcp" ]; then
-                script="${dir}/validar_mcp.py"
-              elif [ "$dir" = "plugins" ]; then
-                script="${dir}/validar_plugin.py"
-              elif [ "$dir" = "repositorios" ]; then
-                script="${dir}/validar_repositorio.py"
-              fi
+            ejemplo=$(module_ejemplo "$dir")
+            script=$(module_validator "$dir")
 
-              if [ -f "$script" ]; then
-                python "$script" "$ejemplo" --strict || EXIT=1
-              fi
+            if [ -d "$ejemplo" ] && [ -f "$script" ]; then
+              python "$script" "$ejemplo" --strict || EXIT=1
             fi
           done
           exit $EXIT

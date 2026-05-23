@@ -1,0 +1,77 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Release · Publicación automática de versiones
+#
+# Propósito: Al pushear un tag semver (v*), extrae las notas de CHANGELOG.md
+# para esa versión y crea una GitHub Release con tarball adjunto.
+#
+# Se ejecuta en:
+#   - Push de tags v* (ej: v1.0.0, v1.1.0-rc.1)
+#
+# ROADMAP: 3.1.4
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Crear Release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extraer versión del tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          VERSION="${TAG#v}"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "📦 Release: $TAG (versión $VERSION)"
+
+      - name: Extraer notas de CHANGELOG.md
+        id: notes
+        run: |
+          TAG="${{ steps.version.outputs.tag }}"
+          VERSION="${{ steps.version.outputs.version }}"
+
+          # Extraer la sección del CHANGELOG para esta versión
+          # Busca entre "## [VERSION]" y el siguiente "## ["
+          NOTES=$(awk -v ver="$VERSION" '
+            /^## \[/ {
+              if (found) exit
+              if (index($0, ver)) { found=1; next }
+            }
+            found { print }
+          ' CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="Release $TAG — ver CHANGELOG.md para detalles."
+          fi
+
+          # Escribir notas a archivo para el paso de release
+          echo "$NOTES" > /tmp/release-notes.md
+          echo "📝 Notas extraídas para $TAG"
+
+      - name: Validar sistema antes de release
+        uses: ./.github/actions/setup-validadores
+      - run: python validar_repo.py --strict
+
+      - name: Crear GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: ${{ steps.version.outputs.tag }}
+          body_path: /tmp/release-notes.md
+          draft: false
+          prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
+          generate_release_notes: true
