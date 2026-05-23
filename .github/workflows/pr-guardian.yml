@@ -19,20 +19,34 @@ permissions:
   pull-requests: write
 
 jobs:
-  conventional-title:
-    name: Título Conventional Commit
+  guardian:
+    name: PR Guardian
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install pyyaml
+
+      # ── 1. Título Conventional Commit ────────────────────────────────────
       - name: Validar título del PR
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          TITLE="${{ github.event.pull_request.title }}"
+          echo "::group::Conventional Commit Title"
           REGEX="^(feat|fix|docs|style|refactor|test|ci|chore)(\(.+\))?!?: .+"
 
-          if echo "$TITLE" | grep -qE "$REGEX"; then
-            echo "✅ Título válido: $TITLE"
-            exit 0
+          if echo "$PR_TITLE" | grep -qE "$REGEX"; then
+            echo "✅ Título válido: $PR_TITLE"
           else
-            echo "❌ Título inválido: $TITLE"
+            echo "❌ Título inválido: $PR_TITLE"
             echo ""
             echo "El título debe seguir Conventional Commits:"
             echo "  tipo(alcance)?: descripción"
@@ -41,19 +55,14 @@ jobs:
             echo "Ejemplo: feat(agentes): añade validador de subagentes"
             exit 1
           fi
+          echo "::endgroup::"
 
-  pr-size:
-    name: Tamaño del PR
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # ── 2. Tamaño del PR ────────────────────────────────────────────────
       - name: Contar líneas cambiadas
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
-          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | \
+          echo "::group::PR Size"
+          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}" | \
             awk '{added+=$1; removed+=$2} END {print added+removed}')
 
           echo "📊 Líneas cambiadas: $LINES"
@@ -64,18 +73,12 @@ jobs:
           else
             echo "✅ Tamaño aceptable"
           fi
+          echo "::endgroup::"
 
-  protected-files:
-    name: Archivos Protegidos
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # ── 3. Archivos Protegidos ──────────────────────────────────────────
       - name: Detectar archivos protegidos modificados
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
+          echo "::group::Protected Files"
           PROTECTED=(
             "INDEX.md"
             "README.md"
@@ -92,8 +95,11 @@ jobs:
           )
 
           EXIT=0
+          CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}")
+
           for f in "${PROTECTED[@]}"; do
-            if git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD" | grep -qx "$f"; then
+            if echo "$CHANGED" | grep -qx "$f"; then
               echo "⚠️ Archivo protegido modificado: $f"
               EXIT=1
             fi
@@ -105,25 +111,18 @@ jobs:
             echo "Si necesitas modificarlos, abre un issue primero y discútelo."
             exit 1
           fi
+          echo "::endgroup::"
 
-  changelog-check:
-    name: CHANGELOG Actualizado
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+      # ── 4. CHANGELOG Actualizado ────────────────────────────────────────
       - name: Verificar CHANGELOG.md
         run: |
-          BASE="${{ github.event.pull_request.base.sha }}"
-          HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
-
-          # Si el PR modifica módulos o validadores, requiere CHANGELOG
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD")
+          echo "::group::CHANGELOG Check"
+          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+            "${{ github.event.pull_request.head.sha }}")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
               echo "✅ CHANGELOG.md actualizado"
-              exit 0
             else
               echo "❌ Falta actualizar CHANGELOG.md"
               echo "Este PR modifica módulos o validadores. Añade una entrada en CHANGELOG.md."
@@ -132,17 +131,12 @@ jobs:
           else
             echo "ℹ️ No requiere CHANGELOG (no modifica módulos)"
           fi
+          echo "::endgroup::"
 
-  placeholder-check:
-    name: Placeholders en Ejemplos
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      # ── 5. Placeholders en Ejemplos ─────────────────────────────────────
       - name: Validar que ejemplos no tengan placeholders
         run: |
+          echo "::group::Placeholder Check"
           EXIT=0
           for dir in agentes skills commands hooks mcp plugins dot-claude repositorios; do
             ejemplo="${dir}/ejemplo_${dir}"
@@ -174,4 +168,5 @@ jobs:
               fi
             fi
           done
+          echo "::endgroup::"
           exit $EXIT
