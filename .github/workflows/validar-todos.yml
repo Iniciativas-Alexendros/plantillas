@@ -24,6 +24,10 @@ on:
     branches: [main, master]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  statuses: write
+
 jobs:
   validar:
     name: Validar Módulos
@@ -100,3 +104,16 @@ jobs:
           echo "📊 Resultado: $PASSED pasaron, $FAILED fallaron"
           echo "═══════════════════════════════════════"
           exit $GLOBAL_EXIT
+
+      - name: Reportar estado
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          gh api "repos/${{ github.repository }}/statuses/$SHA" \
+            -f state="$STATE" \
+            -f context="Validar Sistema de Plantillas" \
+            -f description="14 módulos canónicos"

@@ -25,6 +25,7 @@ concurrency:
 
 permissions:
   contents: read
+  statuses: write
 
 jobs:
   lint:
@@ -106,3 +107,16 @@ jobs:
             --ignore 'dot-claude/**' \
             '**/*.md' || true
           echo "::endgroup::"
+
+      - name: Reportar estado
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          gh api "repos/${{ github.repository }}/statuses/$SHA" \
+            -f state="$STATE" \
+            -f context="CI Global" \
+            -f description="Lint & Estructura"

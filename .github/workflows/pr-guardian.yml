@@ -17,6 +17,7 @@ on:
 permissions:
   contents: read
   pull-requests: write
+  statuses: write
 
 jobs:
   guardian:
@@ -164,3 +165,16 @@ jobs:
           done
           echo "::endgroup::"
           exit $EXIT
+
+      - name: Reportar estado
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          STATE="success"
+          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
+          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          gh api "repos/${{ github.repository }}/statuses/$SHA" \
+            -f state="$STATE" \
+            -f context="PR Guardian" \
+            -f description="título + tamaño + protegidos + changelog + placeholders"
