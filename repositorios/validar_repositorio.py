@@ -25,7 +25,6 @@ from validadores import (
     Nivel,
     check_placeholders,
     check_archivos_vacios,
-    check_estructura,
 )
 
 
@@ -150,7 +149,7 @@ class RepoValidator(BaseValidator):
 
         if not licencia:
             resultados.append(
-                Resultado(Nivel.ERROR, "licencia", f"Falta LICENSE o COPYRIGHT.md")
+                Resultado(Nivel.ERROR, "licencia", "Falta LICENSE o COPYRIGHT.md")
             )
             return resultados
 
@@ -175,7 +174,6 @@ class RepoValidator(BaseValidator):
                 Resultado(Nivel.WARNING, "changelog", "CHANGELOG.md debería tener '[Unreleased]'", "CHANGELOG.md")
             )
 
-        secciones_keep = ["Added", "Changed", "Deprecated", "Removed", "Fixed", "Security"]
         secciones_map = {
             "Added": ["### Added", "### Añadido"],
             "Changed": ["### Changed", "### Cambiado"],

@@ -43,10 +43,14 @@ ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md"]
 DIRECTORIOS_PERMITIDOS = {
     "agentes",
     "artefactos",
+    "autoresearch",
     "commands",
+    "cuadernos",
     "dot-claude",
     "hooks",
+    "knowledge",
     "mcp",
+    "miniapps",
     "modulo",
     "plugins",
     "proyecto",
@@ -67,6 +71,10 @@ MODULOS_CANONICOS = [
     "repositorios",
     "modulo",
     "proyecto",
+    "miniapps",
+    "autoresearch",
+    "cuadernos",
+    "knowledge",
 ]
 
 # Módulos que no siguen el patrón plantilla_*/ejemplo_* porque su raíz ES la plantilla
@@ -81,6 +89,10 @@ NOMBRE_SINGULAR = {
     "plugins": "plugin",
     "dot-claude": "dot_claude",
     "repositorios": "repositorio",
+    "miniapps": "miniapps",
+    "autoresearch": "autoresearch",
+    "cuadernos": "cuadernos",
+    "knowledge": "knowledge",
 }
 
 ARCHIVOS_PROHIBIDOS = [
@@ -231,31 +243,42 @@ class ValidadorGlobal(BaseValidator):
             singular = NOMBRE_SINGULAR.get(mod, mod)
 
             if mod not in MODULOS_ESPECIALES:
-                # Plantilla
-                plantilla = mod_path / f"plantilla_{singular}"
+                # Plantilla: aceptar dir legado o single-file `plantilla_<base>.*` (canon-runtime).
+                # Extensiones canónicas: .md (la mayoría) o .sh.template (hooks).
+                base_plantilla = f"plantilla_{singular}"
                 if mod == "dot-claude":
-                    plantilla = mod_path / "plantilla_dot_claude"
-                if not plantilla.is_dir():
+                    base_plantilla = "plantilla_dot_claude"
+                plantilla_dir = mod_path / base_plantilla
+                plantilla_files = [
+                    p for p in mod_path.glob(f"{base_plantilla}.*")
+                    if p.is_file() and not p.name.endswith(".bak")
+                ]
+                if not plantilla_dir.is_dir() and not plantilla_files:
                     resultados.append(
                         Resultado(
                             Nivel.ERROR,
                             "estructura_modulos",
-                            f"{mod}/ falta directorio plantilla",
-                            str(plantilla.relative_to(self.ruta)),
+                            f"{mod}/ falta plantilla (ni dir '{base_plantilla}/' ni archivo '{base_plantilla}.*')",
+                            f"{mod}/{base_plantilla}",
                         )
                     )
 
-                # Ejemplo
-                ejemplo = mod_path / f"ejemplo_{singular}"
+                # Ejemplo: aceptar dir legado o single-file `ejemplo_<base>.*`.
+                base_ejemplo = f"ejemplo_{singular}"
                 if mod == "dot-claude":
-                    ejemplo = mod_path / "ejemplo_dot_claude"
-                if not ejemplo.is_dir():
+                    base_ejemplo = "ejemplo_dot_claude"
+                ejemplo_dir = mod_path / base_ejemplo
+                ejemplo_files = [
+                    p for p in mod_path.glob(f"{base_ejemplo}.*")
+                    if p.is_file() and not p.name.endswith(".bak")
+                ]
+                if not ejemplo_dir.is_dir() and not ejemplo_files:
                     resultados.append(
                         Resultado(
                             Nivel.ERROR,
                             "estructura_modulos",
-                            f"{mod}/ falta directorio ejemplo",
-                            str(ejemplo.relative_to(self.ruta)),
+                            f"{mod}/ falta ejemplo (ni dir '{base_ejemplo}/' ni archivo '{base_ejemplo}.*')",
+                            f"{mod}/{base_ejemplo}",
                         )
                     )
             else:

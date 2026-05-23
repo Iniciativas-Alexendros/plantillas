@@ -1,45 +1,63 @@
 {
-  "skillListingBudgetFraction": 0.07,
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
   "permissions": {
     "allow": [
-      "Agent",
-      "Bash(bash -n:*)",
-      "Bash(chmod +x:*)",
-      "Bash(cp:*)",
-      "Bash(env)",
-      "Bash(git:*)",
-      "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(node --version)",
-      "Bash(npm:*)",
-      "Bash(pnpm:*)",
-      "Bash(python3 --version)",
-      "Bash(rm:*)",
-      "Bash(touch:*)",
       "Read",
       "Grep",
       "Glob",
       "Edit",
       "Write",
+      "Bash(git status)",
+      "Bash(git log:*)",
+      "Bash(git diff:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git stash:*)",
+      "Bash(ls:*)",
+      "Bash(mkdir:*)",
+      "Bash(cp:*)",
+      "Bash(touch:*)",
+      "Bash(chmod +x:*)",
+      "Bash(env)",
+      "Bash(python3:*)",
+      "Bash(node --version)",
+      "Bash(npm:*)",
+      "Bash(pnpm:*)",
+      "Bash(bash -n:*)",
       "TodoWrite"
     ],
     "deny": [
       "Bash(sudo:*)",
-      "Bash(rm -rf /)",
-      "Bash(curl *|*sh)",
-      "Bash(wget *|*sh)"
+      "Bash(rm -rf /:*)",
+      "Bash(curl * | sh:*)",
+      "Bash(wget * | sh:*)"
     ]
   },
+
   "hooks": {
-    "enabled": true,
-    "sources": ["hooks/"]
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/pre-bash-secret-guard.sh" }
+        ]
+      }
+    ],
+    "PostToolUse": [],
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          { "type": "command", "command": "~/.claude/hooks/session-start-banner.sh" }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [],
+    "Stop": []
   },
-  "skills": {
-    "autoDiscover": true,
-    "preload": []
-  },
-  "output": {
-    "language": "es",
-    "style": "concise"
+
+  "env": {
+    "CLAUDE_LANG": "es"
   }
 }

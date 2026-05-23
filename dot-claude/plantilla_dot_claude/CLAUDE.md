@@ -136,22 +136,38 @@ Ver `skills/` para el catálogo completo.
 
 ---
 
-## SECCIÓN 5: Rutas Importantes
+## SECCIÓN 5: Árbol de directorios `.claude/`
 
-### Qué desarrollar aquí
+El ecosistema `.claude/` sigue un árbol plano. Cada directorio tiene un propósito
+semántico claro:
 
-Mapa de rutas críticas en tu sistema.
+```
+~/.claude/
+├── agents/          ← Agentes especializados (subagentes Claude Code)
+├── skills/          ← Skills reutilizables (comandos slash)
+├── commands/        ← Comandos slash personalizados adicionales
+├── hooks/           ← Hooks de interceptación (PreToolUse, PostToolUse, etc.)
+├── scripts/         ← Scripts de utilidad personal
+├── plugins/         ← Plugins de extensión
+├── mcp/             ← Configuración de servidores MCP
+├── miniapps/        ← Mini-aplicaciones HTML/SPA autocontenidas
+├── autoresearch/    ← Investigaciones automáticas persistentes
+├── cuadernos/       ← Cuadernos de trabajo interactivos
+├── knowledge/       ← Base de conocimiento (documentos de referencia)
+├── artefactos/      ← Outputs entregados al operador (playgrounds, memos)
+└── projects/        ← Memoria por proyecto (contexto persistente)
+```
 
-```markdown
-## 4. Rutas Importantes
+### Rutas importantes
 
 | Ruta | Propósito |
 |---|---|
-| `~/.claude/` | Configuración global de Claude |
-| `~/.claude/skills/` | Skills disponibles en todos los proyectos |
-| `~/.claude/agents/` | Agentes globales |
-| `[ruta personal]` | [propósito] |
-```
+| `~/.claude/CLAUDE.md` | Norma global (este archivo) |
+| `~/.claude/settings.json` | Permisos, hooks, env |
+| `~/.claude/mcp.json` | Servidores MCP globales |
+| `~/.claude/agents/` | Agentes especializados |
+| `~/.claude/skills/` | Skills globales |
+| `~/.claude/projects/` | Memoria por proyecto |
 
 ---
 

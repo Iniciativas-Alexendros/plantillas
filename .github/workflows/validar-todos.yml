@@ -8,7 +8,10 @@
 #   - Push a main/master
 #   - Manualmente (workflow_dispatch)
 #
-# Módulos validados: agentes, skills, commands, hooks, mcp, plugins, dot-claude, repositorios, modulo, proyecto
+# Módulos validados (14 canónicos tras la reforma "canon-runtime alignment" 2026-05-23):
+#   - Single-file canon: agentes, commands, miniapps, autoresearch, cuadernos, knowledge
+#   - Dir canon (multi-archivo): dot-claude, repositorios, modulo, proyecto, skills, mcp, plugins
+#   - Sh-template canon: hooks
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: Validar Sistema de Plantillas
@@ -20,45 +23,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  listar-modulos:
-    name: Listar módulos
+  validar-global:
+    name: Validar repo (validar_repo.py)
     runs-on: ubuntu-latest
-    outputs:
-      modulos: ${{ steps.list.outputs.modulos }}
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Detectar módulos con validador
-        id: list
-        run: |
-          MODULOS=()
-          for dir in agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto; do
-            if [ -f "$dir/validar_${dir%-claude}" ]; then
-              MODULOS+=("$dir")
-            elif [ -f "$dir/validar_${dir%-claude}.py" ]; then
-              MODULOS+=("$dir")
-            fi
-          done
-
-          # Fallback: usar lista fija
-          if [ ${#MODULOS[@]} -eq 0 ]; then
-            MODULOS=(agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto)
-          fi
-
-          JSON=$(printf '%s\n' "${MODULOS[@]}" | jq -R . | jq -s .)
-          echo "modulos=$JSON" >> $GITHUB_OUTPUT
-          echo "📦 Módulos detectados:"
-          printf '%s\n' "${MODULOS[@]}"
-
-  validar:
-    name: Validar ${{ matrix.modulo }}
-    runs-on: ubuntu-latest
-    needs: listar-modulos
-    strategy:
-      fail-fast: false
-      matrix:
-        modulo: ${{ fromJson(needs.listar-modulos.outputs.modulos) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -73,89 +40,115 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
 
-      - name: Ejecutar validador de ${{ matrix.modulo }}
+      - name: Validar estructura del repo
+        run: python validar_repo.py --strict
+
+  validar-modulos:
+    name: Validar ${{ matrix.modulo }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # ── Single-file canon (.md) ─────────────────────────────────────
+          - modulo: agentes
+            script: agentes/validar_agente.py
+            ejemplo: agentes/ejemplo_agente.md
+            plantilla: agentes/plantilla_agente.md
+          - modulo: commands
+            script: commands/validar_command.py
+            ejemplo: commands/ejemplo_command.md
+            plantilla: commands/plantilla_command.md
+          - modulo: miniapps
+            script: miniapps/validar_miniapps.py
+            ejemplo: miniapps/ejemplo_miniapps.md
+            plantilla: miniapps/plantilla_miniapps.md
+          - modulo: autoresearch
+            script: autoresearch/validar_autoresearch.py
+            ejemplo: autoresearch/ejemplo_autoresearch.md
+            plantilla: autoresearch/plantilla_autoresearch.md
+          - modulo: cuadernos
+            script: cuadernos/validar_cuadernos.py
+            ejemplo: cuadernos/ejemplo_cuadernos.md
+            plantilla: cuadernos/plantilla_cuadernos.md
+          - modulo: knowledge
+            script: knowledge/validar_knowledge.py
+            ejemplo: knowledge/ejemplo_knowledge.md
+            plantilla: knowledge/plantilla_knowledge.md
+
+          # ── Sh-template canon (.sh.template) ─────────────────────────────
+          - modulo: hooks
+            script: hooks/validar_hook.py
+            ejemplo: hooks/ejemplo_hook.sh.template
+            plantilla: hooks/plantilla_hook.sh.template
+
+          # ── Dir canon (multi-archivo) ────────────────────────────────────
+          - modulo: skills
+            script: skills/validar_skill.py
+            ejemplo: skills/ejemplo_skill
+            plantilla: skills/plantilla_skill
+          - modulo: mcp
+            script: mcp/validar_mcp.py
+            ejemplo: mcp/ejemplo_mcp
+            plantilla: mcp/plantilla_mcp
+          - modulo: plugins
+            script: plugins/validar_plugin.py
+            ejemplo: plugins/ejemplo_plugin
+            plantilla: plugins/plantilla_plugin
+          - modulo: dot-claude
+            script: dot-claude/validar_dot_claude.py
+            ejemplo: dot-claude/ejemplo_dot_claude
+            plantilla: dot-claude/plantilla_dot_claude
+          - modulo: repositorios
+            script: repositorios/validar_repositorio.py
+            ejemplo: repositorios/ejemplo_repositorio
+            plantilla: repositorios/plantilla_repositorio
+
+          # ── Módulos especiales (raíz = plantilla) ────────────────────────
+          - modulo: modulo
+            script: modulo/validar_modulo.py
+            ejemplo: modulo
+            plantilla: ""
+          - modulo: proyecto
+            script: proyecto/validar_proyecto.py
+            ejemplo: proyecto
+            plantilla: ""
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar dependencias
         run: |
-          SCRIPT="${{ matrix.modulo }}/validar_${{ matrix.modulo }}"
-          SCRIPT_PY="${SCRIPT}.py"
+          python -m pip install --upgrade pip
+          pip install pyyaml
 
-          # Mapeo de nombres
-          if [ "${{ matrix.modulo }}" = "dot-claude" ]; then
-            SCRIPT_PY="dot-claude/validar_dot_claude.py"
-          elif [ "${{ matrix.modulo }}" = "agentes" ]; then
-            SCRIPT_PY="agentes/validar_agente.py"
-          elif [ "${{ matrix.modulo }}" = "skills" ]; then
-            SCRIPT_PY="skills/validar_skill.py"
-          elif [ "${{ matrix.modulo }}" = "commands" ]; then
-            SCRIPT_PY="commands/validar_command.py"
-          elif [ "${{ matrix.modulo }}" = "hooks" ]; then
-            SCRIPT_PY="hooks/validar_hook.py"
-          elif [ "${{ matrix.modulo }}" = "mcp" ]; then
-            SCRIPT_PY="mcp/validar_mcp.py"
-          elif [ "${{ matrix.modulo }}" = "plugins" ]; then
-            SCRIPT_PY="plugins/validar_plugin.py"
-          fi
-
-          # Validar ejemplo correspondiente
-          EJEMPLO="${{ matrix.modulo }}/ejemplo_${{ matrix.modulo }}"
-          if [ "${{ matrix.modulo }}" = "dot-claude" ]; then
-            EJEMPLO="dot-claude/ejemplo_dot_claude"
-          elif [ "${{ matrix.modulo }}" = "modulo" ]; then
-            EJEMPLO="modulo"
-          elif [ "${{ matrix.modulo }}" = "proyecto" ]; then
-            EJEMPLO="proyecto"
-          fi
-
-          echo "::group::Validando $EJEMPLO con $SCRIPT_PY"
-          python "$SCRIPT_PY" "$EJEMPLO" --strict
+      - name: Validar ejemplo (strict)
+        run: |
+          echo "::group::Ejemplo $modulo"
+          python "${{ matrix.script }}" "${{ matrix.ejemplo }}" --strict
           echo "::endgroup::"
 
-      - name: Validar plantilla correspondiente
+      - name: Validar plantilla (no-strict, placeholders permitidos)
+        if: matrix.plantilla != ''
         run: |
-          PLANTILLA="${{ matrix.modulo }}/plantilla_${{ matrix.modulo }}"
-          if [ "${{ matrix.modulo }}" = "dot-claude" ]; then
-            PLANTILLA="dot-claude/plantilla_dot_claude"
-          elif [ "${{ matrix.modulo }}" = "modulo" ]; then
-            PLANTILLA="modulo"
-          elif [ "${{ matrix.modulo }}" = "proyecto" ]; then
-            PLANTILLA="proyecto"
-          fi
-
-          SCRIPT_PY="${{ matrix.modulo }}/validar_${{ matrix.modulo }}.py"
-          if [ "${{ matrix.modulo }}" = "dot-claude" ]; then
-            SCRIPT_PY="dot-claude/validar_dot_claude.py"
-          elif [ "${{ matrix.modulo }}" = "agentes" ]; then
-            SCRIPT_PY="agentes/validar_agente.py"
-          elif [ "${{ matrix.modulo }}" = "skills" ]; then
-            SCRIPT_PY="skills/validar_skill.py"
-          elif [ "${{ matrix.modulo }}" = "commands" ]; then
-            SCRIPT_PY="commands/validar_command.py"
-          elif [ "${{ matrix.modulo }}" = "hooks" ]; then
-            SCRIPT_PY="hooks/validar_hook.py"
-          elif [ "${{ matrix.modulo }}" = "mcp" ]; then
-            SCRIPT_PY="mcp/validar_mcp.py"
-          elif [ "${{ matrix.modulo }}" = "plugins" ]; then
-            SCRIPT_PY="plugins/validar_plugin.py"
-          fi
-
-          if [ -d "$PLANTILLA" ]; then
-            echo "::group::Validando plantilla $PLANTILLA"
-            if [ "${{ matrix.modulo }}" = "modulo" ] || [ "${{ matrix.modulo }}" = "proyecto" ]; then
-              python "$SCRIPT_PY" "$PLANTILLA" || true
-            else
-              python "$SCRIPT_PY" "$PLANTILLA" --strict || true
-            fi
-            echo "::endgroup::"
-          fi
+          echo "::group::Plantilla $modulo"
+          python "${{ matrix.script }}" "${{ matrix.plantilla }}" || true
+          echo "::endgroup::"
 
   resumen:
     name: Resumen
     runs-on: ubuntu-latest
-    needs: validar
+    needs: [validar-global, validar-modulos]
     if: always()
     steps:
       - name: Resultado final
         run: |
-          if [ "${{ needs.validar.result }}" == "success" ]; then
+          if [ "${{ needs.validar-global.result }}" == "success" ] && [ "${{ needs.validar-modulos.result }}" == "success" ]; then
             echo "✅ TODOS LOS MÓDULOS PASARON LA VALIDACIÓN"
             exit 0
           else

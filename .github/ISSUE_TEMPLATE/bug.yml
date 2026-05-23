@@ -1,34 +1,34 @@
 name: Bug
- description: Reporta un bug o comportamiento inesperado
- title: "[bug] "
- labels: ["bug"]
- body:
-   - type: textarea
-     attributes:
-       label: Descripción
-       description: ¿Qué ocurrió?
-     validations:
-       required: true
-   - type: textarea
-     attributes:
-       label: Pasos para reproducir
-       description: Pasos mínimos para reproducir el bug.
-       value: |
-         1. ...
-         2. ...
-         3. ...
-     validations:
-       required: true
-   - type: textarea
-     attributes:
-       label: Comportamiento esperado
-     validations:
-       required: true
-   - type: input
-     attributes:
-       label: Versión
-       description: Versión del sistema de plantillas (ej: v1.0.0)
-   - type: textarea
-     attributes:
-       label: Contexto adicional
-       description: Logs, capturas, o cualquier otro contexto.
+description: Reporta un bug o comportamiento inesperado
+title: "[bug] "
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: Descripción
+      description: ¿Qué ocurrió?
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Pasos para reproducir
+      description: Pasos mínimos para reproducir el bug.
+      value: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: Comportamiento esperado
+    validations:
+      required: true
+  - type: input
+    attributes:
+      label: Versión
+      description: "Versión del sistema de plantillas (ej: v1.0.0)"
+  - type: textarea
+    attributes:
+      label: Contexto adicional
+      description: Logs, capturas, o cualquier otro contexto.

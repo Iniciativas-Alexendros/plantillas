@@ -13,8 +13,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from validadores import BaseValidator, Check, Resultado, Nivel, check_estructura
-from validadores.checks import check_json_parseable, check_placeholders
+from validadores import BaseValidator, Check, Resultado, check_estructura
+from validadores.checks import check_json_parseable
 
 
 class ValidadorProyecto(BaseValidator):

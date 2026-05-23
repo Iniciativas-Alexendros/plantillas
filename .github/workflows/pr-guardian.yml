@@ -111,14 +111,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # fetch-depth: 0 trae historial completo; sin esto, BASE no es
+          # alcanzable desde HEAD y `git diff` falla con "bad object".
+          fetch-depth: 0
       - name: Verificar CHANGELOG.md
         run: |
           BASE="${{ github.event.pull_request.base.sha }}"
           HEAD="${{ github.event.pull_request.head.sha }}"
-          git fetch origin "$BASE" --depth=1
 
-          # Si el PR modifica módulos o validadores, requiere CHANGELOG
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" "$HEAD")
+          # Si el PR modifica módulos o validadores, requiere CHANGELOG.
+          CHANGES=$(git diff --name-only "$BASE" "$HEAD")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
