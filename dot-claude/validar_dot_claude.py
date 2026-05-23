@@ -1,13 +1,20 @@
 #!/usr/bin/env python3
 """
-Validador de configuraciones .claude/ · v1.0.0
+Validador de configuraciones dot-claude · v2.0.0 (canon-runtime alignment)
 
-Verifica que un directorio de configuración Claude Code (raíz .claude/)
-cumpla con la estructura, settings, y referencias correctas.
+Verifica que un directorio que materializa `.claude/` (global o por proyecto)
+cumpla con el schema runtime real de Claude Code 2.1.x:
+
+  - Estructura de archivos requeridos (CLAUDE.md, settings.json, mcp.json, README.md)
+  - settings.json con schema canon-runtime (permissions + hooks; sin claves legado)
+  - mcp.json con estructura {mcpServers: {...}}
+  - CLAUDE.md sin referencias a 'herramientas/' (árbol plano post-reforma)
+  - Detección de placeholders sin rellenar (skipped en plantilla_dot_claude)
 
 Uso:
-    python validar_dot_claude.py ~/.claude
-    python validar_dot_claude.py ~/.claude --strict
+    python dot-claude/validar_dot_claude.py dot-claude/ejemplo_dot_claude --strict
+    python dot-claude/validar_dot_claude.py dot-claude/plantilla_dot_claude
+    python dot-claude/validar_dot_claude.py ~/.claude
 """
 
 import argparse
@@ -21,138 +28,421 @@ from validadores import (
     Check,
     Resultado,
     Nivel,
-    check_json_parseable,
     check_placeholders,
-    check_archivos_vacios,
-    check_estructura,
 )
 
 
-try:
-    import yaml
-    HAS_YAML = True
-except ImportError:
-    HAS_YAML = False
+# ═══════════════════════════════════════════════════════════════════════════
+# Configuración
+# ═══════════════════════════════════════════════════════════════════════════
+
+REQUIRED_FILES = ["CLAUDE.md", "settings.json", "mcp.json", "README.md"]
+
+# Claves de settings.json que el runtime NO interpreta (legado / inventadas)
+SETTINGS_CLAVES_LEGADO = [
+    "skillListingBudgetFraction",
+    "hooks.enabled",
+    "hooks.sources",
+    "hooks.autoDiscover",
+    "skills.autoDiscover",
+    "skills.preload",
+    "mcp.servers",
+    "output.language",
+    "output.style",
+]
+
+# Eventos hook canónicos del runtime Claude Code 2.1.x.
+VALID_EVENTOS_HOOK = {
+    "PreToolUse",
+    "PostToolUse",
+    "SessionStart",
+    "SessionEnd",
+    "UserPromptSubmit",
+    "Stop",
+    "Notification",
+    "PreCompact",
+}
 
 
-REQUIRED_FILES = ["CLAUDE.md", "settings.json", "mcp.json"]
-REQUIRED_DIRS = ["agents", "skills", "commands", "hooks"]
-
+# ═══════════════════════════════════════════════════════════════════════════
+# Validador
+# ═══════════════════════════════════════════════════════════════════════════
 
 class DotClaudeValidator(BaseValidator):
+    """
+    Validador para directorios que materializan .claude/ (global o proyecto).
+    Acepta tanto 'plantilla_dot_claude' como 'ejemplo_dot_claude' o un .claude/ real.
+    """
+
     def __init__(self, dot_dir: Path, strict: bool = False):
         super().__init__(dot_dir, strict)
+        self.es_plantilla = self.ruta.name == "plantilla_dot_claude"
         self.checks = [
             Check("estructura", self._check_estructura),
-            Check("json", self._check_json),
-            Check("placeholder", self._check_placeholders),
-            Check("vacio", self._check_empty_files),
-            Check("settings", self._check_settings),
-            Check("mcp", self._check_mcp_config),
-            Check("claude_md", self._check_claude_md),
+            Check("settings_json", self._check_settings_json),
+            Check("mcp_json", self._check_mcp_json),
+            Check("settings_no_legado", self._check_settings_no_legado),
+            Check("claude_md_arbol_plano", self._check_claude_md_arbol_plano),
+            Check("placeholders", self._check_placeholders),
         ]
 
-    def _check_estructura(self):
-        return check_estructura(self, REQUIRED_DIRS, REQUIRED_FILES)
+    # ──────────────────────────────────────────────────────────────────────
+    # Helpers
+    # ──────────────────────────────────────────────────────────────────────
 
-    def _check_json(self):
+    def _load_json(self, nombre: str):
+        """Carga y devuelve el contenido de un JSON del directorio, o None si falla."""
+        p = self.ruta / nombre
+        if not p.is_file():
+            return None
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return None
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Checks
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _check_estructura(self):
+        """Verifica que existan los archivos requeridos."""
         resultados = []
-        for p in self._archivos("*.json"):
-            resultados.extend(check_json_parseable(self, p))
+        for f in REQUIRED_FILES:
+            p = self.ruta / f
+            if not p.is_file():
+                resultados.append(Resultado(
+                    Nivel.ERROR, "estructura",
+                    f"Falta archivo obligatorio: {f}",
+                    f,
+                ))
+        if not resultados:
+            resultados.append(Resultado(
+                Nivel.OK, "estructura",
+                f"Archivos requeridos presentes: {', '.join(REQUIRED_FILES)}",
+            ))
+        return resultados
+
+    def _check_settings_json(self):
+        """
+        Valida el schema runtime de settings.json:
+          - JSON parseable
+          - Top-level dict
+          - Contiene 'permissions' y 'hooks'
+          - permissions.allow y permissions.deny son listas de strings
+          - hooks es dict cuyo valor es lista de {matcher, hooks: [{type, command}]}
+        """
+        resultados = []
+        p = self.ruta / "settings.json"
+        if not p.is_file():
+            return resultados  # _check_estructura ya lo reporta
+
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"settings.json JSON inválido: {e}",
+                "settings.json",
+            ))
+            return resultados
+
+        if not isinstance(data, dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                "settings.json debe ser un objeto JSON (dict)",
+                "settings.json",
+            ))
+            return resultados
+
+        # Verificar 'permissions'
+        if "permissions" not in data:
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                "settings.json falta clave 'permissions'",
+                "settings.json",
+            ))
+        else:
+            perms = data["permissions"]
+            if not isinstance(perms, dict):
+                resultados.append(Resultado(
+                    Nivel.ERROR, "settings_json",
+                    "'permissions' debe ser un objeto",
+                    "settings.json",
+                ))
+            else:
+                for campo in ("allow", "deny"):
+                    if campo not in perms:
+                        resultados.append(Resultado(
+                            Nivel.ERROR, "settings_json",
+                            f"'permissions' falta campo '{campo}'",
+                            "settings.json",
+                        ))
+                    elif not isinstance(perms[campo], list):
+                        resultados.append(Resultado(
+                            Nivel.ERROR, "settings_json",
+                            f"'permissions.{campo}' debe ser una lista",
+                            "settings.json",
+                        ))
+                    else:
+                        for item in perms[campo]:
+                            if not isinstance(item, str):
+                                resultados.append(Resultado(
+                                    Nivel.ERROR, "settings_json",
+                                    f"'permissions.{campo}' contiene un elemento no-string: {item!r}",
+                                    "settings.json",
+                                ))
+                                break
+
+        # Verificar 'hooks'
+        if "hooks" not in data:
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                "settings.json falta clave 'hooks'",
+                "settings.json",
+            ))
+        else:
+            hooks = data["hooks"]
+            if not isinstance(hooks, dict):
+                resultados.append(Resultado(
+                    Nivel.ERROR, "settings_json",
+                    "'hooks' debe ser un objeto (dict con eventos como claves)",
+                    "settings.json",
+                ))
+            else:
+                for evento, entradas in hooks.items():
+                    if evento not in VALID_EVENTOS_HOOK:
+                        resultados.append(Resultado(
+                            Nivel.WARNING, "settings_json",
+                            f"'hooks.{evento}' no es un evento reconocido por el runtime "
+                            f"(válidos: {sorted(VALID_EVENTOS_HOOK)})",
+                            "settings.json",
+                        ))
+                    if not isinstance(entradas, list):
+                        resultados.append(Resultado(
+                            Nivel.ERROR, "settings_json",
+                            f"'hooks.{evento}' debe ser una lista",
+                            "settings.json",
+                        ))
+                        continue
+                    for i, entrada in enumerate(entradas):
+                        if not isinstance(entrada, dict):
+                            resultados.append(Resultado(
+                                Nivel.ERROR, "settings_json",
+                                f"'hooks.{evento}[{i}]' debe ser un objeto",
+                                "settings.json",
+                            ))
+                            continue
+                        if "matcher" not in entrada:
+                            resultados.append(Resultado(
+                                Nivel.ERROR, "settings_json",
+                                f"'hooks.{evento}[{i}]' falta 'matcher'",
+                                "settings.json",
+                            ))
+                        if "hooks" not in entrada or not isinstance(entrada["hooks"], list):
+                            resultados.append(Resultado(
+                                Nivel.ERROR, "settings_json",
+                                f"'hooks.{evento}[{i}]' falta 'hooks' (lista)",
+                                "settings.json",
+                            ))
+                            continue
+                        for j, h in enumerate(entrada["hooks"]):
+                            if not isinstance(h, dict):
+                                resultados.append(Resultado(
+                                    Nivel.ERROR, "settings_json",
+                                    f"'hooks.{evento}[{i}].hooks[{j}]' debe ser un objeto",
+                                    "settings.json",
+                                ))
+                                continue
+                            if h.get("type") != "command":
+                                resultados.append(Resultado(
+                                    Nivel.ERROR, "settings_json",
+                                    f"'hooks.{evento}[{i}].hooks[{j}].type' debe ser 'command'",
+                                    "settings.json",
+                                ))
+                            cmd = h.get("command", "")
+                            if not isinstance(cmd, str) or not cmd.strip():
+                                resultados.append(Resultado(
+                                    Nivel.ERROR, "settings_json",
+                                    f"'hooks.{evento}[{i}].hooks[{j}].command' debe ser string no vacío",
+                                    "settings.json",
+                                ))
+
+        if not resultados:
+            resultados.append(Resultado(
+                Nivel.OK, "settings_json",
+                "settings.json válido (schema canon-runtime)",
+                "settings.json",
+            ))
+        return resultados
+
+    def _check_mcp_json(self):
+        """Valida que mcp.json tenga la estructura {mcpServers: {...}}."""
+        resultados = []
+        p = self.ruta / "mcp.json"
+        if not p.is_file():
+            return resultados  # _check_estructura ya lo reporta
+
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as e:
+            resultados.append(Resultado(
+                Nivel.ERROR, "mcp_json",
+                f"mcp.json JSON inválido: {e}",
+                "mcp.json",
+            ))
+            return resultados
+
+        if not isinstance(data, dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "mcp_json",
+                "mcp.json debe ser un objeto JSON",
+                "mcp.json",
+            ))
+            return resultados
+
+        if "mcpServers" not in data:
+            resultados.append(Resultado(
+                Nivel.ERROR, "mcp_json",
+                "mcp.json debe tener clave raíz 'mcpServers'",
+                "mcp.json",
+            ))
+        elif not isinstance(data["mcpServers"], dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "mcp_json",
+                "'mcpServers' debe ser un objeto",
+                "mcp.json",
+            ))
+        else:
+            resultados.append(Resultado(
+                Nivel.OK, "mcp_json",
+                f"mcp.json válido ({len(data['mcpServers'])} servidor(es))",
+                "mcp.json",
+            ))
+        return resultados
+
+    def _check_settings_no_legado(self):
+        """Detecta claves obsoletas (legado) en settings.json y emite WARNING."""
+        resultados = []
+        p = self.ruta / "settings.json"
+        if not p.is_file():
+            return resultados
+
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return resultados  # _check_settings_json ya lo reporta
+
+        if not isinstance(data, dict):
+            return resultados
+
+        encontradas = []
+
+        # Claves top-level
+        TOP_LEVEL_LEGADO = {
+            "skillListingBudgetFraction",
+            "skills",
+            "output",
+        }
+        for clave in TOP_LEVEL_LEGADO:
+            if clave in data:
+                encontradas.append(clave)
+
+        # Claves anidadas: hooks.enabled, hooks.sources, hooks.autoDiscover
+        if "hooks" in data and isinstance(data["hooks"], dict):
+            hooks_dict = data["hooks"]
+            for sub in ("enabled", "sources", "autoDiscover"):
+                if sub in hooks_dict:
+                    encontradas.append(f"hooks.{sub}")
+
+        # mcp.servers (dentro del settings, no el mcp.json separado)
+        if "mcp" in data and isinstance(data["mcp"], dict):
+            if "servers" in data["mcp"]:
+                encontradas.append("mcp.servers")
+
+        if encontradas:
+            for clave in encontradas:
+                resultados.append(Resultado(
+                    Nivel.WARNING, "settings_no_legado",
+                    f"Clave obsoleta en settings.json: '{clave}' — el runtime la ignora",
+                    "settings.json",
+                ))
+        else:
+            resultados.append(Resultado(
+                Nivel.OK, "settings_no_legado",
+                "Sin claves legado en settings.json",
+                "settings.json",
+            ))
+        return resultados
+
+    def _check_claude_md_arbol_plano(self):
+        """Emite WARNING si CLAUDE.md menciona 'herramientas/' (árbol pre-reforma)."""
+        resultados = []
+        p = self.ruta / "CLAUDE.md"
+        if not p.is_file():
+            return resultados
+
+        content = p.read_text(encoding="utf-8")
+        # Buscar fuera de codeblocks para evitar falsos positivos en ejemplos
+        content_sin_code = self._extraer_fuera_codeblock(content)
+
+        if "herramientas/" in content_sin_code:
+            resultados.append(Resultado(
+                Nivel.WARNING, "claude_md_arbol_plano",
+                "CLAUDE.md menciona 'herramientas/' — usar árbol plano post-reforma",
+                "CLAUDE.md",
+            ))
+        else:
+            resultados.append(Resultado(
+                Nivel.OK, "claude_md_arbol_plano",
+                "CLAUDE.md no menciona 'herramientas/' (árbol plano OK)",
+                "CLAUDE.md",
+            ))
         return resultados
 
     def _check_placeholders(self):
-        return check_placeholders(self, extensiones=(".json", ".md", ".yaml", ".yml", ".txt"))
+        """
+        Busca placeholders sin rellenar en todos los archivos del directorio.
+        Se salta el check si estamos validando plantilla_dot_claude.
+        """
+        if self.es_plantilla:
+            return [Resultado(
+                Nivel.OK, "placeholders",
+                "Skipped: plantilla_dot_claude (placeholders son esperados)",
+            )]
+        return check_placeholders(
+            self,
+            extensiones=(".json", ".md", ".yaml", ".yml", ".txt", ".sh"),
+        )
 
-    def _check_empty_files(self):
-        return check_archivos_vacios(self, min_bytes=30)
 
-    def _check_settings(self):
-        resultados = []
-        settings = self.ruta / "settings.json"
-        if not settings.exists():
-            return resultados
-
-        data = json.loads(settings.read_text(encoding="utf-8"))
-
-        # Verificar campos comunes de settings
-        if "model" in data:
-            model = data["model"]
-            if model not in ("opus", "sonnet", "haiku", "opusplan"):
-                resultados.append(
-                    Resultado(Nivel.WARNING, "settings", f"settings.json 'model' no reconocido: '{model}'", "settings.json")
-                )
-
-        return resultados
-
-    def _check_mcp_config(self):
-        resultados = []
-        mcp = self.ruta / "mcp.json"
-        if not mcp.exists():
-            return resultados
-
-        data = json.loads(mcp.read_text(encoding="utf-8"))
-        if not isinstance(data, dict):
-            resultados.append(
-                Resultado(Nivel.ERROR, "mcp", "mcp.json debe ser un objeto", "mcp.json")
-            )
-            return resultados
-
-        if "mcpServers" not in data and "servers" not in data:
-            resultados.append(
-                Resultado(Nivel.WARNING, "mcp", "mcp.json debería tener 'mcpServers' o 'servers'", "mcp.json")
-            )
-
-        return resultados
-
-    def _check_claude_md(self):
-        resultados = []
-        claude_md = self.ruta / "CLAUDE.md"
-        if not claude_md.exists():
-            return resultados
-
-        content = claude_md.read_text(encoding="utf-8")
-
-        # Verificar frontmatter (opcional, warning)
-        if content.startswith("---"):
-            parts = content.split("---", 2)
-            if len(parts) >= 3 and HAS_YAML:
-                try:
-                    data = yaml.safe_load(parts[1])
-                    if isinstance(data, dict) and "name" not in data:
-                        resultados.append(
-                            Resultado(Nivel.WARNING, "claude_md", "CLAUDE.md falta campo 'name' en frontmatter", "CLAUDE.md")
-                        )
-                except Exception as e:
-                    resultados.append(
-                        Resultado(Nivel.WARNING, "claude_md", f"CLAUDE.md YAML inválido: {e}", "CLAUDE.md")
-                    )
-        # else: sin frontmatter es válido, no generar warning
-
-        # Verificar secciones mínimas
-        if "## Estructura" not in content and "## Introducción" not in content:
-            resultados.append(
-                Resultado(Nivel.WARNING, "claude_md", "CLAUDE.md debería tener '## Estructura' o '## Introducción'", "CLAUDE.md")
-            )
-
-        return resultados
-
+# ═══════════════════════════════════════════════════════════════════════════
+# Main
+# ═══════════════════════════════════════════════════════════════════════════
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Valida una configuración .claude/.")
-    parser.add_argument("dot_dir", help="Directorio .claude/ a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser = argparse.ArgumentParser(
+        description="Valida un directorio de configuración .claude/ (canon-runtime)."
+    )
+    parser.add_argument(
+        "ruta",
+        help="Directorio a validar (plantilla_dot_claude, ejemplo_dot_claude, o ~/.claude)",
+    )
+    parser.add_argument(
+        "--strict",
+        action="store_true",
+        help="Tratar warnings como errores (para CI/CD)",
+    )
     args = parser.parse_args()
 
-    dot_path = Path(args.dot_dir)
-    if not dot_path.exists():
-        print(f"❌ El directorio no existe: {dot_path}")
+    ruta = Path(args.ruta).resolve()
+    if not ruta.exists():
+        print(f"No existe: {ruta}")
         return 1
-    if not dot_path.is_dir():
-        print(f"❌ No es un directorio: {dot_path}")
+    if not ruta.is_dir():
+        print(f"No es un directorio: {ruta}")
         return 1
 
-    validator = DotClaudeValidator(dot_path, strict=args.strict)
+    validator = DotClaudeValidator(ruta, strict=args.strict)
     return validator.run()
 
 

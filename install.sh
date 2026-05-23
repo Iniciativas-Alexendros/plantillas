@@ -126,7 +126,7 @@ if [[ "$DRY_RUN" -eq 0 ]]; then
   echo
   echo "Próximos pasos:"
   echo "  1. Explora el índice:   cat ${PREFIX}/INDEX.md"
-  echo "  2. Valida un ejemplo:   python ${PREFIX}/agentes/validar_agente.py ${PREFIX}/agentes/ejemplo_agente/ --strict"
+  echo "  2. Valida un ejemplo:   python ${PREFIX}/agentes/validar_agente.py ${PREFIX}/agentes/ejemplo_agente.md --strict"
   echo "  3. Inicializa un módulo: ${PREFIX}/claude-init"
   echo
   echo "Para actualizar en el futuro:"

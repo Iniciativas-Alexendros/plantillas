@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# =============================================================================
+# Hook Claude Code · pre-bash-secret-guard
+# =============================================================================
+# name: pre-bash-secret-guard
+# matcher: PreToolUse
+# tool_pattern: Bash(*)
+# description: >
+#   Intercepta cada invocación de la herramienta Bash y deniega la ejecución
+#   si el comando contiene patrones de secreto conocidos (GitHub tokens,
+#   OpenAI/Stripe sk-, AWS AKIA, etc.). Protege contra filtraciones accidentales
+#   a través de comandos como `echo`, `curl -d` o `printf` con secretos inline.
+# version: 1.0.0
+# =============================================================================
+
+set -euo pipefail
+
+# =============================================================================
+# PATRONES DE SECRETO
+# Cada patrón es un regex de bash extendido (ERE). Si el comando coincide con
+# cualquiera de ellos, el hook deniega la ejecución.
+# =============================================================================
+SECRET_PATTERNS=(
+    'gh[pousr]_[A-Za-z0-9_]{36,}'           # GitHub tokens (todos los tipos)
+    'ghs_[A-Za-z0-9_]{36,}'                  # GitHub Actions tokens
+    'sk-[a-zA-Z0-9]{20,}'                    # OpenAI / Stripe sk-*
+    'AKIA[0-9A-Z]{16}'                        # AWS Access Key ID
+    'AIza[0-9A-Za-z_-]{35}'                  # Google API key
+    '[0-9a-f]{32}-[0-9a-f]{32}'              # SendGrid API key
+    'xoxb-[0-9]+-[0-9A-Za-z]+'              # Slack bot token
+    'xoxp-[0-9]+-[0-9A-Za-z]+'              # Slack user token
+    'eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}'  # JWT compacto
+)
+
+# =============================================================================
+# ENTRADA
+# =============================================================================
+input="$(cat)"
+
+# Extrae el campo `command` del JSON de entrada.
+# Usa jq si está disponible; si no, python3 como fallback.
+if command -v jq &>/dev/null; then
+    command_str="$(printf '%s' "$input" | jq -r '.tool_input.command // ""' 2>/dev/null)"
+else
+    command_str="$(printf '%s' "$input" | python3 -c \
+        "import json,sys; d=json.load(sys.stdin); print(d.get('tool_input',{}).get('command',''))" \
+        2>/dev/null || echo "")"
+fi
+
+# =============================================================================
+# LÓGICA DE DETECCIÓN
+# =============================================================================
+detected_pattern=""
+
+for pattern in "${SECRET_PATTERNS[@]}"; do
+    if [[ "$command_str" =~ $pattern ]]; then
+        detected_pattern="$pattern"
+        break
+    fi
+done
+
+# =============================================================================
+# DECISIÓN
+# =============================================================================
+if [[ -n "$detected_pattern" ]]; then
+    # Construir el motivo de denegación escapando comillas para JSON válido.
+    safe_pattern="${detected_pattern//\"/\\\"}"
+    reason="Comando denegado: contiene patrón de secreto detectado (${safe_pattern}). Usa variables de entorno o un gestor de secretos en lugar de valores inline."
+    printf '{"decision":"deny","reason":"%s"}\n' "$reason"
+    # Registrar en stderr para el log de Claude Code (no afecta la decisión).
+    printf '[pre-bash-secret-guard] DENEGADO — patrón: %s\n' "$detected_pattern" >&2
+else
+    printf '{"decision":"allow","reason":"Sin patrones de secreto detectados en el comando."}\n'
+fi

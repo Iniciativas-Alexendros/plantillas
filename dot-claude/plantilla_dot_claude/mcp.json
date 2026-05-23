@@ -1,27 +1,11 @@
 {
-  "_comment": "CONFIGURACIÓN MCP GLOBAL · Playbook de contenido",
-  "_purpose": "Define los servidores MCP disponibles globalmente.\nEstos servidores están disponibles en TODOS los proyectos.\n\nINSTRUCCIONES: Añade solo los servidores que tengas configurados.\nElimina los ejemplos que no apliquen.",
-
   "mcpServers": {
-    "_comment_filesystem": "Acceso al filesystem local",
-    "filesystem": {
+    "<nombre-servidor>": {
       "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${HOME}"]
-    },
-
-    "_comment_github": "Integración con GitHub",
-    "github": {
-      "command": "npx",
-      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "args": ["-y", "@modelcontextprotocol/server-NOMBRE"],
       "env": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+        "VARIABLE_ENTORNO": "${VARIABLE_ENTORNO}"
       }
-    },
-
-    "_comment_fetch": "Lectura de URLs",
-    "fetch": {
-      "command": "uvx",
-      "args": ["mcp-server-fetch"]
     }
   }
 }

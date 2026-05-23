@@ -1,16 +1,26 @@
 #!/usr/bin/env python3
 """
-Validador de Commands Claude Code · v1.0.0
+Validador de Commands Claude Code · v2.0.0 (canon-runtime alignment)
 
-Verifica que un directorio de comando slash cumpla con la estructura
-estipulada por el sistema de plantillas.
+Acepta el formato single-file `<nombre-comando>.md` con frontmatter
+(description + opcionales argument-hint, allowed-tools) + cuerpo en
+secciones canon (Trigger, Instrucciones, Parámetros, Output esperado,
+Restricciones, Referencias).
 
 Uso:
-    python validar_command.py ~/.claude/commands/mi-comando
-    python validar_command.py ~/.claude/commands/mi-comando --strict
+    python validar_command.py commands/ejemplo_command.md
+    python validar_command.py commands/ejemplo_command.md --strict
+    python validar_command.py commands/plantilla_command.md
+
+Compatibilidad: si se pasa un directorio (estructura legado), busca
+`COMMAND.md` dentro y emite warning de migración pendiente.
+
+Referencia:
+    - Claude Code Commands: https://code.claude.com/docs/en/commands.md
 """
 
 import argparse
+import re
 import sys
 from pathlib import Path
 
@@ -20,86 +30,227 @@ from validadores import (
     Check,
     Resultado,
     Nivel,
-    check_placeholders,
-    check_archivos_vacios,
-    check_estructura,
+    check_yaml_frontmatter,
 )
 
+try:
+    import yaml
+    HAS_YAML = True
+except ImportError:
+    HAS_YAML = False
 
-REQUIRED_FILES = ["COMMAND.md"]
-REQUIRED_DIRS = []
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CONFIGURACIÓN
+# ═══════════════════════════════════════════════════════════════════════════════
+
+FRONTMATTER_REQUIRED = ["description"]
+
+VALID_TOOLS = {
+    "Read", "Grep", "Glob", "Edit", "Write", "Bash",
+    "Agent", "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList",
+    "WebFetch", "WebSearch", "NotebookEdit", "LSP",
+}
+
+REQUIRED_SECTIONS = [
+    "## Trigger",
+    "## Instrucciones",
+    "## Parámetros",
+    "## Output esperado",
+    "## Restricciones",
+    "## Referencias",
+]
+
+# Kebab-case estricto o nombres reservados para plantilla/ejemplo
+KEBAB_RE = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")
+NOMBRES_ESPECIALES = {"plantilla_command", "ejemplo_command"}
+
+MIN_BYTES = 500
+MAX_BYTES = 15_000
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# VALIDADOR
+# ═══════════════════════════════════════════════════════════════════════════════
 
 class CommandValidator(BaseValidator):
-    def __init__(self, cmd_dir: Path, strict: bool = False):
-        super().__init__(cmd_dir, strict)
+    """Validador para commands single-file (formato canon-runtime v2)."""
+
+    def __init__(self, archivo: Path, strict: bool = False):
+        # BaseValidator necesita un directorio; usamos el padre del archivo.
+        super().__init__(archivo.parent, strict)
+        self.archivo = archivo.resolve()
+        self.es_plantilla = self.archivo.name.startswith("plantilla_")
         self.checks = [
-            Check("estructura", self._check_estructura),
-            Check("placeholder", self._check_placeholders),
-            Check("vacio", self._check_empty_files),
-            Check("contenido", self._check_contenido),
+            Check("formato",      self._check_formato),
+            Check("frontmatter",  self._check_frontmatter),
+            Check("allowed_tools",self._check_allowed_tools),
+            Check("secciones",    self._check_secciones),
+            Check("placeholders", self._check_placeholders),
+            Check("longitud",     self._check_longitud),
+            Check("slug_filename",self._check_slug_filename),
         ]
 
-    def _check_estructura(self):
-        return check_estructura(self, REQUIRED_DIRS, REQUIRED_FILES)
+    # ──────────────────────────────────────────────────────────────────────
+    # Helpers
+    # ──────────────────────────────────────────────────────────────────────
 
-    def _check_placeholders(self):
-        return check_placeholders(self)
+    def _frontmatter_data(self):
+        """Extrae el frontmatter YAML como dict, o None si falla/no hay yaml."""
+        if not HAS_YAML or not self.archivo.is_file():
+            return None
+        content = self.archivo.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            return None
+        parts = content.split("---", 2)
+        if len(parts) < 3:
+            return None
+        try:
+            data = yaml.safe_load(parts[1])
+            return data if isinstance(data, dict) else None
+        except Exception:
+            return None
 
-    def _check_empty_files(self):
-        return check_archivos_vacios(self, min_bytes=30)
+    def _cuerpo(self) -> str:
+        """Devuelve el cuerpo del archivo sin el frontmatter."""
+        if not self.archivo.is_file():
+            return ""
+        content = self.archivo.read_text(encoding="utf-8")
+        if not content.startswith("---"):
+            return content
+        parts = content.split("---", 2)
+        return parts[2] if len(parts) >= 3 else content
 
-    def _check_contenido(self):
+    def _rel(self, p: Path) -> str:
+        """Override: devuelve ruta relativa al archivo, no al parent dir."""
+        try:
+            return str(p.relative_to(self.archivo.parent))
+        except ValueError:
+            return p.name
+
+    # ──────────────────────────────────────────────────────────────────────
+    # Checks
+    # ──────────────────────────────────────────────────────────────────────
+
+    def _check_formato(self):
+        if not self.archivo.is_file():
+            return [Resultado(Nivel.ERROR, "formato",
+                              f"{self.archivo.name} no es un archivo")]
+        if self.archivo.suffix != ".md":
+            return [Resultado(Nivel.ERROR, "formato",
+                              f"{self.archivo.name} no termina en .md")]
+        return []
+
+    def _check_frontmatter(self):
+        if not self.archivo.is_file():
+            return []
+        # Usa el helper canónico de validadores/checks.py
+        return check_yaml_frontmatter(self, self.archivo, FRONTMATTER_REQUIRED)
+
+    def _check_allowed_tools(self):
+        """Valida el campo opcional `allowed-tools` si está presente."""
+        data = self._frontmatter_data()
+        if not data or "allowed-tools" not in data:
+            return []
+        tools = data["allowed-tools"]
+        if not isinstance(tools, list):
+            return [Resultado(Nivel.ERROR, "allowed_tools",
+                              "campo 'allowed-tools' debe ser una lista")]
         resultados = []
-        cmd_md = self.ruta / "COMMAND.md"
-        if not cmd_md.exists():
-            return resultados
-
-        content = cmd_md.read_text(encoding="utf-8")
-
-        if "## Trigger" not in content:
-            resultados.append(
-                Resultado(Nivel.WARNING, "contenido", "COMMAND.md debería tener '## Trigger'", "COMMAND.md")
-            )
-        if "## Instrucciones" not in content:
-            resultados.append(
-                Resultado(Nivel.WARNING, "contenido", "COMMAND.md debería tener '## Instrucciones'", "COMMAND.md")
-            )
-        if "## Ejemplo de uso" not in content:
-            resultados.append(
-                Resultado(Nivel.WARNING, "contenido", "COMMAND.md debería tener '## Ejemplo de uso'", "COMMAND.md")
-            )
-
-        # Verificar que el nombre del archivo es kebab-case (ignorar prefijos de ejemplo/plantilla)
-        nombre = self.ruta.name
-        nombre_limpio = nombre
-        for prefijo in ("ejemplo_", "plantilla_"):
-            if nombre_limpio.startswith(prefijo):
-                nombre_limpio = nombre_limpio[len(prefijo):]
-                break
-        if not all(c.islower() or c.isdigit() or c == '-' for c in nombre_limpio):
-            resultados.append(
-                Resultado(Nivel.WARNING, "contenido", f"Nombre del directorio '{nombre}' no es kebab-case")
-            )
-
+        for tool in tools:
+            if not isinstance(tool, str):
+                resultados.append(Resultado(Nivel.ERROR, "allowed_tools",
+                                            f"tool inválido: {tool!r}"))
+                continue
+            base = tool.split("(")[0]
+            if base not in VALID_TOOLS and not base.startswith("mcp__"):
+                resultados.append(Resultado(Nivel.WARNING, "allowed_tools",
+                                            f"tool '{tool}' no está en la lista canon"))
         return resultados
 
+    def _check_secciones(self):
+        """Verifica que todas las secciones canon están presentes."""
+        cuerpo = self._cuerpo()
+        resultados = []
+        for seccion in REQUIRED_SECTIONS:
+            if seccion not in cuerpo:
+                resultados.append(Resultado(Nivel.ERROR, "secciones",
+                                            f"falta sección obligatoria: '{seccion}'"))
+        return resultados
+
+    def _check_placeholders(self):
+        """En plantillas, los placeholders son esperados y se omite el check."""
+        if self.es_plantilla:
+            return []
+        cuerpo = self._cuerpo()
+        cuerpo_limpio = self._extraer_fuera_codeblock(cuerpo)
+        for pattern in self.PLACEHOLDER_PATTERNS:
+            if pattern.search(cuerpo_limpio):
+                return [Resultado(Nivel.WARNING, "placeholders",
+                                  f"contiene placeholders sin rellenar "
+                                  f"(patrón: {pattern.pattern})")]
+        return []
+
+    def _check_longitud(self):
+        """Warning si el archivo es sospechosamente corto o muy largo."""
+        if not self.archivo.is_file():
+            return []
+        size = self.archivo.stat().st_size
+        resultados = []
+        if size < MIN_BYTES:
+            resultados.append(Resultado(Nivel.WARNING, "longitud",
+                                        f"archivo demasiado corto ({size} bytes); "
+                                        f"cuerpo del comando posiblemente incompleto"))
+        elif size > MAX_BYTES:
+            resultados.append(Resultado(Nivel.WARNING, "longitud",
+                                        f"archivo demasiado largo ({size} bytes); "
+                                        f"considera dividir en subcomandos"))
+        return resultados
+
+    def _check_slug_filename(self):
+        """El nombre del archivo (sin .md) debe ser kebab-case o un nombre especial."""
+        slug = self.archivo.stem  # nombre sin extensión
+        if slug in NOMBRES_ESPECIALES:
+            return []
+        if not KEBAB_RE.match(slug):
+            return [Resultado(Nivel.ERROR, "slug_filename",
+                              f"nombre de archivo '{slug}' no es kebab-case "
+                              f"(ej: test-cobertura, deploy, code-review)")]
+        return []
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# MAIN
+# ═══════════════════════════════════════════════════════════════════════════════
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Valida un comando Claude Code.")
-    parser.add_argument("cmd_dir", help="Directorio del comando a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser = argparse.ArgumentParser(
+        description="Valida un command Claude Code single-file (canon-runtime v2)."
+    )
+    parser.add_argument("ruta", help="Ruta al archivo .md del comando (o dir legado)")
+    parser.add_argument("--strict", action="store_true",
+                        help="Tratar warnings como errores (CI/CD)")
     args = parser.parse_args()
 
-    cmd_path = Path(args.cmd_dir)
-    if not cmd_path.exists():
-        print(f"❌ El directorio no existe: {cmd_path}")
-        return 1
-    if not cmd_path.is_dir():
-        print(f"❌ No es un directorio: {cmd_path}")
+    ruta = Path(args.ruta).resolve()
+
+    if not ruta.exists():
+        print(f"❌ No existe: {ruta}")
         return 1
 
-    validator = CommandValidator(cmd_path, strict=args.strict)
+    # Compatibilidad legado: si se pasa un directorio, buscar COMMAND.md dentro
+    if ruta.is_dir():
+        legacy = ruta / "COMMAND.md"
+        if not legacy.is_file():
+            print(f"❌ Dir sin COMMAND.md: {ruta}")
+            return 1
+        print(f"⚠️  Modo legado: validando {legacy} "
+              f"(migrar a single-file <nombre>.md)")
+        archivo = legacy
+    else:
+        archivo = ruta
+
+    validator = CommandValidator(archivo, strict=args.strict)
     return validator.run()
 
 
