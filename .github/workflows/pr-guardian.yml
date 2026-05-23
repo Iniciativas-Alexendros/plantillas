@@ -56,8 +56,10 @@ jobs:
           fi
           echo "::endgroup::"
 
-      # ── 2. Tamaño del PR ────────────────────────────────────────────────
+      # ── 2. Tamaño del PR (advisory — no bloquea otros checks) ─────────
       - name: Contar líneas cambiadas
+        id: pr_size
+        continue-on-error: true
         run: |
           echo "::group::PR Size"
           LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" \
