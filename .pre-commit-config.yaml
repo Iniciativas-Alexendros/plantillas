@@ -22,22 +22,23 @@ repos:
     hooks:
       - id: detect-placeholders
         name: Detectar placeholders sin rellenar
-        entry: python -c "
-import sys, re
-placeholder = re.compile(r'\[AS[IÍ]\]|\[nombre-.+?\]|\[descripción .+?\]|\[tool[0-9]*\]|\[skill[0-9]*\]|\[Paso [0-9]+\]|\[propósito\]|\[qué .+?\]|\[cuándo .+?\]|\[cómo .+?\]')
-files = sys.argv[1:]
-err = 0
-for f in files:
-    if f.endswith(('.md','.json','.yaml','.yml','.txt')):
-        txt = open(f).read()
-        clean = re.sub(r'```[\s\S]*?```', '', txt)
-        clean = re.sub(r'`[^`]+`', '', clean)
-        m = placeholder.search(clean)
-        if m:
-            print(f'PLACEHOLDER: {f} → {m.group()}')
-            err = 1
-sys.exit(err)
-"
+        entry: |
+          python -c "
+          import sys, re
+          placeholder = re.compile(r'\[AS[IÍ]\]|\[nombre-.+?\]|\[descripción .+?\]|\[tool[0-9]*\]|\[skill[0-9]*\]|\[Paso [0-9]+\]|\[propósito\]|\[qué .+?\]|\[cuándo .+?\]|\[cómo .+?\]')
+          files = sys.argv[1:]
+          err = 0
+          for f in files:
+              if f.endswith(('.md','.json','.yaml','.yml','.txt')):
+                  txt = open(f).read()
+                  clean = re.sub(r'\`\`\`[\s\S]*?\`\`\`', '', txt)
+                  clean = re.sub(r'\`[^\`]+\`', '', clean)
+                  m = placeholder.search(clean)
+                  if m:
+                      print(f'PLACEHOLDER: {f} -> {m.group()}')
+                      err = 1
+          sys.exit(err)
+          "
         language: system
         files: \.(md|json|yaml|yml|txt)$
         pass_filenames: true
@@ -65,19 +66,24 @@ sys.exit(err)
 
       - id: validate-modules
         name: Validar ejemplos de módulos
-        entry: bash -c '
-          cd "$(git rev-parse --show-toplevel)"
-          python agentes/validar_agente.py agentes/ejemplo_agente/ --strict
-          python skills/validar_skill.py skills/ejemplo_skill/ --strict
-          python commands/validar_command.py commands/ejemplo_command/ --strict
-          python hooks/validar_hook.py hooks/ejemplo_hook/ --strict
-          python mcp/validar_mcp.py mcp/ejemplo_mcp/ --strict
-          python plugins/validar_plugin.py plugins/ejemplo_plugin/ --strict
-          python dot-claude/validar_dot_claude.py dot-claude/ejemplo_dot_claude/ --strict
-          python repositorios/validar_repositorio.py repositorios/ejemplo_repositorio/ --strict --visibility public
-          python modulo/validar_modulo.py modulo/ --strict
-          python proyecto/validar_proyecto.py proyecto/ --strict
-        '
+        entry: |
+          bash -c '
+            cd "$(git rev-parse --show-toplevel)"
+            python agentes/validar_agente.py agentes/ejemplo_agente.md --strict
+            python skills/validar_skill.py skills/ejemplo_skill/ --strict
+            python commands/validar_command.py commands/ejemplo_command.md --strict
+            python hooks/validar_hook.py hooks/ejemplo_hook.sh.template --strict
+            python mcp/validar_mcp.py mcp/ejemplo_mcp/ --strict
+            python plugins/validar_plugin.py plugins/ejemplo_plugin/ --strict
+            python dot-claude/validar_dot_claude.py dot-claude/ejemplo_dot_claude/ --strict
+            python repositorios/validar_repositorio.py repositorios/ejemplo_repositorio/ --strict --visibility public
+            python modulo/validar_modulo.py modulo/ --strict
+            python proyecto/validar_proyecto.py proyecto/ --strict
+            python miniapps/validar_miniapps.py miniapps/ejemplo_miniapps.md --strict
+            python autoresearch/validar_autoresearch.py autoresearch/ejemplo_autoresearch.md --strict
+            python cuadernos/validar_cuadernos.py cuadernos/ejemplo_cuadernos.md --strict
+            python knowledge/validar_knowledge.py knowledge/ejemplo_knowledge.md --strict
+          '
         language: system
         pass_filenames: false
         always_run: true

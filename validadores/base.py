@@ -3,7 +3,7 @@ BaseValidator · Clase base para todos los validadores del sistema.
 """
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from enum import Enum
 from pathlib import Path
 from typing import Callable, List
