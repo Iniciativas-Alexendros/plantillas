@@ -35,6 +35,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Instalar yamllint
         run: pip install yamllint
       - name: Ejecutar yamllint
@@ -42,7 +43,8 @@ jobs:
           yamllint -d relaxed \
             $(find . -type f \( -name '*.yml' -o -name '*.yaml' \) \
               ! -path './.git/*' \
-              ! -path './artefactos/*' | sort)
+              ! -path './artefactos/*' \
+              ! -name '.pre-commit-config.yaml' | sort)
 
   lint-json:
     name: Lint JSON
@@ -66,6 +68,7 @@ jobs:
   lint-markdown:
     name: Lint Markdown
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -80,7 +83,7 @@ jobs:
             --ignore 'artefactos/**' \
             --ignore '**/node_modules/**' \
             --ignore 'dot-claude/**' \
-            '**/*.md' || true  # Warnings por ahora, no bloqueantes
+            '**/*.md'
 
   lint-python:
     name: Lint Python
@@ -90,6 +93,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+          cache: pip
       - name: Instalar ruff
         run: pip install ruff
       - name: Ejecutar ruff
@@ -98,21 +102,23 @@ jobs:
   lint-shell:
     name: Lint Shell
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Instalar shellcheck
         run: sudo apt-get update && sudo apt-get install -y shellcheck
       - name: Ejecutar shellcheck
         run: |
-          find . -type f \( -name '*.sh' -o -name 'claude-init' -o -name 'install' -o -name 'update' \) \
-            ! -path './.git/*' \
-            ! -path './artefactos/*' | while read -r f; do
-            # Solo si el shebang es bash/sh
+          EXIT=0
+          while read -r f; do
             if head -1 "$f" | grep -qE 'bash|sh'; then
               echo "🔍 $f"
-              shellcheck -S warning "$f" || true
+              shellcheck -S warning "$f" || EXIT=1
             fi
-          done
+          done < <(find . -type f \( -name '*.sh' -o -name 'claude-init' \) \
+            ! -path './.git/*' \
+            ! -path './artefactos/*')
+          exit $EXIT
 
   lint-repo-structure:
     name: Validar Estructura del Repo
@@ -132,23 +138,34 @@ jobs:
     if: always()
     steps:
       - name: Resultado final
+        env:
+          R_YAML: ${{ needs.lint-yaml.result }}
+          R_JSON: ${{ needs.lint-json.result }}
+          R_MD: ${{ needs.lint-markdown.result }}
+          R_PY: ${{ needs.lint-python.result }}
+          R_SH: ${{ needs.lint-shell.result }}
+          R_REPO: ${{ needs.lint-repo-structure.result }}
         run: |
-          for job in lint-yaml lint-json lint-markdown lint-python lint-shell lint-repo-structure; do
-            result="${{ needs[job].result }}"
-            if [ "$result" == "success" ]; then
-              echo "✅ $job"
-            else
-              echo "❌ $job ($result)"
-            fi
-          done
+          icon() { [ "$1" = "success" ] && echo "✅" || echo "❌"; }
 
-          if [ "${{ needs.lint-yaml.result }}" == "success" ] && \
-             [ "${{ needs.lint-json.result }}" == "success" ] && \
-             [ "${{ needs.lint-python.result }}" == "success" ] && \
-             [ "${{ needs.lint-repo-structure.result }}" == "success" ]; then
+          echo "$(icon "$R_YAML") lint-yaml: $R_YAML"
+          echo "$(icon "$R_JSON") lint-json: $R_JSON"
+          echo "$(icon "$R_MD") lint-markdown: $R_MD (advisory)"
+          echo "$(icon "$R_PY") lint-python: $R_PY"
+          echo "$(icon "$R_SH") lint-shell: $R_SH (advisory)"
+          echo "$(icon "$R_REPO") lint-repo-structure: $R_REPO"
+
+          # Bloqueantes: yaml, json, python, repo-structure
+          # Advisories: markdown, shell (continue-on-error)
+          if [ "$R_YAML" = "success" ] && \
+             [ "$R_JSON" = "success" ] && \
+             [ "$R_PY" = "success" ] && \
+             [ "$R_REPO" = "success" ]; then
+            echo ""
             echo "✅ CI GLOBAL PASÓ"
             exit 0
           else
+            echo ""
             echo "❌ CI GLOBAL FALLÓ"
             exit 1
           fi

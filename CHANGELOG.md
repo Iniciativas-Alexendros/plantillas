@@ -10,6 +10,24 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 ### Added
 
 - Fase 3: Ecosistema — scripts de instalación, CONTRIBUTING.md, tests, pre-commit hooks.
+- Workflow `release.yml` para releases automáticas por tag semver (ROADMAP 3.1.4).
+- Workflow `link-check.yml` para detección semanal de enlaces rotos (ROADMAP 4.2.1).
+- Composite action `setup-validadores` para setup DRY de Python + pyyaml + pip cache.
+- Script centralizado `module-map.sh` para mapeo módulo→validador→ejemplo→plantilla.
+
+### Fixed
+
+- Vulnerabilidad de inyección de código en `pr-guardian.yml` (título del PR).
+- Deadlock lógico entre `protected-files` y `changelog-check` en `pr-guardian.yml`.
+- Job `resumen` roto en `ci-global.yml` (expresiones dinámicas no resueltas).
+- Directorios faltantes en `ejemplo_agente` y `ejemplo_dot_claude`.
+- Rutas incorrectas en `test_smoke.py` para módulos especiales (modulo, proyecto).
+- TruffleHog pineado a versión estable `v3.88.29`.
+
+### Changed
+
+- `validar-todos.yml` refactorizado con module-map (elimina ~80 líneas de if/elif).
+- `lint-markdown` y `lint-shell` usan `continue-on-error` para visibilidad en GitHub UI.
 
 ## [1.0.0] — 2026-05-23
 

@@ -21,8 +21,8 @@ MODULOS = [
     ("plugins", "validar_plugin.py", "ejemplo_plugin"),
     ("dot-claude", "validar_dot_claude.py", "ejemplo_dot_claude"),
     ("repositorios", "validar_repositorio.py", "ejemplo_repositorio"),
-    ("modulo", "validar_modulo.py", "modulo"),
-    ("proyecto", "validar_proyecto.py", "proyecto"),
+    ("modulo", "validar_modulo.py", "."),
+    ("proyecto", "validar_proyecto.py", "."),
 ]
 
 
