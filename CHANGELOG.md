@@ -11,14 +11,6 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 - Fase 3: Ecosistema — scripts de instalación, CONTRIBUTING.md, tests, pre-commit hooks.
 
-### Changed
-
-- CI consolidado de 29 → 6 checks por PR: cada workflow ahora es 1 job con steps secuenciales.
-- `ci-global.yml`: 7 jobs → 1 "Lint & Estructura" con `::group::` por check.
-- `pr-guardian.yml`: 5 jobs → 1 "PR Guardian" con todos los checks de calidad.
-- `validar-todos.yml`: 12 jobs (matrix) → 1 "Validar Módulos" con loop secuencial.
-- `security-scan.yml`: 3 jobs → 1 "Security" con detect-secrets + gitignore + TruffleHog.
-
 ## [1.0.0] — 2026-05-23
 
 ### Added
