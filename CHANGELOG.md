@@ -9,6 +9,13 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 ### Added
 
+- Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.
+- Composite action `setup-validadores` para setup DRY de Python + pyyaml.
+- Script `module-map.sh` para mapeo módulo→validador→ejemplo→plantilla.
+- Workflow `release.yml` para releases automáticas por tag semver.
+- Workflow `link-check.yml` para detección semanal de enlaces rotos.
+- Directorios faltantes en `ejemplo_agente/tools/custom/` y `ejemplo_dot_claude/`.
+- `ruff.toml` con configuración de linting para validadores.
 - **Módulo `miniapps/`** — canon nuevo para SPA single-file tipo Claude.ai artifact (categorías: dashboard, explorer, tool, playbook; runtimes: browser, electron, static). Incluye `plantilla_miniapps.md`, `ejemplo_miniapps.md` (KPI dashboard), `validar_miniapps.py` y workflow CI.
 - **Módulo `autoresearch/`** — canon nuevo para cuadernos de investigación automatizada con frontmatter `topic/sources/status/confidence`. Incluye ejemplo real sobre prompt caching vs memory en Claude API.
 - **Módulo `cuadernos/`** — canon nuevo para notas estructuradas del operador (kinds: idea, log, decision, playbook). Ejemplo: decisión de colapsar plantillas a single-file.

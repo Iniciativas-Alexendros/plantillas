@@ -8,9 +8,11 @@
 #   - Push a main/master
 #   - Manualmente (workflow_dispatch)
 #
-# Módulos validados (14 canónicos tras la reforma "canon-runtime alignment" 2026-05-23):
-#   - Single-file canon: agentes, commands, miniapps, autoresearch, cuadernos, knowledge
-#   - Dir canon (multi-archivo): dot-claude, repositorios, modulo, proyecto, skills, mcp, plugins
+# Módulos validados (14 canónicos):
+#   - Single-file canon: agentes, commands, miniapps, autoresearch, cuadernos,
+#                        knowledge
+#   - Dir canon: dot-claude, repositorios, modulo, proyecto, skills, mcp,
+#                plugins
 #   - Sh-template canon: hooks
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -23,135 +25,78 @@ on:
   workflow_dispatch:
 
 jobs:
-  validar-global:
-    name: Validar repo (validar_repo.py)
+  validar:
+    name: Validar Módulos
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
 
       - name: Instalar dependencias
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
+        run: pip install pyyaml
 
       - name: Validar estructura del repo
-        run: python validar_repo.py --strict
-
-  validar-modulos:
-    name: Validar ${{ matrix.modulo }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # ── Single-file canon (.md) ─────────────────────────────────────
-          - modulo: agentes
-            script: agentes/validar_agente.py
-            ejemplo: agentes/ejemplo_agente.md
-            plantilla: agentes/plantilla_agente.md
-          - modulo: commands
-            script: commands/validar_command.py
-            ejemplo: commands/ejemplo_command.md
-            plantilla: commands/plantilla_command.md
-          - modulo: miniapps
-            script: miniapps/validar_miniapps.py
-            ejemplo: miniapps/ejemplo_miniapps.md
-            plantilla: miniapps/plantilla_miniapps.md
-          - modulo: autoresearch
-            script: autoresearch/validar_autoresearch.py
-            ejemplo: autoresearch/ejemplo_autoresearch.md
-            plantilla: autoresearch/plantilla_autoresearch.md
-          - modulo: cuadernos
-            script: cuadernos/validar_cuadernos.py
-            ejemplo: cuadernos/ejemplo_cuadernos.md
-            plantilla: cuadernos/plantilla_cuadernos.md
-          - modulo: knowledge
-            script: knowledge/validar_knowledge.py
-            ejemplo: knowledge/ejemplo_knowledge.md
-            plantilla: knowledge/plantilla_knowledge.md
-
-          # ── Sh-template canon (.sh.template) ─────────────────────────────
-          - modulo: hooks
-            script: hooks/validar_hook.py
-            ejemplo: hooks/ejemplo_hook.sh.template
-            plantilla: hooks/plantilla_hook.sh.template
-
-          # ── Dir canon (multi-archivo) ────────────────────────────────────
-          - modulo: skills
-            script: skills/validar_skill.py
-            ejemplo: skills/ejemplo_skill
-            plantilla: skills/plantilla_skill
-          - modulo: mcp
-            script: mcp/validar_mcp.py
-            ejemplo: mcp/ejemplo_mcp
-            plantilla: mcp/plantilla_mcp
-          - modulo: plugins
-            script: plugins/validar_plugin.py
-            ejemplo: plugins/ejemplo_plugin
-            plantilla: plugins/plantilla_plugin
-          - modulo: dot-claude
-            script: dot-claude/validar_dot_claude.py
-            ejemplo: dot-claude/ejemplo_dot_claude
-            plantilla: dot-claude/plantilla_dot_claude
-          - modulo: repositorios
-            script: repositorios/validar_repositorio.py
-            ejemplo: repositorios/ejemplo_repositorio
-            plantilla: repositorios/plantilla_repositorio
-
-          # ── Módulos especiales (raíz = plantilla) ────────────────────────
-          - modulo: modulo
-            script: modulo/validar_modulo.py
-            ejemplo: modulo
-            plantilla: ""
-          - modulo: proyecto
-            script: proyecto/validar_proyecto.py
-            ejemplo: proyecto
-            plantilla: ""
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
-
-      - name: Instalar dependencias
         run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
-
-      - name: Validar ejemplo (strict)
-        run: |
-          echo "::group::Ejemplo $modulo"
-          python "${{ matrix.script }}" "${{ matrix.ejemplo }}" --strict
+          echo "::group::validar_repo.py"
+          python validar_repo.py --strict
           echo "::endgroup::"
 
-      - name: Validar plantilla (no-strict, placeholders permitidos)
-        if: matrix.plantilla != ''
+      - name: Validar todos los módulos
         run: |
-          echo "::group::Plantilla $modulo"
-          python "${{ matrix.script }}" "${{ matrix.plantilla }}" || true
-          echo "::endgroup::"
+          GLOBAL_EXIT=0
+          PASSED=0
+          FAILED=0
 
-  resumen:
-    name: Resumen
-    runs-on: ubuntu-latest
-    needs: [validar-global, validar-modulos]
-    if: always()
-    steps:
-      - name: Resultado final
-        run: |
-          if [ "${{ needs.validar-global.result }}" == "success" ] && [ "${{ needs.validar-modulos.result }}" == "success" ]; then
-            echo "✅ TODOS LOS MÓDULOS PASARON LA VALIDACIÓN"
-            exit 0
-          else
-            echo "❌ ALGUNOS MÓDULOS FALLARON LA VALIDACIÓN"
-            exit 1
-          fi
+          # Declarar módulos: nombre|script|ejemplo|plantilla
+          # plantilla vacía = no validar plantilla
+          MODULES=(
+            "agentes|agentes/validar_agente.py|agentes/ejemplo_agente.md|agentes/plantilla_agente.md"
+            "commands|commands/validar_command.py|commands/ejemplo_command.md|commands/plantilla_command.md"
+            "miniapps|miniapps/validar_miniapps.py|miniapps/ejemplo_miniapps.md|miniapps/plantilla_miniapps.md"
+            "autoresearch|autoresearch/validar_autoresearch.py|autoresearch/ejemplo_autoresearch.md|autoresearch/plantilla_autoresearch.md"
+            "cuadernos|cuadernos/validar_cuadernos.py|cuadernos/ejemplo_cuadernos.md|cuadernos/plantilla_cuadernos.md"
+            "knowledge|knowledge/validar_knowledge.py|knowledge/ejemplo_knowledge.md|knowledge/plantilla_knowledge.md"
+            "hooks|hooks/validar_hook.py|hooks/ejemplo_hook.sh.template|hooks/plantilla_hook.sh.template"
+            "skills|skills/validar_skill.py|skills/ejemplo_skill|skills/plantilla_skill"
+            "mcp|mcp/validar_mcp.py|mcp/ejemplo_mcp|mcp/plantilla_mcp"
+            "plugins|plugins/validar_plugin.py|plugins/ejemplo_plugin|plugins/plantilla_plugin"
+            "dot-claude|dot-claude/validar_dot_claude.py|dot-claude/ejemplo_dot_claude|dot-claude/plantilla_dot_claude"
+            "repositorios|repositorios/validar_repositorio.py|repositorios/ejemplo_repositorio|repositorios/plantilla_repositorio"
+            "modulo|modulo/validar_modulo.py|modulo|"
+            "proyecto|proyecto/validar_proyecto.py|proyecto|"
+          )
+
+          for entry in "${MODULES[@]}"; do
+            IFS='|' read -r MOD SCRIPT EJEMPLO PLANTILLA <<< "$entry"
+
+            echo "::group::📦 $MOD"
+            MOD_OK=true
+
+            if python "$SCRIPT" "$EJEMPLO" --strict; then
+              echo "✅ ejemplo: OK"
+            else
+              echo "❌ ejemplo: FALLÓ"
+              MOD_OK=false
+              GLOBAL_EXIT=1
+            fi
+
+            if [ -n "$PLANTILLA" ] && [ -e "$PLANTILLA" ]; then
+              python "$SCRIPT" "$PLANTILLA" || true
+            fi
+
+            echo "::endgroup::"
+
+            if [ "$MOD_OK" = true ]; then
+              PASSED=$((PASSED + 1))
+            else
+              FAILED=$((FAILED + 1))
+            fi
+          done
+
+          echo ""
+          echo "═══════════════════════════════════════"
+          echo "📊 Resultado: $PASSED pasaron, $FAILED fallaron"
+          echo "═══════════════════════════════════════"
+          exit $GLOBAL_EXIT
