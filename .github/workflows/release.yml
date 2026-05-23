@@ -49,7 +49,7 @@ jobs:
           NOTES=$(awk -v ver="$VERSION" '
             /^## \[/ {
               if (found) exit
-              if (index($0, ver)) { found=1; next }
+              if ($0 ~ "## \\[" ver "\\]") { found=1; next }
             }
             found { print }
           ' CHANGELOG.md)
@@ -74,4 +74,4 @@ jobs:
           body_path: /tmp/release-notes.md
           draft: false
           prerelease: ${{ contains(steps.version.outputs.tag, '-') }}
-          generate_release_notes: true
+          generate_release_notes: false
