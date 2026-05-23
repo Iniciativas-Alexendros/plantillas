@@ -86,7 +86,6 @@ jobs:
             "CONTRIBUTING.md"
             "CODE_OF_CONDUCT.md"
             "ROADMAP.md"
-            "CHANGELOG.md"
             "INTEGRACION.md"
             "install.sh"
             "claude-init"
