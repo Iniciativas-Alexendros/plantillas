@@ -7,6 +7,15 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 ## [Unreleased] — Canon-Runtime Alignment (BREAKING)
 
+### Fixed
+
+- **Lint verde · pre-commit 13/13**:
+  - `repositorios/auditoria-canon-repo.sh`: la rama de fallback (sin `yq`) tenía un `|` al inicio de línea tras el heredoc `PY`, lo que rompía `bash -n` (SC1046/SC1047/SC1072/SC1073/SC1133). Reescrita usando `while read -r slug; do …; done < <(python3 - <<PY … PY)`, simétrica con la rama `yq`.
+  - `dot-claude/ejemplo_dot_claude/rc/xek-bash.sh`: añadida directiva `# shellcheck shell=bash` (SC2148) y reemplazado `alias localip="…"` por una función equivalente (SC2142: los aliases bash no admiten `$1/$2`).
+  - `.pre-commit-config.yaml`:
+    - hook `trailing-whitespace`: `args: ["--markdown-linebreak-ext=md"]` para preservar los saltos de línea markdown (dos espacios al final) en `.md`.
+    - hook `detect-placeholders`: añadido `exclude: '(^|/)(_legacy_|plantilla_|__[A-Z_]+__)|^\.pre-commit-config\.yaml$'`. La regex matcheaba placeholders intencionales en las plantillas-fuente y en el propio archivo de configuración.
+
 ### Added
 
 - Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.
