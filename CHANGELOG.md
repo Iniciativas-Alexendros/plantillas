@@ -35,6 +35,13 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
   - rcfiles (`xek-bash.sh`, `xek-zsh.zsh`) activan `mise` y añaden aliases de red (`myip`, `localip`, `ports`, `trace`, `scan`, `bench`, `ssh-keep`, `tunl`, `rtunl`) y docker (`d`, `dc`, `dps`, `dlogs`, `ld`, `dscan`, `dlint`, `dlayers`).
   - Pre-stage de `~/.claude/` ahora excluye `cloud-env/` y `rc/` (no son contenido de `~/.claude/`).
   - Banner muestra versión de Node detectada vs target.
+- **XEK-ENV v3.3** — Bun-first + polish:
+  - **Bun como gestor de paquetes JS por defecto**: `bun upgrade --stable` ya corría en CORE (toggleable con `BUN_AUTO_UPGRADE=0`); ahora los rcfiles añaden aliases dedicados (`b`, `bi`, `ba`, `bad`, `bag`, `brm`, `bup`, `bx`, `br`, `bt`, `bd`, `bw`, `bbuild`, `bnew`, `bu`). Política: respetar `pnpm-lock.yaml`/`package-lock.json` si están pinned; corepack sigue activo para fallbacks.
+  - **`env-vars.general.env`** — variante ligera con tiers AI/OFFICE/NET/DOCKER/LEGAL apagados por defecto (frío 20–40s). El `env-vars.env` original queda como variante "minado" (todo on excepto LEGAL).
+  - **`apt-get update` deduplicado** por stamp diario (`APT_STAMP`) → ahorra 4–8s en cold start; tier DOCKER invalida el stamp tras añadir el repo de Trivy.
+  - Banner reporta versión de Python y Bun además de Node.
+  - `env-vars.env` añade `XEK_ENV_NAME` (etiqueta de entorno en el banner) y `BUN_INSTALL=/home/user/.bun`.
+  - README documenta la política Bun-first y advierte explícitamente del error común de pegar `bootstrap.sh` en el campo "Variables de entorno" del diálogo (que rompe el PATH al no expandir `$HOME`).
 
 ### Changed (BREAKING)
 
