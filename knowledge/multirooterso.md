@@ -167,6 +167,8 @@ Si las tres respuestas son "no preocupante", adopta. Si alguna es
 
 ## Referencias
 
+- Evidencia local: /etc/passwd, /etc/machine-id, /proc/self/status, /proc/self/uid_map, /proc/self/ns/ — contenedor Ubuntu 24.04.4.
+- Comportamiento de tar/rsync/zfs send/mount/git por contrato de la herramienta.
 - Linux: `user_namespaces(7)`, `capabilities(7)`, `mount(8)`,
   `xattr(7)`, `subuid(5)`, SELinux/AppArmor docs.
 - illumos/OmniOS: `zones(5)`, `ppriv(1)`, `zfs(1M)`, `share_nfs(1M)`,
