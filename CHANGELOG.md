@@ -20,7 +20,7 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **Módulo `autoresearch/`** — canon nuevo para cuadernos de investigación automatizada con frontmatter `topic/sources/status/confidence`. Incluye ejemplo real sobre prompt caching vs memory en Claude API.
 - **Módulo `cuadernos/`** — canon nuevo para notas estructuradas del operador (kinds: idea, log, decision, playbook). Ejemplo: decisión de colapsar plantillas a single-file.
 - **Módulo `knowledge/`** — canon nuevo para artículos KB referenciables con frontmatter `domain/references/authority/status`. Ejemplo: diferencia entre `tools` (agente) y `allowed-tools` (command).
-- **`knowledge/roadmap-omnios-illumos/`** — roadmap operativo de instalación OmniOS de cero a primera zona corriendo: ZFS root + `beadm`, red `dladm`/`ipadm`, IPS (`pkg`), RBAC en lugar de sudo total, SMF, zonas, bhyve opcional, snapshots/BE, endurecimiento, y cheatsheet Linux → illumos.
+- **`knowledge/roadmap-omnios-illumos.md`** — roadmap operativo de instalación OmniOS de cero a primera zona corriendo: ZFS root + `beadm`, red `dladm`/`ipadm`, IPS (`pkg`), RBAC en lugar de sudo total, SMF, zonas, bhyve opcional, snapshots/BE, endurecimiento, y cheatsheet Linux → illumos.
 - `validar_repo.py` acepta `plantilla_<base>.*` y `ejemplo_<base>.*` (glob por extensión) además de directorios, habilitando los formatos single-file `.md` y `.sh.template`.
 - Workflow `validar-todos.yml` reescrito a matriz declarativa explícita con 14 módulos canon y soporte per-módulo de plantilla/ejemplo como file o dir.
 

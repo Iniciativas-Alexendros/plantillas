@@ -235,6 +235,8 @@ Regla práctica: snapshot antes de cualquier `pkg update`, y
 
 ## Referencias
 
+- Conocimiento general del ciclo de instalación OmniOS r151xx LTS / stable.
+- Comandos comprobados de la familia illumos: beadm, pkg, dladm, ipadm, zfs, zpool, svcs, svcadm, zonecfg, zoneadm.
 - Comandos del contrato illumos: `beadm(1M)`, `pkg(1)`, `dladm(1M)`,
   `ipadm(1M)`, `svcs(1)`, `svcadm(1M)`, `zonecfg(1M)`, `zoneadm(1M)`,
   `zfs(1M)`, `zpool(1M)`, `ppriv(1)`, `profiles(1)`, `pfexec(1)`.
