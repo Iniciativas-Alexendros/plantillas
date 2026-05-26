@@ -41,6 +41,7 @@ repos:
           "
         language: system
         files: \.(md|json|yaml|yml|txt)$
+        exclude: '(^|/)(_legacy_|plantilla_|__[A-Z_]+__)|^\.pre-commit-config\.yaml$'
         pass_filenames: true
 
       - id: lint-python

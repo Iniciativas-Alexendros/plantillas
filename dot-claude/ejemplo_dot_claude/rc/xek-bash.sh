@@ -1,3 +1,4 @@
+# shellcheck shell=bash
 # ~/.bashrc.d/xek.sh — XEK bash wrapper (sourced from ~/.bashrc)
 # Parte del bootstrap XEK-ENV v3.1 para Claude Code on the web.
 [ -z "${PS1:-}" ] && return
@@ -50,7 +51,7 @@ alias xek-versions='node --version; python3 --version; bun --version; go version
 alias myip='curl -fsSL https://ifconfig.me; echo'
 alias myip4='curl -fsSL -4 https://ifconfig.me; echo'
 alias myip6='curl -fsSL -6 https://ifconfig.me 2>/dev/null; echo'
-alias localip="ip -4 -o addr show scope global | awk '{print \$2, \$4}'"
+localip() { ip -4 -o addr show scope global | awk '{print $2, $4}'; }
 alias ports='sudo ss -tulnp'
 alias listen='ss -tlnp'
 alias trace='mtr -rwbzc 10'

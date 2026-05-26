@@ -14,8 +14,10 @@
 
 set -euo pipefail
 
+# shellcheck disable=SC2034  # SCRIPT_URL/RELEASE_API expuestos para wrappers externos
 SCRIPT_URL="https://raw.githubusercontent.com/alexendros/plantillas/main/install.sh"
 REPO_URL="https://github.com/alexendros/plantillas.git"
+# shellcheck disable=SC2034
 RELEASE_API="https://api.github.com/repos/alexendros/plantillas/releases/latest"
 
 PREFIX="${HOME}/.claude/plantillas"
