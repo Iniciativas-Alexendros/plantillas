@@ -24,6 +24,17 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **`knowledge/multirooterso.md`** — artículo sobre identidad del root en Unix: UID 0 local, debilidad de `hostid`/`machine-id`, decomposición vía capabilities y namespaces en Linux, equivalentes en illumos/OmniOS (RBAC, privileges, zonas). Evidencia recogida localmente en contenedor Ubuntu 24.04.
 - `validar_repo.py` acepta `plantilla_<base>.*` y `ejemplo_<base>.*` (glob por extensión) además de directorios, habilitando los formatos single-file `.md` y `.sh.template`.
 - Workflow `validar-todos.yml` reescrito a matriz declarativa explícita con 14 módulos canon y soporte per-módulo de plantilla/ejemplo como file o dir.
+- **`dot-claude/ejemplo_dot_claude/cloud-env/`** — copia canónica versionada del bootstrap para el diálogo "Actualizar entorno en la nube" de Claude Code on the web: `env-vars.env` (variables de entorno) + `bootstrap.sh` (script de configuración) + `README.md`. Diseño **XEK-ENV v3.1**, sucesor de OMNI-ENV v3.0-FINAL: 7 tiers toggleables (`CORE`/`PY`/`SHELL`/`AI`/`OFFICE`/`LEGAL`/`WEB`) vía env vars, cache diaria por stamp (<5s en sesiones repetidas), idempotente, tolerante a apt offline, sin secretos. Pre-stagea `~/.claude/` desde `ejemplo_dot_claude/`.
+- **`dot-claude/ejemplo_dot_claude/rc/`** — rcfiles que el bootstrap pre-stagea cuando los tiers SHELL/PY están on: `xek-bash.sh` (alias modernos con fd/bat/eza/delta, integraciones starship/zoxide/atuin/direnv, fzf keybindings), `xek-zsh.zsh` (zinit + fast-syntax-highlighting + autosuggestions + fzf-tab + history-substring-search), `starship.toml` (prompt cross-shell), `ipython_config.py` (autoload polars/pandas/numpy/httpx/pydantic/rich).
+- **XEK-ENV v3.2** — bump del bootstrap horizontal:
+  - **Tier RUNTIMES** (nuevo, on): instala `mise` y materializa `node@$NODE_VERSION` (default **24**) y `python@$PYTHON_VERSION` (default 3.13). PATH del entorno pone `~/.local/share/mise/shims` primero, con `/opt/node22/bin` como fallback (preserva el `claude` CLI). `mise.toml` / `.tool-versions` per-repo siguen funcionando.
+  - **Tier NET** (nuevo, on): herramientas de diagnóstico y optimización de red para LAN y VPS — `mtr-tiny`, `iperf3`, `nmap`, `tcpdump`, `ngrep`, `traceroute`, `whois`, `socat`, `mosh`, `autossh`, `sshpass`, `nethogs`, `iftop`, `bmon`, `tmux`, `screen`, `rclone`, `restic`, `netcat-openbsd`, `wireguard-tools`, `gping` (cargo), `bandwhich` (cargo), `croc` (binario GitHub).
+  - **Tier DOCKER** (nuevo, on): containerización — `docker-compose-plugin`, `docker-buildx-plugin`, `buildah`, `skopeo`, `lazydocker`, `dive`, `ctop`, `hadolint`, `trivy` (apt repo Aqua Security).
+  - Tier CORE añade `direnv`, `jq`, `yq`, `bc` y opcional `bun upgrade --stable` (via `BUN_AUTO_UPGRADE`).
+  - Tier WEB ahora ejecuta `corepack prepare pnpm@latest --activate` y `yarn@stable --activate` sobre Node 24.
+  - rcfiles (`xek-bash.sh`, `xek-zsh.zsh`) activan `mise` y añaden aliases de red (`myip`, `localip`, `ports`, `trace`, `scan`, `bench`, `ssh-keep`, `tunl`, `rtunl`) y docker (`d`, `dc`, `dps`, `dlogs`, `ld`, `dscan`, `dlint`, `dlayers`).
+  - Pre-stage de `~/.claude/` ahora excluye `cloud-env/` y `rc/` (no son contenido de `~/.claude/`).
+  - Banner muestra versión de Node detectada vs target.
 
 ### Changed (BREAKING)
 
