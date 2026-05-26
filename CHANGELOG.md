@@ -22,6 +22,8 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **Módulo `knowledge/`** — canon nuevo para artículos KB referenciables con frontmatter `domain/references/authority/status`. Ejemplo: diferencia entre `tools` (agente) y `allowed-tools` (command).
 - `validar_repo.py` acepta `plantilla_<base>.*` y `ejemplo_<base>.*` (glob por extensión) además de directorios, habilitando los formatos single-file `.md` y `.sh.template`.
 - Workflow `validar-todos.yml` reescrito a matriz declarativa explícita con 14 módulos canon y soporte per-módulo de plantilla/ejemplo como file o dir.
+- **`dot-claude/ejemplo_dot_claude/cloud-env/`** — copia canónica versionada del bootstrap para el diálogo "Actualizar entorno en la nube" de Claude Code on the web: `env-vars.env` (variables de entorno) + `bootstrap.sh` (script de configuración) + `README.md`. Diseño **XEK-ENV v3.1**, sucesor de OMNI-ENV v3.0-FINAL: 7 tiers toggleables (`CORE`/`PY`/`SHELL`/`AI`/`OFFICE`/`LEGAL`/`WEB`) vía env vars, cache diaria por stamp (<5s en sesiones repetidas), idempotente, tolerante a apt offline, sin secretos. Pre-stagea `~/.claude/` desde `ejemplo_dot_claude/`.
+- **`dot-claude/ejemplo_dot_claude/rc/`** — rcfiles que el bootstrap pre-stagea cuando los tiers SHELL/PY están on: `xek-bash.sh` (alias modernos con fd/bat/eza/delta, integraciones starship/zoxide/atuin/direnv, fzf keybindings), `xek-zsh.zsh` (zinit + fast-syntax-highlighting + autosuggestions + fzf-tab + history-substring-search), `starship.toml` (prompt cross-shell), `ipython_config.py` (autoload polars/pandas/numpy/httpx/pydantic/rich).
 
 ### Changed (BREAKING)
 
