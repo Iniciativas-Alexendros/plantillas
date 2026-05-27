@@ -3,10 +3,16 @@
 Copia canónica y versionada de lo que se pega en el diálogo **"Actualizar
 entorno en la nube"** (https://claude.ai/code → entornos).
 
-| Archivo | Destino en el diálogo |
-|---|---|
-| `env-vars.env` | Campo **"Variables de entorno"** (formato `.env`) |
-| `bootstrap.sh` | Campo **"Script de configuración"** |
+| Archivo | Destino en el diálogo | Caso de uso |
+|---|---|---|
+| `env-vars.env` | Campo **"Variables de entorno"** | Todos los tiers on excepto LEGAL (minado) |
+| `env-vars.general.env` | Campo **"Variables de entorno"** | Variante ligera (AI/OFFICE/NET/DOCKER off) |
+| `bootstrap.sh` | Campo **"Script de configuración"** | Mismo bootstrap para ambas variantes |
+
+> **Atención**: nunca pegues el contenido de `bootstrap.sh` en el campo
+> "Variables de entorno". El diálogo no expande `$HOME` ni ejecuta `$(...)`,
+> y rompe el `PATH` del entorno. Verifica con `echo $PATH` que veas rutas
+> absolutas (`/home/user/...`) y no `$HOME/...` literales.
 
 ## Cómo aplicarlo (manual)
 
@@ -17,7 +23,40 @@ entorno en la nube"** (https://claude.ai/code → entornos).
 5. *Guardar cambios*. Los cambios se aplican a sesiones **nuevas**.
 6. Arranca una sesión nueva; el bootstrap escribe en `$XEK_LOG`.
 
-## Versiones runtime (XEK-ENV v3.2)
+## Gestor de paquetes JS · Bun-first
+
+XEK-ENV adopta **Bun** como gestor por defecto (10–25× más rápido que npm,
+sustituye `npm`+`npx`+`yarn`+`pnpm`+`tsc`+`jest` en un único binario). `bun`
+viene preinstalado en la imagen base; el tier CORE lo mantiene fresco con
+`bun upgrade --stable` cada nuevo día (toggleable con `BUN_AUTO_UPGRADE=0`).
+
+**Política**:
+1. Default: `bun install` / `bun add` / `bunx`.
+2. Si un repo trae `pnpm-lock.yaml` o `package-lock.json`, respeta el PM
+   pinned (no migrar sin pedirlo).
+3. `corepack` activa `pnpm@latest` y `yarn@stable` cuando un repo los pin.
+
+**Aliases en los rcfiles** (sirven en bash y zsh):
+
+| Alias | Comando | Para qué |
+|---|---|---|
+| `b` | `bun` | base |
+| `bi` | `bun install` | install deps de package.json |
+| `ba` | `bun add` | añadir dep |
+| `bad` | `bun add --dev` | dev dep |
+| `bag` | `bun add --global` | global (a `$HOME/.bun/bin`) |
+| `brm` | `bun remove` | quitar dep |
+| `bup` | `bun update` | actualizar deps |
+| `bx` | `bunx` | ejecutar sin install (npx-style) |
+| `br` | `bun run` | script de package.json |
+| `bt` | `bun test` | tests |
+| `bd` | `bun run dev` | dev (convención) |
+| `bw` | `bun --watch run` | watch mode |
+| `bbuild` | `bun build` | bundler |
+| `bnew` | `bun create` | scaffold |
+| `bu` | `bun upgrade --stable` | actualizar el runtime Bun |
+
+## Versiones runtime (XEK-ENV v3.3)
 
 Gestionadas por **mise** (sucesor de asdf), instalado en `~/.local/bin/mise`,
 con shims en `~/.local/share/mise/shims` (prepended al `PATH`).
@@ -145,5 +184,10 @@ las necesitas:
 
 ## Versión
 
-XEK-ENV **v3.2** — añade Node 24 (via mise), tiers NET y DOCKER.
-Histórico: v3.0 (OMNI-ENV) → v3.1 (tiers + rcfiles) → v3.2 (runtimes + red + docker).
+XEK-ENV **v3.3** — Bun-first + polish + variante `general` separada.
+Histórico:
+- v3.0 (OMNI-ENV) — base monolítica
+- v3.1 — primer XEK-ENV con tiers + rcfiles
+- v3.2 — añadidos Node 24 (mise), tier NET, tier DOCKER
+- v3.3 — Bun-first con aliases dedicados, `env-vars.general.env`,
+  `apt-get update` deduplicado por stamp diario, banner con versión Bun

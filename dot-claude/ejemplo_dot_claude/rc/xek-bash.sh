@@ -85,6 +85,23 @@ alias jl='jupyter lab --no-browser --ip=0.0.0.0 --port=8888'
 alias venv='uv venv && source .venv/bin/activate'
 alias activate='source .venv/bin/activate'
 
+# ─── Bun (gestor de paquetes JS por defecto en XEK) ──────────────────────
+alias b='bun'
+alias bi='bun install'             # install deps de package.json
+alias ba='bun add'                 # añadir dep
+alias bad='bun add --dev'          # añadir devDep
+alias bag='bun add --global'       # global → $HOME/.bun/bin
+alias brm='bun remove'             # quitar dep
+alias bup='bun update'             # actualizar deps
+alias bx='bunx'                    # ejecutar paquete sin install (npx-style)
+alias br='bun run'                 # ejecutar script de package.json
+alias bt='bun test'                # tests
+alias bd='bun run dev'             # dev (convención común)
+alias bbuild='bun build'           # bundler
+alias bnew='bun create'            # scaffold de proyecto
+alias bw='bun --watch run'         # watch mode
+alias bu='bun upgrade --stable'    # actualizar el runtime Bun
+
 # ─── Integraciones ───────────────────────────────────────────────────────
 command -v mise     >/dev/null && eval "$(mise activate bash --shims)" 2>/dev/null
 command -v starship >/dev/null && eval "$(starship init bash)"
