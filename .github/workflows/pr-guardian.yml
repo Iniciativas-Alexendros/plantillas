@@ -88,12 +88,13 @@ jobs:
             "CODE_OF_CONDUCT.md"
             "ROADMAP.md"
             "INTEGRACION.md"
-            "install.sh"
             "claude-init"
             "update.sh"
             "validadores/base.py"
-            ".pre-commit-config.yaml"
           )
+          # Nota: install.sh y .pre-commit-config.yaml NO son protegidos
+          # bloqueantes — son configuración operativa y deben poder
+          # modificarse en PRs de lint/CI sin issue previo.
 
           EXIT=0
           CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \

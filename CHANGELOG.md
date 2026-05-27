@@ -7,6 +7,10 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 ## [Unreleased] — Canon-Runtime Alignment (BREAKING)
 
+### Changed
+
+- **`.github/workflows/pr-guardian.yml`** — saca `install.sh` y `.pre-commit-config.yaml` de la lista `PROTECTED` (step 3). Son configuración operativa: deben poder modificarse en PRs de lint/CI sin issue previo. El resto del contrato (Conventional Commits, tamaño, CHANGELOG en cambios de módulo, placeholders) se mantiene.
+
 ### Fixed
 
 - **Lint verde · pre-commit 13/13**:
