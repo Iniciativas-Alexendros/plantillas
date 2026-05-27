@@ -1,8 +1,8 @@
 # ROADMAP · Sistema de Plantillas Modulares para Claude Code
 
-> **Estado**: Fase 3 COMPLETADA (con items pendientes de automatización)
-> **Última actualización**: 2026-05-23
-> **Propietario**: alexendros
+> **Estado**: Fase 3 COMPLETADA (con items pendientes de automatización)  
+> **Última actualización**: 2026-05-23  
+> **Propietario**: alexendros  
 > **Licencia**: MIT
 
 ---
