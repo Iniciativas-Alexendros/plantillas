@@ -1,0 +1,74 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# pr-sticky-comment · Composite action
+#
+# Propósito: mantener UN solo comentario "vivo" en el PR, actualizable en cada
+# run. Usa marker HTML (<!-- bot:<marker> -->) para idempotencia · sin spam.
+#
+# Implementación: gh api (sin dependencias de terceros). Si el marker existe,
+# patch del comentario; si no, create.
+#
+# Uso:
+#   - uses: ./.github/actions/pr-sticky-comment
+#     with:
+#       marker: pipelines-summary
+#       body: |
+#         ## ✅ Pipelines summary
+#         ...
+#       pr-number: ${{ github.event.pull_request.number }}
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: pr-sticky-comment
+description: Comentario sticky en PR, idempotente vía marker HTML.
+
+inputs:
+  marker:
+    description: Identificador del comentario (kebab-case).
+    required: true
+  body:
+    description: Cuerpo Markdown del comentario.
+    required: true
+  pr-number:
+    description: Número del PR (si vacío, intenta inferir de github.event).
+    required: false
+    default: ""
+  github-token:
+    description: Token con permisos pull-requests:write.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Upsert sticky comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        STICKY_MARKER: ${{ inputs.marker }}
+        STICKY_BODY: ${{ inputs.body }}
+        STICKY_PR: ${{ inputs.pr-number }}
+        STICKY_PR_FALLBACK: ${{ github.event.pull_request.number }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -Eeuo pipefail
+        MARKER="<!-- bot:${STICKY_MARKER} -->"
+        PR="${STICKY_PR:-$STICKY_PR_FALLBACK}"
+        if [ -z "$PR" ] || [ "$PR" = "null" ]; then
+          echo "::warning::pr-sticky-comment: no PR number disponible, skipping."
+          exit 0
+        fi
+
+        BODY_FILE="$(mktemp)"
+        printf '%s\n%s\n' "$MARKER" "$STICKY_BODY" > "$BODY_FILE"
+
+        EXISTING=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+          --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | .[0].id // empty")
+
+        if [ -n "$EXISTING" ]; then
+          echo "[sticky] update comment id=$EXISTING"
+          gh api -X PATCH "repos/$REPO/issues/comments/$EXISTING" \
+            -F body=@"$BODY_FILE" >/dev/null
+        else
+          echo "[sticky] create new comment"
+          gh api -X POST "repos/$REPO/issues/$PR/comments" \
+            -F body=@"$BODY_FILE" >/dev/null
+        fi
