@@ -5,6 +5,18 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Post-Merge Template · least-privilege polish
+
+### Changed
+
+- **`.github/workflows/_lib-post-merge.yml`**, **`_lib-supply-chain.yml`**, **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`**, **`.github/workflows/post-merge.yml`** (dogfood) — eliminado `packages: write` de todos los bloques `permissions:`. Era declarado pero nunca consumido por la lib. Los repos que publican imágenes a GHCR (trenchpass, proton-mail-mcp) lo declaran en su `release.yml` propio. Flag de Devin en `Alexendros/mi-website-profesional#42`.
+
+### Added
+
+- **`.github/workflows/README-post-merge.md`** — sección "Matriz de permisos" con tabla `permiso × feature` para que adoptantes puedan recortar a least-privilege estricto según los `enable_*` activos.
+
+---
+
 ## [Unreleased] — Post-Merge Template
 
 ### Added

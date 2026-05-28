@@ -27,7 +27,6 @@ permissions:
   id-token: write          # OIDC para attest-build-provenance
   attestations: write      # SLSA attestations
   checks: write            # reviewdog reporter github-check
-  packages: write          # cuando se publica a GHCR (opcional aguas abajo)
   security-events: write   # zizmor SARIF upload
 
 concurrency:
