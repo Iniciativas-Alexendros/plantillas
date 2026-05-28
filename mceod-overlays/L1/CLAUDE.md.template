@@ -1,0 +1,12 @@
+# CLAUDE.md — Categoría {{CATEGORY_NAME}}
+
+- Versión: 1.0.0
+- Fecha: 2026-05-27
+- Ámbito: aplicable a todos los proyectos bajo `{{CATEGORY_PATH}}`.
+- Hereda de: `~/.claude/CLAUDE.md` (L0).
+
+## Convenciones de la categoría
+Documentar aquí las normas comunes a los proyectos de la categoría {{CATEGORY_NAME}} que no sean ya parte del canon global. Ejemplos: convenciones de commits, perfiles de testing, layout estándar, herramientas compartidas.
+
+## Excepciones respecto a L0
+Listar excepciones explícitas. Cada excepción se justifica en una línea.
