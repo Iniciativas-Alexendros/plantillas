@@ -1,0 +1,108 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-post-merge · Reusable workflow · ORQUESTADOR
+#
+# Punto de entrada único para consumidores. Llama a detect-stack, fan-out a
+# sub-libs (lint, supply-chain, release-please) y termina con failure-report.
+#
+# Filosofía:
+#   - Non-blocking: ningún sub-job hace fallar el orchestrator.
+#   - Generalista: detect-stack decide qué activar.
+#   - Informativa: cada sub-job emite step-summary + reviewdog inline.
+#   - Auto-resolución asistida: failure-report abre issue tras racha sostenida.
+#
+# Uso (caller mínimo):
+#   jobs:
+#     run:
+#       uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1
+#       with:
+#         enable_release: false   # default false (opt-in)
+#       secrets: inherit
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · post-merge orchestrator
+
+on:
+  workflow_call:
+    inputs:
+      enable_linters:
+        type: boolean
+        required: false
+        default: true
+      enable_sbom:
+        type: boolean
+        required: false
+        default: true
+      enable_attest:
+        type: boolean
+        required: false
+        default: true
+      enable_release:
+        type: boolean
+        required: false
+        default: false
+      release_type:
+        type: string
+        required: false
+        default: ""
+      streak_threshold_open:
+        type: number
+        required: false
+        default: 2
+      streak_threshold_close:
+        type: number
+        required: false
+        default: 3
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+  attestations: write
+  checks: write
+  packages: write
+  security-events: write
+
+jobs:
+  detect:
+    uses: Alexendros/plantillas/.github/workflows/_lib-detect-stack.yml@main
+
+  lint:
+    if: inputs.enable_linters
+    needs: detect
+    uses: Alexendros/plantillas/.github/workflows/_lib-lint-aggregate.yml@main
+    with:
+      has_ts: ${{ needs.detect.outputs.has_ts }}
+      has_rust: ${{ needs.detect.outputs.has_rust }}
+      has_python: ${{ needs.detect.outputs.has_python }}
+      has_docker: ${{ needs.detect.outputs.has_docker }}
+      has_markdown: ${{ needs.detect.outputs.has_markdown }}
+      has_shell: ${{ needs.detect.outputs.has_shell }}
+
+  supply-chain:
+    needs: detect
+    uses: Alexendros/plantillas/.github/workflows/_lib-supply-chain.yml@main
+    with:
+      enable_sbom: ${{ inputs.enable_sbom }}
+      enable_attest: ${{ inputs.enable_attest }}
+
+  release:
+    if: inputs.enable_release
+    needs: detect
+    uses: Alexendros/plantillas/.github/workflows/_lib-release-please.yml@main
+    with:
+      release_type: ${{ inputs.release_type }}
+      release_type_auto: ${{ needs.detect.outputs.release_type }}
+
+  report:
+    if: always()
+    needs: [detect, lint, supply-chain, release]
+    uses: Alexendros/plantillas/.github/workflows/_lib-failure-report.yml@main
+    with:
+      lint_outcome: ${{ needs.lint.outputs.outcome_json || '{}' }}
+      sbom_outcome: ${{ needs.supply-chain.outputs.sbom_outcome || 'skipped' }}
+      attest_outcome: ${{ needs.supply-chain.outputs.attest_outcome || 'skipped' }}
+      release_outcome: ${{ needs.release.result || 'skipped' }}
+      release_tag: ${{ needs.release.outputs.release_tag || '' }}
+      streak_threshold_open: ${{ inputs.streak_threshold_open }}
+      streak_threshold_close: ${{ inputs.streak_threshold_close }}
