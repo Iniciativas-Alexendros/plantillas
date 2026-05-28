@@ -1,0 +1,188 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-failure-report · Reusable workflow
+#
+# Propósito: stack profesional de notificación post-merge, no bloqueante:
+#   1. Sticky commit-comment (siempre, histórico discreto)
+#   2. Step-summary agregado con tabla compacta
+#   3. Issue auto sticky SOLO si N>=2 runs consecutivos fallan (anti-flake)
+#   4. Auto-cierre del issue tras N>=3 runs consecutivos verdes
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · failure report
+
+on:
+  workflow_call:
+    inputs:
+      lint_outcome:
+        type: string
+        required: false
+        default: '{}'
+      sbom_outcome:
+        type: string
+        required: false
+        default: skipped
+      attest_outcome:
+        type: string
+        required: false
+        default: skipped
+      release_outcome:
+        type: string
+        required: false
+        default: skipped
+      release_tag:
+        type: string
+        required: false
+        default: ""
+      streak_threshold_open:
+        type: number
+        required: false
+        default: 2
+      streak_threshold_close:
+        type: number
+        required: false
+        default: 3
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  report:
+    name: Generar reporte
+    runs-on: ubuntu-latest
+    steps:
+      - id: classify
+        name: Clasificar outcome global
+        env:
+          LINT_JSON: ${{ inputs.lint_outcome }}
+          SBOM: ${{ inputs.sbom_outcome }}
+          ATTEST: ${{ inputs.attest_outcome }}
+          RELEASE: ${{ inputs.release_outcome }}
+        run: |
+          set -Eeuo pipefail
+          OVERALL=ok
+          for v in "$SBOM" "$ATTEST" "$RELEASE"; do
+            case "$v" in failure|cancelled) OVERALL=fail ;; esac
+          done
+          if echo "$LINT_JSON" | jq -e '. | to_entries[] | select(.value=="failure")' >/dev/null 2>&1; then
+            OVERALL=fail
+          fi
+          echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
+          echo "::notice::overall=$OVERALL"
+
+      - id: streak
+        name: Contar racha consecutiva (fallos u OK previos)
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          WF_NAME: ${{ github.workflow }}
+          BRANCH: ${{ github.ref_name }}
+          THIS_RUN_ID: ${{ github.run_id }}
+        run: |
+          set -Eeuo pipefail
+          PREV=$(gh api "repos/$REPO/actions/runs?branch=$BRANCH&status=completed&per_page=10" \
+            --jq "[.workflow_runs[] | select(.id != ${THIS_RUN_ID}) | select(.name==\"$WF_NAME\")] | .[0:5] | map(.conclusion)")
+          STREAK_FAIL=0
+          STREAK_OK=0
+          for c in $(echo "$PREV" | jq -r '.[]'); do
+            case "$c" in
+              failure|cancelled|timed_out)
+                if [ "$STREAK_OK" -eq 0 ]; then STREAK_FAIL=$((STREAK_FAIL+1)); else break; fi ;;
+              success)
+                if [ "$STREAK_FAIL" -eq 0 ]; then STREAK_OK=$((STREAK_OK+1)); else break; fi ;;
+            esac
+          done
+          echo "prev_fail=$STREAK_FAIL" >> "$GITHUB_OUTPUT"
+          echo "prev_ok=$STREAK_OK" >> "$GITHUB_OUTPUT"
+          echo "::notice::racha previa fail=$STREAK_FAIL ok=$STREAK_OK"
+
+      - id: body
+        name: Construir cuerpos de reporte
+        env:
+          LINT_JSON: ${{ inputs.lint_outcome }}
+          SBOM: ${{ inputs.sbom_outcome }}
+          ATTEST: ${{ inputs.attest_outcome }}
+          RELEASE: ${{ inputs.release_outcome }}
+          TAG: ${{ inputs.release_tag }}
+          OVERALL: ${{ steps.classify.outputs.overall }}
+        run: |
+          set -Eeuo pipefail
+          if [ "$OVERALL" = ok ]; then ICON="🟢"; else ICON="🔴"; fi
+          {
+            echo "## $ICON Post-merge summary"
+            echo ""
+            echo "- Commit: \`${GITHUB_SHA}\`"
+            echo "- Workflow: [${GITHUB_WORKFLOW} #${GITHUB_RUN_NUMBER}](${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID})"
+            echo "- Triggered by: \`${GITHUB_ACTOR}\`"
+            echo ""
+            echo "### Linters"
+            echo ""
+            echo "| Tool | Outcome |"
+            echo "|---|---|"
+            echo "$LINT_JSON" | jq -r 'to_entries[] | "| \(.key) | \(.value) |"' 2>/dev/null || echo "| (sin datos) | — |"
+            echo ""
+            echo "### Supply chain · Release"
+            echo ""
+            echo "| Job | Outcome | Detalle |"
+            echo "|---|---|---|"
+            echo "| sbom | $SBOM | syft → CycloneDX |"
+            echo "| attest | $ATTEST | actions/attest-build-provenance |"
+            echo "| release-please | $RELEASE | tag=$TAG |"
+          } > sticky.md
+          cat sticky.md >> "$GITHUB_STEP_SUMMARY"
+          # Exporta el cuerpo como output multilínea
+          {
+            echo "sticky_body<<__END__"
+            cat sticky.md
+            echo "__END__"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Sticky commit-comment
+        uses: Alexendros/plantillas/.github/actions/sticky-commit-comment@main
+        with:
+          marker: post-merge-sticky
+          sha: ${{ github.sha }}
+          body: ${{ steps.body.outputs.sticky_body }}
+
+      - name: Issue body con racha info
+        id: issue_body
+        if: steps.classify.outputs.overall == 'fail'
+        env:
+          STICKY: ${{ steps.body.outputs.sticky_body }}
+          PREV_FAIL: ${{ steps.streak.outputs.prev_fail }}
+          OPEN_TH: ${{ inputs.streak_threshold_open }}
+          CLOSE_TH: ${{ inputs.streak_threshold_close }}
+        run: |
+          set -Eeuo pipefail
+          {
+            echo "issue_body<<__END__"
+            printf '%s\n' "$STICKY"
+            echo ""
+            echo "---"
+            echo ""
+            echo "**Racha de fallos previos:** ${PREV_FAIL} runs consecutivos."
+            echo "**Umbral apertura:** ${OPEN_TH}."
+            echo ""
+            echo "Se cerrará automáticamente tras ${CLOSE_TH} runs verdes consecutivos."
+            echo "__END__"
+          } >> "$GITHUB_OUTPUT"
+
+      - id: open
+        name: Abrir/actualizar issue si racha >= threshold_open
+        if: steps.classify.outputs.overall == 'fail' && fromJSON(steps.streak.outputs.prev_fail) >= inputs.streak_threshold_open
+        uses: Alexendros/plantillas/.github/actions/sticky-issue@main
+        with:
+          action: create-or-update
+          marker: post-merge:auto
+          label: post-merge-failure
+          title: "[auto] Post-merge regresión sostenida (${{ github.ref_name }})"
+          body: ${{ steps.issue_body.outputs.issue_body }}
+
+      - id: close
+        name: Cerrar issue si racha verde >= threshold_close
+        if: steps.classify.outputs.overall == 'ok' && fromJSON(steps.streak.outputs.prev_ok) >= inputs.streak_threshold_close
+        uses: Alexendros/plantillas/.github/actions/sticky-issue@main
+        with:
+          action: close-if-streak
+          marker: post-merge:auto
+          label: post-merge-failure

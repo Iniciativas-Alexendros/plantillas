@@ -5,6 +5,27 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Post-Merge Template
+
+### Added
+
+- **`.github/workflows/_lib-post-merge.yml`** — Orquestador reusable. Único punto de entrada para consumidores; llama detect-stack y fan-out a sub-libs.
+- **`.github/workflows/_lib-detect-stack.yml`** — Reusable wf, expone outputs `has_ts/has_rust/has_python/has_docker/has_markdown/has_shell/is_monorepo/is_docs_only/languages/release_type`.
+- **`.github/workflows/_lib-lint-aggregate.yml`** — Linters punta 2026 en paralelo, non-blocking: actionlint+zizmor, gitleaks, yamllint, shellcheck, hadolint, markdownlint-cli2, lychee, Biome o ESLint, Ruff, cargo-deny+clippy, osv-scanner. Reviewdog reporter `github-check`.
+- **`.github/workflows/_lib-supply-chain.yml`** — syft → CycloneDX SBOM + `actions/attest-build-provenance@v2` (SLSA L3 nativo, OIDC, cero secrets).
+- **`.github/workflows/_lib-release-please.yml`** — Wrapper `googleapis/release-please-action@v4` con `release-type` autodetectado (manifest/node/rust/python/simple). Opt-in vía `enable_release`.
+- **`.github/workflows/_lib-failure-report.yml`** — Stack profesional de notificación: sticky commit-comment siempre, step-summary rico, issue auto sticky tras racha de fallos consecutivos (`>=streak_threshold_open`, anti-flake), auto-cierre tras racha verde (`>=streak_threshold_close`).
+- **`.github/actions/detect-stack/action.yml`** — Composite con la heurística (file-presence based). Inline-usable.
+- **`.github/actions/reviewdog-multi/action.yml`** — Bootstrap de reviewdog con `fail_on_error: false`.
+- **`.github/actions/sticky-issue/action.yml`** — Upsert idempotente vía marker HTML. Soporta `create-or-update` y `close-if-streak`.
+- **`.github/actions/sticky-commit-comment/action.yml`** — Comentario sticky al commit (no PR), marker HTML idempotente.
+- **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`** — Caller plantilla copy-paste-ready.
+- **`.github/workflows/README-post-merge.md`** — Documentación adopción (3 pasos), inputs, stacks soportados, troubleshooting, versionado.
+
+Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1`. Pilotos planificados: plantillas (dogfood), afiladocs, xek-cluster. Resto en sprint posterior tras validación.
+
+---
+
 ## [Unreleased] — Canon-Runtime Alignment (BREAKING)
 
 ### Changed

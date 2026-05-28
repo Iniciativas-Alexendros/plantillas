@@ -1,0 +1,65 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# sticky-commit-comment · Composite action
+#
+# Propósito: gestionar un comentario único en el commit indicado, actualizable
+# en cada run. Idempotente vía marker HTML. Sin spam.
+#
+# Mismo patrón que pr-sticky-comment pero apunta al COMMIT (no al PR), apto para
+# triggers `push` post-merge.
+#
+# Uso:
+#   - uses: ./.github/actions/sticky-commit-comment
+#     with:
+#       marker: post-merge-sticky
+#       sha: ${{ github.sha }}
+#       body: |
+#         ## Post-merge summary
+#         ...
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: sticky-commit-comment
+description: Comentario sticky en commit, idempotente vía marker HTML.
+
+inputs:
+  marker:
+    description: Identificador del comentario (kebab-case).
+    required: true
+  body:
+    description: Cuerpo Markdown del comentario.
+    required: true
+  sha:
+    description: SHA del commit objetivo (default github.sha).
+    required: false
+    default: ${{ github.sha }}
+  github-token:
+    description: Token con permisos contents:write.
+    required: false
+    default: ${{ github.token }}
+
+runs:
+  using: composite
+  steps:
+    - name: Upsert sticky commit comment
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        STICKY_MARKER: ${{ inputs.marker }}
+        STICKY_BODY: ${{ inputs.body }}
+        STICKY_SHA: ${{ inputs.sha }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -Eeuo pipefail
+        MARKER="<!-- bot:${STICKY_MARKER} -->"
+        BODY_FILE="$(mktemp)"
+        printf '%s\n%s\n' "$MARKER" "$STICKY_BODY" > "$BODY_FILE"
+
+        EXISTING=$(gh api "repos/$REPO/commits/$STICKY_SHA/comments" --paginate \
+          --jq "[.[] | select(.body | startswith(\"$MARKER\"))] | .[0].id // empty")
+
+        if [ -n "$EXISTING" ]; then
+          echo "[sticky-commit] update id=$EXISTING on $STICKY_SHA"
+          gh api -X PATCH "repos/$REPO/comments/$EXISTING" -F body=@"$BODY_FILE" >/dev/null
+        else
+          echo "[sticky-commit] create on $STICKY_SHA"
+          gh api -X POST "repos/$REPO/commits/$STICKY_SHA/comments" -F body=@"$BODY_FILE" >/dev/null
+        fi

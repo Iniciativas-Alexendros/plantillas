@@ -1,0 +1,170 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# detect-stack · Composite action
+#
+# Propósito: heurística de presencia de archivos para clasificar el stack del
+# repo. Sin instalación, sin red. Devuelve booleans + array JSON de lenguajes
+# + release_type (auto) para que workflows aguas abajo activen gates condicionales.
+#
+# Uso (mismo repo):
+#   - uses: ./.github/actions/detect-stack
+#     id: stack
+#
+#   - if: steps.stack.outputs.has_ts == 'true'
+#     run: echo "es TypeScript"
+#
+# Uso (cross-repo):
+#   - uses: Alexendros/plantillas/.github/actions/detect-stack@v1
+#     id: stack
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: detect-stack
+description: Detecta lenguajes/tecnologías del repo por presencia de archivos.
+
+outputs:
+  has_ts:
+    description: TypeScript/JavaScript presente (package.json + ts o tsconfig).
+    value: ${{ steps.detect.outputs.has_ts }}
+  has_rust:
+    description: Cargo.toml presente (raíz o workspace).
+    value: ${{ steps.detect.outputs.has_rust }}
+  has_python:
+    description: pyproject.toml o setup.cfg o requirements*.txt.
+    value: ${{ steps.detect.outputs.has_python }}
+  has_docker:
+    description: Dockerfile* o compose*.y?ml.
+    value: ${{ steps.detect.outputs.has_docker }}
+  has_markdown:
+    description: Algún *.md (excluye node_modules, .git).
+    value: ${{ steps.detect.outputs.has_markdown }}
+  has_shell:
+    description: Archivos *.sh o *.bash.
+    value: ${{ steps.detect.outputs.has_shell }}
+  is_monorepo:
+    description: pnpm-workspace.yaml, package.json#workspaces, Cargo workspace, o release-please-manifest.
+    value: ${{ steps.detect.outputs.is_monorepo }}
+  is_docs_only:
+    description: Solo Markdown (sin código fuente).
+    value: ${{ steps.detect.outputs.is_docs_only }}
+  languages:
+    description: Array JSON de lenguajes detectados, ej. '["typescript","docker"]'.
+    value: ${{ steps.detect.outputs.languages }}
+  release_type:
+    description: Tipo para release-please (node|rust|python|simple|manifest).
+    value: ${{ steps.detect.outputs.release_type }}
+
+runs:
+  using: composite
+  steps:
+    - name: Heurística por archivos
+      id: detect
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+
+        has_ts=false
+        has_rust=false
+        has_python=false
+        has_docker=false
+        has_markdown=false
+        has_shell=false
+        is_monorepo=false
+        is_docs_only=false
+
+        # Helper · find con excludes estándar
+        repo_find() {
+          find . -path ./node_modules -prune -o -path ./.git -prune -o -path ./target -prune \
+                  -o -path ./dist -prune -o -path ./.next -prune -o -path ./build -prune \
+                  -o -type f "$@" -print 2>/dev/null
+        }
+
+        # TS/JS
+        if [ -f package.json ]; then
+          if grep -q '"typescript"' package.json 2>/dev/null || ls tsconfig*.json >/dev/null 2>&1; then
+            has_ts=true
+          else
+            # JS sin TS también cuenta como "node" para release-please
+            has_ts=true
+          fi
+        fi
+
+        # Rust
+        if [ -f Cargo.toml ]; then has_rust=true; fi
+
+        # Python
+        if [ -f pyproject.toml ] || [ -f setup.cfg ] || ls requirements*.txt >/dev/null 2>&1; then
+          has_python=true
+        fi
+
+        # Docker
+        if ls Dockerfile* >/dev/null 2>&1 || ls compose*.yml compose*.yaml docker-compose*.yml docker-compose*.yaml >/dev/null 2>&1; then
+          has_docker=true
+        fi
+
+        # Markdown (cualquier .md en repo)
+        if [ -n "$(repo_find -name '*.md' | head -1)" ]; then has_markdown=true; fi
+
+        # Shell
+        if [ -n "$(repo_find -name '*.sh' -o -name '*.bash' | head -1)" ]; then has_shell=true; fi
+
+        # Monorepo
+        if [ -f pnpm-workspace.yaml ] || [ -f .release-please-manifest.json ] || [ -f release-please-config.json ]; then
+          is_monorepo=true
+        fi
+        if [ -f package.json ] && grep -q '"workspaces"' package.json 2>/dev/null; then
+          is_monorepo=true
+        fi
+        if [ -f Cargo.toml ] && grep -q '^\[workspace\]' Cargo.toml 2>/dev/null; then
+          is_monorepo=true
+        fi
+
+        # Docs-only
+        if [ "$has_markdown" = true ] && [ "$has_ts" = false ] && [ "$has_rust" = false ] \
+            && [ "$has_python" = false ] && [ "$has_docker" = false ]; then
+          is_docs_only=true
+        fi
+
+        # languages array (JSON)
+        languages='[]'
+        add_lang() { languages=$(echo "$languages" | jq -c --arg l "$1" '. + [$l]'); }
+        [ "$has_ts" = true ]       && add_lang typescript
+        [ "$has_rust" = true ]     && add_lang rust
+        [ "$has_python" = true ]   && add_lang python
+        [ "$has_docker" = true ]   && add_lang docker
+        [ "$has_shell" = true ]    && add_lang shell
+        [ "$has_markdown" = true ] && add_lang markdown
+
+        # release_type (autotype)
+        release_type=simple
+        if [ "$is_monorepo" = true ] && { [ -f release-please-config.json ] || [ -f .release-please-manifest.json ]; }; then
+          release_type=manifest
+        elif [ "$has_rust" = true ] && [ "$has_ts" = false ]; then
+          release_type=rust
+        elif [ "$has_ts" = true ]; then
+          release_type=node
+        elif [ "$has_python" = true ]; then
+          release_type=python
+        fi
+
+        {
+          echo "has_ts=$has_ts"
+          echo "has_rust=$has_rust"
+          echo "has_python=$has_python"
+          echo "has_docker=$has_docker"
+          echo "has_markdown=$has_markdown"
+          echo "has_shell=$has_shell"
+          echo "is_monorepo=$is_monorepo"
+          echo "is_docs_only=$is_docs_only"
+          echo "languages=$languages"
+          echo "release_type=$release_type"
+        } >> "$GITHUB_OUTPUT"
+
+        {
+          echo "### detect-stack"
+          echo ""
+          echo "| Eje | Valor |"
+          echo "|---|---|"
+          echo "| Lenguajes | \`$languages\` |"
+          echo "| Monorepo | $is_monorepo |"
+          echo "| Docs only | $is_docs_only |"
+          echo "| Release type | \`$release_type\` |"
+        } >> "$GITHUB_STEP_SUMMARY"

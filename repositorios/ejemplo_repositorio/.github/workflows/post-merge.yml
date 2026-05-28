@@ -1,0 +1,48 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# post-merge · Caller plantilla · Pipelines 2026-05
+#
+# Copia este archivo a tu repo como `.github/workflows/post-merge.yml`. El único
+# trabajo que hace es invocar el orquestador en plantillas, que se encarga del
+# resto (detect-stack, linters, supply-chain, release-please, failure-report).
+#
+# Tras tu primer push a main, observa la pestaña Actions → "post-merge".
+#
+# Requisitos en el repo consumidor:
+#   - Settings → Actions → Workflow permissions = "Read and write"
+#   - Settings → Actions → Allow GitHub Actions to create and approve PRs
+#   - Issues habilitados (para sticky-issue)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: post-merge
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write          # release-please commits y PRs
+  issues: write            # sticky-issue
+  pull-requests: write     # release-please PRs
+  id-token: write          # OIDC para attest-build-provenance
+  attestations: write      # SLSA attestations
+  checks: write            # reviewdog reporter github-check
+  packages: write          # cuando se publica a GHCR (opcional aguas abajo)
+  security-events: write   # zizmor SARIF upload
+
+concurrency:
+  group: post-merge-${{ github.ref }}
+  cancel-in-progress: false   # post-merge: queremos histórico
+
+jobs:
+  run:
+    uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1
+    with:
+      enable_linters: true     # actionlint+zizmor, ruff, eslint/biome, cargo-deny, ...
+      enable_sbom: true        # syft → CycloneDX
+      enable_attest: true      # actions/attest-build-provenance (SLSA L3)
+      enable_release: false    # release-please · opt-in (default false)
+      # release_type: ""       # autodetect; override "node"|"rust"|"python"|"simple"|"manifest"
+      # streak_threshold_open: 2
+      # streak_threshold_close: 3
+    secrets: inherit
