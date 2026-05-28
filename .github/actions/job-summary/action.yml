@@ -1,0 +1,115 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# job-summary · Composite action
+#
+# Propósito: escribir un resumen estructurado en $GITHUB_STEP_SUMMARY al final
+# del job, sin requerir tokens ni red. Markdown rico, agrupable, scrolleable
+# desde la página del run.
+#
+# Uso (mismo repo):
+#   - uses: ./.github/actions/job-summary
+#     with:
+#       title: "Validación de módulos"
+#       status: "${{ job.status }}"
+#       items: |
+#         agentes=ok=12 archivos
+#         skills=ok=8 archivos
+#         hooks=warn=1 lint warning
+#       artifacts: "playwright-report,coverage"
+#       duration: "${{ steps.timer.outputs.elapsed }}"
+#
+# Uso (cross-repo):
+#   - uses: Alexendros/plantillas/.github/actions/job-summary@main
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: job-summary
+description: Escribe un job summary Markdown rico en $GITHUB_STEP_SUMMARY.
+
+inputs:
+  title:
+    description: Título del bloque (H2).
+    required: true
+  status:
+    description: "Estado global: success | failure | cancelled | skipped."
+    required: false
+    default: success
+  items:
+    description: |
+      Lista multilínea "clave=estado=detalle" (estados: ok | warn | fail | info).
+      Cada línea se renderiza como fila de tabla con icono.
+    required: false
+    default: ""
+  artifacts:
+    description: Lista separada por comas de nombres de artifacts publicados.
+    required: false
+    default: ""
+  duration:
+    description: Duración legible (ej. "1m 42s"). Si vacío, se omite.
+    required: false
+    default: ""
+  notes:
+    description: Notas libres en Markdown (renderizadas tras la tabla).
+    required: false
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - name: Render summary
+      shell: bash
+      run: |
+        set -Eeuo pipefail
+        TITLE="${{ inputs.title }}"
+        STATUS="${{ inputs.status }}"
+        ITEMS="${{ inputs.items }}"
+        ARTIFACTS="${{ inputs.artifacts }}"
+        DURATION="${{ inputs.duration }}"
+        NOTES="${{ inputs.notes }}"
+
+        case "$STATUS" in
+          success)   ICON="🟢" ;;
+          failure)   ICON="🔴" ;;
+          cancelled) ICON="🟡" ;;
+          skipped)   ICON="⚪" ;;
+          *)         ICON="ℹ️" ;;
+        esac
+
+        {
+          echo "## $ICON $TITLE"
+          echo ""
+          [ -n "$DURATION" ] && echo "**Duración:** \`$DURATION\`  "
+          echo "**Workflow:** \`${{ github.workflow }}\` · **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})  "
+          echo "**Commit:** \`${{ github.sha }}\` (${{ github.ref_name }})"
+          echo ""
+
+          if [ -n "$ITEMS" ]; then
+            echo "| Comprobación | Estado | Detalle |"
+            echo "|---|---|---|"
+            while IFS= read -r line; do
+              [ -z "$line" ] && continue
+              key="${line%%=*}"
+              rest="${line#*=}"
+              state="${rest%%=*}"
+              detail="${rest#*=}"
+              case "$state" in
+                ok)   se="✅ ok" ;;
+                warn) se="⚠️ warn" ;;
+                fail) se="❌ fail" ;;
+                info) se="ℹ️ info" ;;
+                *)    se="$state" ;;
+              esac
+              echo "| \`$key\` | $se | $detail |"
+            done <<< "$ITEMS"
+            echo ""
+          fi
+
+          if [ -n "$ARTIFACTS" ]; then
+            echo "**Artifacts publicados:** $(echo "$ARTIFACTS" | sed 's/,/, /g')"
+            echo ""
+          fi
+
+          if [ -n "$NOTES" ]; then
+            echo "---"
+            echo ""
+            echo "$NOTES"
+          fi
+        } >> "$GITHUB_STEP_SUMMARY"
