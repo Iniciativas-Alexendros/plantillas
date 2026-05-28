@@ -1,14 +1,12 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # _lib-supply-chain · Reusable workflow
 #
-# Propósito: cadena de suministro post-merge tecnología-punta 2026.
+# Cadena de suministro tecnología-punta 2026:
 #   - syft → SBOM CycloneDX (artifact + summary)
-#   - osv-scanner → vulnerabilidades (advisory)
-#   - actions/attest-build-provenance → SLSA v1 build provenance L3 nativo
-#     (cero secrets, OIDC + sigstore/fulcio gestionado por GitHub)
+#   - actions/attest-build-provenance@v2 sobre el SBOM (SLSA v1 L3 nativo)
 #
-# Non-blocking: cada step `continue-on-error: true`. Reporta a step-summary y
-# artifacts; el caller decide qué hacer con el outcome.
+# Mismo job para evitar artifact crossing (anchore/sbom-action y attest viven
+# en el mismo workspace, sin descarga intermedia).
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: _lib · supply chain
@@ -25,13 +23,17 @@ on:
         required: false
         default: true
       subject_path:
-        description: Path al artifact a atestar (binario, dir, glob). Si vacío, atesta el workspace completo (modo "source provenance").
+        description: Path al artifact a atestar. Si vacío y enable_sbom, atesta el propio SBOM.
         type: string
         required: false
         default: ""
     outputs:
-      sbom_outcome: { value: "${{ jobs.sbom.outputs.outcome }}", description: outcome SBOM }
-      attest_outcome: { value: "${{ jobs.attest.outputs.outcome }}", description: outcome attest }
+      sbom_outcome:
+        value: ${{ jobs.supply.outputs.sbom_outcome }}
+        description: outcome SBOM
+      attest_outcome:
+        value: ${{ jobs.supply.outputs.attest_outcome }}
+        description: outcome attest
 
 permissions:
   contents: read
@@ -40,23 +42,28 @@ permissions:
   packages: write
 
 jobs:
-  sbom:
-    name: syft → CycloneDX SBOM
-    if: inputs.enable_sbom
+  supply:
+    name: SBOM + provenance
     runs-on: ubuntu-latest
     outputs:
-      outcome: ${{ steps.run.outcome }}
+      sbom_outcome: ${{ steps.sbom.outcome }}
+      attest_outcome: ${{ steps.attest.outcome }}
     steps:
       - uses: actions/checkout@v4
-      - id: run
+
+      - id: sbom
+        name: syft → CycloneDX SBOM
+        if: inputs.enable_sbom
         continue-on-error: true
         uses: anchore/sbom-action@v0
         with:
           format: cyclonedx-json
           output-file: sbom.cdx.json
           artifact-name: sbom-cyclonedx.json
+          upload-artifact: true
+
       - name: Summary SBOM
-        if: always()
+        if: always() && inputs.enable_sbom
         continue-on-error: true
         run: |
           if [ -f sbom.cdx.json ]; then
@@ -66,38 +73,30 @@ jobs:
               echo "**Componentes:** $N"
               echo "Artifact: \`sbom-cyclonedx.json\`"
             } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### SBOM · CycloneDX" >> "$GITHUB_STEP_SUMMARY"
+            echo "SBOM no generado." >> "$GITHUB_STEP_SUMMARY"
           fi
 
-  attest:
-    name: attest-build-provenance
-    if: inputs.enable_attest
-    needs: [sbom]
-    runs-on: ubuntu-latest
-    outputs:
-      outcome: ${{ steps.do.outcome }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download SBOM (si se generó)
-        if: inputs.enable_sbom
-        uses: actions/download-artifact@v4
+      - id: attest
+        if: inputs.enable_attest && (steps.sbom.outcome == 'success' || inputs.subject_path != '')
         continue-on-error: true
-        with:
-          name: sbom-cyclonedx.json
-          path: .
-      - id: do
-        continue-on-error: true
-        name: Atestar build provenance + SBOM
+        name: Atestar build provenance
         uses: actions/attest-build-provenance@v2
         with:
           subject-path: ${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}
+
       - name: Summary attest
-        if: always()
+        if: always() && inputs.enable_attest
         continue-on-error: true
+        env:
+          SP: ${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}
+          OUT: ${{ steps.attest.outcome }}
         run: |
           {
             echo "### attest-build-provenance"
-            echo "**Subject:** \`${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}\`"
-            echo "**Outcome:** \`${{ steps.do.outcome }}\`"
+            echo "**Subject:** \`$SP\`"
+            echo "**Outcome:** \`$OUT\`"
             echo ""
-            echo "Verificación local: \`gh attestation verify <artifact> --owner ${{ github.repository_owner }}\`"
+            echo "Verificación: \`gh attestation verify <artifact> --owner ${{ github.repository_owner }}\`"
           } >> "$GITHUB_STEP_SUMMARY"
