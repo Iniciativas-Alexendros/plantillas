@@ -60,12 +60,19 @@ jobs:
           RELEASE: ${{ inputs.release_outcome }}
         run: |
           set -Eeuo pipefail
+          # OVERALL classification (3 tiers · ok 🟢 / warn 🟡 / fail 🔴)
+          # - fail: supply-chain o release jobs estructurales fallan
+          # - warn: solo linters warn/failure (informativo, no bloqueo de blast radius)
+          # - ok:   todo verde o skipped
           OVERALL=ok
           for v in "$SBOM" "$ATTEST" "$RELEASE"; do
             case "$v" in failure|cancelled) OVERALL=fail ;; esac
           done
-          if echo "$LINT_JSON" | jq -e '. | to_entries[] | select(.value=="failure")' >/dev/null 2>&1; then
-            OVERALL=fail
+          # Linters: failure → warn; "warn" outcome (OSV-style) → warn; nada eleva a fail
+          if [ "$OVERALL" = ok ]; then
+            if echo "$LINT_JSON" | jq -e '. | to_entries[] | select(.value=="failure" or .value=="warn")' >/dev/null 2>&1; then
+              OVERALL=warn
+            fi
           fi
           echo "overall=$OVERALL" >> "$GITHUB_OUTPUT"
           echo "::notice::overall=$OVERALL"
@@ -107,7 +114,11 @@ jobs:
           OVERALL: ${{ steps.classify.outputs.overall }}
         run: |
           set -Eeuo pipefail
-          if [ "$OVERALL" = ok ]; then ICON="🟢"; else ICON="🔴"; fi
+          case "$OVERALL" in
+            ok)   ICON="🟢" ;;
+            warn) ICON="🟡" ;;
+            *)    ICON="🔴" ;;
+          esac
           {
             echo "## $ICON Post-merge summary"
             echo ""
@@ -168,7 +179,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - id: open
-        name: Abrir/actualizar issue si racha >= threshold_open
+        name: Abrir/actualizar issue si racha >= threshold_open (solo fail, no warn)
         if: steps.classify.outputs.overall == 'fail' && fromJSON(steps.streak.outputs.prev_fail) >= inputs.streak_threshold_open
         uses: Alexendros/plantillas/.github/actions/sticky-issue@main
         with:
@@ -179,8 +190,8 @@ jobs:
           body: ${{ steps.issue_body.outputs.issue_body }}
 
       - id: close
-        name: Cerrar issue si racha verde >= threshold_close
-        if: steps.classify.outputs.overall == 'ok' && fromJSON(steps.streak.outputs.prev_ok) >= inputs.streak_threshold_close
+        name: Cerrar issue si racha verde/amarilla >= threshold_close
+        if: (steps.classify.outputs.overall == 'ok' || steps.classify.outputs.overall == 'warn') && fromJSON(steps.streak.outputs.prev_ok) >= inputs.streak_threshold_close
         uses: Alexendros/plantillas/.github/actions/sticky-issue@main
         with:
           action: close-if-streak

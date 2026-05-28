@@ -95,8 +95,9 @@ runs:
           has_python=true
         fi
 
-        # Docker
-        if ls Dockerfile* >/dev/null 2>&1 || ls compose*.yml compose*.yaml docker-compose*.yml docker-compose*.yaml >/dev/null 2>&1; then
+        # Docker (recursivo · monorepos con apps/*/Dockerfile o services/*/Dockerfile)
+        if [ -n "$(repo_find -name 'Dockerfile*' | head -1)" ] || \
+           [ -n "$(repo_find -name 'compose*.yml' -o -name 'compose*.yaml' -o -name 'docker-compose*.yml' -o -name 'docker-compose*.yaml' | head -1)" ]; then
           has_docker=true
         fi
 

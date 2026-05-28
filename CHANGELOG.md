@@ -5,6 +5,25 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Post-Merge Template v1.1 polish
+
+### Changed
+
+- **`.github/actions/detect-stack/action.yml`** — Detección de Docker ahora recursiva (`repo_find -name 'Dockerfile*'`). Monorepos con `apps/*/Dockerfile`, `services/*/Dockerfile`, etc. ahora activan correctamente el job `hadolint`. Antes solo se chequeaba la raíz.
+
+- **`.github/workflows/_lib-lint-aggregate.yml`** — `osv-scanner` migrado del wrapper `google/osv-scanner-action/osv-scanner-action@v2.3.8` (exit 127, no usable directamente según Google) al binario CLI oficial (`osv-scanner_linux_amd64`). Pre-check de lockfiles: si no hay (`package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` / `Cargo.lock` / `requirements.txt` / `poetry.lock` / `Pipfile.lock` / `go.sum` / `composer.lock`), outcome=skipped (no es failure). Vulnerabilidades detectadas → outcome=warn (no fail).
+
+- **`.github/workflows/_lib-failure-report.yml`** — Clasificador global pasa de 2 estados (ok/fail) a 3 tiers:
+  - 🟢 `ok` — todo verde o skipped
+  - 🟡 `warn` — solo linters tienen `failure` o `warn` outcome (informativo, no abre issue auto)
+  - 🔴 `fail` — supply-chain o release jobs estructurales fallan (sí abre issue auto tras racha)
+
+  Coherente con la filosofía "máxima info en fallo, no bloqueo fatal": OSV vulns o linters quisquillosos no degradan el sticky a rojo. Issue auto reservado para regresiones de blast radius alto.
+
+- **`.github/workflows/_lib-{detect-stack,lint-aggregate,release-please,supply-chain}.yml`** — Bump de actions a versiones Node 24-compatible: `actions/checkout@v4 → @v5`, `actions/upload-artifact@v4 → @v5`, `actions/setup-node@v4 → @v5`. Anticipa la deprecación de Node 20 en runners (forzada 2026-06-02).
+
+---
+
 ## [Unreleased] — Post-Merge Template · least-privilege polish
 
 ### Changed

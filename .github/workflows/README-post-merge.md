@@ -70,12 +70,22 @@ Comunes (siempre activos): actionlint, zizmor (security audit de workflows), yam
 - Override manual: pasa `release_type: <node|rust|python|simple|manifest>` al caller.
 - **Opt-in obligatorio**: `enable_release: true` en el caller. Default `false` para proteger repos no-publicables (xek-cluster, controlink-operator).
 
-## Notificación de fallos (4 capas)
+## Notificación de fallos (4 capas + 3 tiers)
 
 1. **reviewdog inline** (`reporter: github-check`, `level: warning`, `fail_on_error: false`) — anotaciones en el código modificado. Funciona aunque el trigger sea `push`.
 2. **`$GITHUB_STEP_SUMMARY`** rico en cada `_lib-*` reusable.
 3. **Sticky commit-comment** en el commit de merge (marker `<!-- bot:post-merge-sticky -->`, idempotente). SIEMPRE se publica.
-4. **Issue auto sticky** SOLO si `prev_fail >= streak_threshold_open` (default 2 runs consecutivos fallidos). Anti-flake. Auto-cierre tras `streak_threshold_close` verdes consecutivos.
+4. **Issue auto sticky** SOLO si `tier=fail` y `prev_fail >= streak_threshold_open` (default 2 runs consecutivos fallidos). Anti-flake. Auto-cierre tras `streak_threshold_close` verdes/amarillos consecutivos.
+
+### Tiers de outcome global (sticky)
+
+| Tier | Icono | Cuándo |
+|---|---|---|
+| ok | 🟢 | Todo verde o skipped |
+| warn | 🟡 | Solo linters con failure/warn (informativo · NO abre issue auto) |
+| fail | 🔴 | Supply-chain o release jobs estructurales fallan |
+
+Coherente con "máxima info en fallo, no bloqueo fatal": OSV vulns o lint quisquilloso = 🟡 (señal sin alarma). Issue auto reservado para regresiones de blast radius alto.
 
 ## Tecnología punta 2026
 
