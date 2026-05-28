@@ -1,0 +1,39 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# post-merge · dogfood en plantillas mismo
+#
+# Apunta a @main (no @v1 todavía · tagueo v1.0.0 tras semana de validación).
+# Este caller valida la lib en su propio repo antes de extender a otros pilotos.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: post-merge
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  id-token: write
+  attestations: write
+  checks: write
+  packages: write
+  security-events: write
+
+concurrency:
+  group: post-merge-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  run:
+    uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@main
+    with:
+      enable_linters: true
+      enable_sbom: true
+      enable_attest: true
+      enable_release: false    # plantillas: aún no activamos release-please hasta validar
+      streak_threshold_open: 2
+      streak_threshold_close: 3
+    secrets: inherit
