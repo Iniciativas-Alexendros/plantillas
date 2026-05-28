@@ -34,3 +34,6 @@ Thumbs.db
 # ─── Backups locales ─────────────────────────────────────────────────────────
 *.backup.*
 *.bak
+
+# ─── Claude Code (overrides personales) ──────────────────────────────────────
+.claude/settings.local.json
