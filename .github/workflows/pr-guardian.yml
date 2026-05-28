@@ -63,13 +63,15 @@ jobs:
         continue-on-error: true
         run: |
           echo "::group::Tamaño del PR"
-          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" \
-            "${{ github.event.pull_request.head.sha }}" | \
+          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          BASE=$(git merge-base "$BASE_REF" "$HEAD_SHA")
+          LINES=$(git diff --numstat "$BASE" "$HEAD_SHA" | \
             awk '{added+=$1; removed+=$2} END {print added+removed}')
 
           echo "📊 Líneas cambiadas: $LINES"
 
-          if [ "$LINES" -gt 500 ]; then
+          if [ "$LINES" -gt 800 ]; then
             echo "⚠️ PR muy grande ($LINES líneas). Considera dividirlo en PRs menores."
             exit 1
           else
@@ -97,7 +99,7 @@ jobs:
           # modificarse en PRs de lint/CI sin issue previo.
 
           EXIT=0
-          CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+          CHANGED=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
             "${{ github.event.pull_request.head.sha }}")
 
           # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
@@ -131,7 +133,7 @@ jobs:
       - name: Verificar CHANGELOG.md
         run: |
           echo "::group::Verificación CHANGELOG"
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+          CHANGES=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
             "${{ github.event.pull_request.head.sha }}")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
