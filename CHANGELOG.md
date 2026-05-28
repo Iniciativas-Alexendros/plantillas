@@ -20,7 +20,7 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **`.github/actions/sticky-issue/action.yml`** — Upsert idempotente vía marker HTML. Soporta `create-or-update` y `close-if-streak`.
 - **`.github/actions/sticky-commit-comment/action.yml`** — Comentario sticky al commit (no PR), marker HTML idempotente.
 - **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`** — Caller plantilla copy-paste-ready.
-- **`docs/post-merge-template.md`** — Documentación adopción (3 pasos), inputs, stacks soportados, troubleshooting, versionado.
+- **`.github/workflows/README-post-merge.md`** — Documentación adopción (3 pasos), inputs, stacks soportados, troubleshooting, versionado.
 
 Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1`. Pilotos planificados: plantillas (dogfood), afiladocs, xek-cluster. Resto en sprint posterior tras validación.
 
