@@ -105,7 +105,7 @@ jobs:
           # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
           # (si hay cambios en módulos, el step 4 ya exige que se actualice)
           MODIFIES_MODULES=false
-          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
+          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
             MODIFIES_MODULES=true
           fi
 
@@ -136,7 +136,7 @@ jobs:
           CHANGES=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
             "${{ github.event.pull_request.head.sha }}")
 
-          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
+          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
               echo "✅ CHANGELOG.md actualizado"
             else

@@ -62,7 +62,7 @@ jobs:
           echo "type=$T" >> "$GITHUB_OUTPUT"
           echo "::notice::release-please type=$T (override='${OVERRIDE}' auto='${AUTO}')"
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - id: rp
         name: googleapis/release-please-action

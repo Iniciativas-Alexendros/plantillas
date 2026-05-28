@@ -37,6 +37,6 @@ jobs:
       languages: ${{ steps.s.outputs.languages }}
       release_type: ${{ steps.s.outputs.release_type }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - id: s
         uses: Alexendros/plantillas/.github/actions/detect-stack@main
