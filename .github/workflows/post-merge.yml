@@ -13,14 +13,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  issues: write
-  pull-requests: write
-  id-token: write
-  attestations: write
-  checks: write
-  packages: write
-  security-events: write
+  contents: write          # sticky-commit-comment + release-please commits
+  issues: write            # sticky-issue (anti-flake regression tracking)
+  pull-requests: write     # release-please PR creation (solo si enable_release=true)
+  id-token: write          # OIDC para actions/attest-build-provenance
+  attestations: write      # SLSA L3 attestations
+  checks: write            # reviewdog reporter github-check
+  security-events: write   # zizmor SARIF upload
 
 concurrency:
   group: post-merge-${{ github.ref }}

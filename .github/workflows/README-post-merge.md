@@ -28,6 +28,25 @@ Eso es todo. El orquestador detecta el stack y activa solo los gates relevantes.
 | `streak_threshold_open` | `2` | Runs consecutivos fallidos necesarios para abrir issue auto. |
 | `streak_threshold_close` | `3` | Runs verde-consecutivos para cerrar issue auto. |
 
+
+## Matriz de permisos
+
+El caller debe declarar permisos suficientes para las features activadas. Mínimo viable según `enable_*`:
+
+| Permiso | Siempre | `enable_linters` | `enable_sbom` | `enable_attest` | `enable_release` |
+|---|---|---|---|---|---|
+| `contents: write` | ✅ sticky-commit-comment | | | | ✅ release PR commits |
+| `issues: write` | ✅ sticky-issue (anti-flake) | | | | |
+| `pull-requests: write` | | | | | ✅ release-please PR |
+| `id-token: write` | | | | ✅ OIDC | |
+| `attestations: write` | | | | ✅ SLSA L3 | |
+| `checks: write` | | ✅ reviewdog | | | |
+| `security-events: write` | | ✅ zizmor SARIF | | | |
+
+**Caller plantilla** declara todos los anteriores (modo "todo activo"). Para least-privilege estricto, recorta según tus `enable_*`.
+
+`packages: write` **no** lo requiere esta lib (intencional). Los repos que publiquen a GHCR lo declaran en su `release.yml` propio, no en `post-merge.yml`.
+
 ## Stacks soportados
 
 `detect-stack` clasifica por presencia de archivos (sin clonar deps):

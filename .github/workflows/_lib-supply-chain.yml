@@ -39,7 +39,6 @@ permissions:
   contents: read
   id-token: write
   attestations: write
-  packages: write
 
 jobs:
   supply:
