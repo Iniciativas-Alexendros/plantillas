@@ -1,0 +1,69 @@
+# CLAUDE.md — Categoría {{CATEGORY_NAME}} (L1 · fullstack/devops)
+
+- Versión: 2.0.0
+- Ámbito: aplicable a todos los proyectos bajo `{{CATEGORY_PATH}}`.
+- Hereda de: `~/.claude/CLAUDE.md` (L0) y AXIS (`~/.claude/AXIS.md`).
+- Propósito: contexto y herramientas comunes a la ingeniería de software de la
+  categoría (git/GitHub, CI/CD, build/test, revisión e integración de cambios).
+
+> **Dos regímenes de carga en Claude Code:**
+> - *CLAUDE.md (memoria)* hereda en cascada: el CLI asciende del cwd hasta `/` y
+>   concatena cada `CLAUDE.md`/`.claude/CLAUDE.md`. Por tanto **este CLAUDE.md lo
+>   heredan también los repos hijos** (L2), sumado a L0 y al del repo.
+> - *settings + agents/skills/commands* NO heredan de directorios intermedios: solo
+>   se cargan del usuario (`~/.claude/`) y del proyecto (cwd). El kit de tools de este
+>   scope se activa al abrir `claude` con cwd en `{{CATEGORY_PATH}}`.
+
+## Identidad del scope
+
+Categoría de **proyectos de código**. Trabajo bajo Maestría Ingeniero: programación
+(cualquier lenguaje), integraciones, infraestructura, despliegue, tests y revisión.
+Mapa vivo de los repos propios, su tipificación y estado: `~/.claude/CARTERA.md`.
+
+## Convenciones de la categoría
+
+- **Idioma y estilo**: castellano técnico, sin emojis fuera de bullets de informe (L0).
+- **Scripts**: `set -o pipefail` o `${PIPESTATUS[0]}` tras pipes, siempre (L0).
+- **SUDAUTH**: nunca `sudo`/`doas`/`pkexec`; se prepara el comando y se entrega al
+  operador con prefijo `! sudo …`. La ejecución privilegiada es acto humano (L0).
+- **Commits**: estilo convencional (`tipo(scope): asunto`), asunto imperativo en
+  castellano; cada commit construye y pasa lint/test del repo.
+- **Ramas**: trabajo en rama temática (`feat/…`, `fix/…`, `homologacion-…`);
+  integración a `main` por **PR** con merge commit (`--no-ff`) salvo decisión contraria
+  del repo. No `push --force` ni `reset --hard` sin confirmación del operador.
+- **Hipótesis vs afirmación**: distinguir explícitamente ante incertidumbre (L0).
+- **"Descatalogado" ≠ "deprecado"**: no usar el segundo como sinónimo del primero (L0).
+
+## Herramientas del scope
+
+- **Agents** (`.claude/agents/`): `code-reviewer` (revisión pre-PR), `ci-runner`
+  (estado de CI/CD y tests), `repo-developer` (desarrollo iterativo), `repo-launcher`
+  (pre-release/deploy con rollback), `incident-responder` (triaje de fallos).
+- **Skills** (`.claude/skills/`): `dev-revision-codigo`, `dev-estrategia-tests`,
+  `app-ci-cd`, `app-despliegue`, `app-docker`. Se autoactivan por contexto o se
+  invocan con `/<nombre>`.
+- **Command** (`.claude/commands/`): `/integrar-homologacion` lanza la orquestación de
+  integración de ramas a `main` vía PR (plan en `.claude/plans/`).
+- **MCP de cuenta** (ámbito usuario, no declarados aquí): `deepwiki` (entender
+  dependencias y breaking changes de librerías por su repo GitHub), `hostinger`
+  (infra/VPS/DNS para repos de infraestructura), `notion` (tableros referenciados).
+  Están permitidos en `settings.json`; úsalos cuando aporten contexto verificable.
+
+## Validación canónica
+
+Los repos de esta categoría se homologan contra el motor `~/Repositorios/plantillas/`:
+- Repos finales: `python ~/Repositorios/plantillas/repositorios/validar_repositorio.py <repo> --strict`.
+- El propio motor `plantillas`: `python ~/Repositorios/plantillas/validar_repo.py --strict`.
+
+## Perfiles por stack (criterio de build/test)
+
+- **Webapp** (Next/Turborepo): `pnpm install && pnpm build`, `pnpm test`/Playwright, lint.
+- **MCP/TS**: `pnpm build`/`test`. **Rust**: `cargo build`/`test`/`clippy`.
+- **Design-system**: `node scripts/validate-tokens.mjs` / `validate-contrast.mjs`.
+- **Infra**: `docker compose config --quiet`; prohibido `:latest`. **Registro**:
+  `python tools/validate.py`.
+
+## Excepciones respecto a L0
+
+- Ninguna que contradiga L0. Esta L1 sólo añade contexto devops; el canon global
+  (idioma, pipefail, SUDAUTH, distinciones) permanece vigente sin excepción.
