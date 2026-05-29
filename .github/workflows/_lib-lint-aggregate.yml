@@ -1,0 +1,373 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-lint-aggregate · Reusable workflow
+#
+# Propósito: ejecutar linters punta 2026 en paralelo. NON-BLOCKING en post-merge
+# (continue-on-error: true en cada step crítico). Salida vía reviewdog
+# (anotaciones inline) + job-summary + outcome JSON agregado.
+#
+# Linters activados según presencia de archivos:
+#   - actionlint + zizmor       · siempre (.github/workflows/*)
+#   - yamllint                  · siempre
+#   - gitleaks                  · siempre
+#   - shellcheck                · si hay *.sh
+#   - hadolint                  · si hay Dockerfile*
+#   - markdownlint-cli2 + lychee · si hay *.md
+#   - ESLint (vía npm)          · si has_ts y existe eslint config
+#   - Biome                     · si has_ts y existe biome.json|biome.jsonc
+#   - Ruff                      · si has_python
+#   - cargo-deny + clippy       · si has_rust
+#   - osv-scanner               · siempre (cubre TS/Python/Rust/Go/Maven lockfiles)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · lint aggregate
+
+on:
+  workflow_call:
+    inputs:
+      has_ts: { type: string, required: false, default: "false" }
+      has_rust: { type: string, required: false, default: "false" }
+      has_python: { type: string, required: false, default: "false" }
+      has_docker: { type: string, required: false, default: "false" }
+      has_markdown: { type: string, required: false, default: "false" }
+      has_shell: { type: string, required: false, default: "false" }
+    outputs:
+      outcome_json:
+        description: JSON con outcome de cada linter ej. {"actionlint":"ok",...}
+        value: ${{ jobs.aggregate.outputs.outcome_json }}
+
+permissions:
+  contents: read
+  checks: write
+  pull-requests: read
+  security-events: write
+
+jobs:
+  workflows:
+    name: actionlint + zizmor
+    runs-on: ubuntu-latest
+    outputs:
+      actionlint: ${{ steps.al.outcome }}
+      zizmor: ${{ steps.zz.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - id: al
+        name: actionlint via reviewdog
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          curl -sfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- latest "$HOME/.local/bin"
+          "$HOME/.local/bin/actionlint" -no-color 2>&1 | \
+            reviewdog -name=actionlint -reporter=github-check -level=warning -fail-on-error=false -f=actionlint || true
+      - id: zz
+        name: zizmor (security audit de workflows)
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          pipx install zizmor || pip install --user zizmor
+          zizmor --format sarif . > zizmor.sarif 2>/dev/null || true
+          zizmor --format plain . 2>&1 | tail -60 >> "$GITHUB_STEP_SUMMARY" || true
+      - uses: github/codeql-action/upload-sarif@v3
+        if: hashFiles('zizmor.sarif') != ''
+        continue-on-error: true
+        with:
+          sarif_file: zizmor.sarif
+          category: zizmor
+
+  secrets-scan:
+    name: gitleaks
+    runs-on: ubuntu-latest
+    outputs:
+      gitleaks: ${{ steps.gl.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+        with: { fetch-depth: 0 }
+      - id: gl
+        continue-on-error: true
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          GITLEAKS_ENABLE_SUMMARY: "true"
+
+  yaml:
+    name: yamllint
+    runs-on: ubuntu-latest
+    outputs:
+      yamllint: ${{ steps.yl.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install --quiet yamllint
+      - id: yl
+        continue-on-error: true
+        run: |
+          set -Eeuo pipefail
+          yamllint -d relaxed -f github . | tee yamllint.log
+          {
+            echo "### yamllint"
+            echo '```'
+            cat yamllint.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  shell:
+    name: shellcheck
+    if: inputs.has_shell == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      shellcheck: ${{ steps.sh.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - id: sh
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './node_modules/*' -not -path './.git/*' \
+            -print0 | xargs -0 -r shellcheck -f gcc 2>&1 | \
+            reviewdog -name=shellcheck -reporter=github-check -level=warning -fail-on-error=false -f=gcc || true
+
+  docker:
+    name: hadolint
+    if: inputs.has_docker == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      hadolint: ${{ steps.hd.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - id: hd
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          curl -sfL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o "$HOME/.local/bin/hadolint"
+          chmod +x "$HOME/.local/bin/hadolint"
+          find . -name 'Dockerfile*' -not -path './node_modules/*' -not -path './.git/*' -print0 | \
+            xargs -0 -r "$HOME/.local/bin/hadolint" --no-color --format=tty 2>&1 | \
+            reviewdog -name=hadolint -reporter=github-check -level=warning -fail-on-error=false -efm='%f:%l %m' || true
+
+  markdown:
+    name: markdownlint + lychee
+    if: inputs.has_markdown == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      markdownlint: ${{ steps.ml.outcome }}
+      lychee: ${{ steps.lc.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - id: ml
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          npm i -g markdownlint-cli2 >/dev/null 2>&1
+          markdownlint-cli2 "**/*.md" "#node_modules" "#.git" 2>&1 | tee md.log | \
+            reviewdog -name=markdownlint -reporter=github-check -level=info -fail-on-error=false \
+              -efm='%f:%l:%c %m' -efm='%f:%l %m' || true
+          {
+            echo "### markdownlint-cli2"
+            echo '```'
+            tail -40 md.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - id: lc
+        name: lychee link-check (advisory)
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: '--no-progress --max-retries 3 --timeout 30 --accept 200,201,202,203,204,206,300..=399,403,429 --exclude-mail "**/*.md"'
+          fail: false
+
+  typescript:
+    name: ESLint o Biome
+    if: inputs.has_ts == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      ts_linter: ${{ steps.run.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: pnpm/action-setup@v4
+        continue-on-error: true
+        with: { run_install: false }
+      - uses: actions/setup-node@v5
+        with: { node-version: '22' }
+      - id: run
+        continue-on-error: true
+        run: |
+          set -Eeuo pipefail
+          # Prefer Biome si existe biome.json(c)
+          if [ -f biome.json ] || [ -f biome.jsonc ]; then
+            echo "[ts] Biome detectado"
+            npx --yes @biomejs/biome ci . || true
+          elif [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f .eslintrc.json ] || [ -f .eslintrc.cjs ]; then
+            echo "[ts] ESLint detectado"
+            if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ] || [ -f yarn.lock ]; then
+              corepack enable 2>/dev/null || true
+              ( pnpm install --frozen-lockfile 2>/dev/null ) || \
+              ( npm ci 2>/dev/null ) || \
+              ( npm install 2>/dev/null )
+            fi
+            npx eslint . --no-error-on-unmatched-pattern || true
+          else
+            echo "[ts] sin config TS lint · skip"
+          fi
+
+  python:
+    name: Ruff
+    if: inputs.has_python == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      ruff: ${{ steps.rf.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - id: rf
+        continue-on-error: true
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
+        run: |
+          set -Eeuo pipefail
+          pip install --quiet ruff
+          ruff check --output-format=concise . 2>&1 | \
+            reviewdog -name=ruff -reporter=github-check -level=warning -fail-on-error=false \
+              -efm='%f:%l:%c: %m' || true
+
+  rust:
+    name: cargo-deny + clippy
+    if: inputs.has_rust == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      cargo_deny: ${{ steps.cd.outcome }}
+      clippy: ${{ steps.cl.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with: { components: clippy }
+      - id: cd
+        continue-on-error: true
+        run: |
+          cargo install --locked cargo-deny --quiet || true
+          cargo deny check 2>&1 | tee deny.log
+          {
+            echo "### cargo-deny"
+            echo '```'
+            tail -80 deny.log
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - id: cl
+        continue-on-error: true
+        run: cargo clippy --all-targets --all-features -- -D warnings || true
+
+  vulns:
+    name: osv-scanner
+    runs-on: ubuntu-latest
+    outputs:
+      osv: ${{ steps.osv.outputs.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: osv
+        name: OSV-Scanner CLI
+        continue-on-error: true
+        run: |
+          set -Eeuo pipefail
+          # Detección previa de lockfiles: si no hay, skip limpio (no es failure)
+          HAS_LOCK=false
+          for f in package-lock.json pnpm-lock.yaml yarn.lock Cargo.lock requirements.txt poetry.lock Pipfile.lock go.sum composer.lock; do
+            if find . -name "$f" -not -path './node_modules/*' -not -path './.git/*' -print -quit | grep -q .; then
+              HAS_LOCK=true; break
+            fi
+          done
+          if [ "$HAS_LOCK" = false ]; then
+            echo "outcome=skipped" >> "$GITHUB_OUTPUT"
+            {
+              echo "### osv-scanner"
+              echo "Sin lockfiles detectados · skipped (no es failure)."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          # Install CLI binario oficial
+          curl -sfL -o /tmp/osv-scanner.tar.gz \
+            "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64.tar.gz" ||           curl -sfL -o /tmp/osv-scanner \
+            "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64"
+          if [ -f /tmp/osv-scanner.tar.gz ]; then
+            tar -xzf /tmp/osv-scanner.tar.gz -C /tmp osv-scanner
+          fi
+          chmod +x /tmp/osv-scanner
+          /tmp/osv-scanner --version
+          # Scan
+          set +e
+          /tmp/osv-scanner scan source --recursive --output=osv-results.json --format=json ./ 2>&1 | tee osv.log
+          OSV_RC=$?
+          set -e
+          # OSV exit code 1 = vulns found, 0 = clean. Tratamos vulns como warn no fail.
+          if [ -f osv-results.json ]; then
+            N=$(jq '[.results[]?.packages[]?.vulnerabilities[]?] | length' osv-results.json 2>/dev/null || echo 0)
+          else
+            N=0
+          fi
+          {
+            echo "### osv-scanner"
+            echo "**Vulnerabilidades encontradas:** $N"
+            echo "**Exit code:** $OSV_RC"
+          } >> "$GITHUB_STEP_SUMMARY"
+          # outcome=success siempre que el scan corrió. Las vulns son warn, no error.
+          if [ "$N" -gt 0 ]; then
+            echo "outcome=warn" >> "$GITHUB_OUTPUT"
+          else
+            echo "outcome=success" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: osv-results
+          path: osv-results.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+  aggregate:
+    name: Agregar outcome JSON
+    needs: [workflows, secrets-scan, yaml, shell, docker, markdown, typescript, python, rust, vulns]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      outcome_json: ${{ steps.j.outputs.json }}
+    steps:
+      - id: j
+        run: |
+          set -Eeuo pipefail
+          OUT=$(jq -nc \
+            --arg actionlint "${{ needs.workflows.outputs.actionlint || 'skipped' }}" \
+            --arg zizmor "${{ needs.workflows.outputs.zizmor || 'skipped' }}" \
+            --arg gitleaks "${{ needs.secrets-scan.outputs.gitleaks || 'skipped' }}" \
+            --arg yamllint "${{ needs.yaml.outputs.yamllint || 'skipped' }}" \
+            --arg shellcheck "${{ needs.shell.outputs.shellcheck || 'skipped' }}" \
+            --arg hadolint "${{ needs.docker.outputs.hadolint || 'skipped' }}" \
+            --arg markdownlint "${{ needs.markdown.outputs.markdownlint || 'skipped' }}" \
+            --arg lychee "${{ needs.markdown.outputs.lychee || 'skipped' }}" \
+            --arg ts_linter "${{ needs.typescript.outputs.ts_linter || 'skipped' }}" \
+            --arg ruff "${{ needs.python.outputs.ruff || 'skipped' }}" \
+            --arg cargo_deny "${{ needs.rust.outputs.cargo_deny || 'skipped' }}" \
+            --arg clippy "${{ needs.rust.outputs.clippy || 'skipped' }}" \
+            --arg osv "${{ needs.vulns.outputs.osv || 'skipped' }}" \
+            '{actionlint:$actionlint, zizmor:$zizmor, gitleaks:$gitleaks, yamllint:$yamllint, shellcheck:$shellcheck, hadolint:$hadolint, markdownlint:$markdownlint, lychee:$lychee, ts_linter:$ts_linter, ruff:$ruff, cargo_deny:$cargo_deny, clippy:$clippy, osv:$osv}')
+          echo "json=$OUT" >> "$GITHUB_OUTPUT"
+          {
+            echo "### lint-aggregate · outcome JSON"
+            echo '```json'
+            echo "$OUT" | jq .
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

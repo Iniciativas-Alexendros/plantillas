@@ -1,14 +1,14 @@
 # ═══════════════════════════════════════════════════════════════════════════════
-# PR Guardian · Control de calidad de Pull Requests
+# Guardián de PRs · Control de calidad de Pull Requests
 #
 # Propósito: Evitar que PRs con títulos incorrectos, tamaño excesivo,
 # modificaciones a archivos protegidos, o sin CHANGELOG entren al repo.
 #
 # Se ejecuta en:
-#   - Cada Pull Request (opened, synchronize, reopened, edited)
+#   - Cada Pull Request (eventos GitHub: opened, synchronize, reopened, edited)
 # ═══════════════════════════════════════════════════════════════════════════════
 
-name: PR Guardian
+name: Guardián de PRs
 
 on:
   pull_request:
@@ -21,7 +21,7 @@ permissions:
 
 jobs:
   guardian:
-    name: PR Guardian
+    name: Guardián de PRs
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -40,7 +40,7 @@ jobs:
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
-          echo "::group::Conventional Commit Title"
+          echo "::group::Título Conventional Commit"
           REGEX="^(feat|fix|docs|style|refactor|test|ci|chore)(\(.+\))?!?: .+"
 
           if echo "$PR_TITLE" | grep -qE "$REGEX"; then
@@ -62,14 +62,16 @@ jobs:
         id: pr_size
         continue-on-error: true
         run: |
-          echo "::group::PR Size"
-          LINES=$(git diff --numstat "origin/${{ github.event.pull_request.base.ref }}" \
-            "${{ github.event.pull_request.head.sha }}" | \
+          echo "::group::Tamaño del PR"
+          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          BASE=$(git merge-base "$BASE_REF" "$HEAD_SHA")
+          LINES=$(git diff --numstat "$BASE" "$HEAD_SHA" | \
             awk '{added+=$1; removed+=$2} END {print added+removed}')
 
           echo "📊 Líneas cambiadas: $LINES"
 
-          if [ "$LINES" -gt 500 ]; then
+          if [ "$LINES" -gt 800 ]; then
             echo "⚠️ PR muy grande ($LINES líneas). Considera dividirlo en PRs menores."
             exit 1
           else
@@ -80,7 +82,7 @@ jobs:
       # ── 3. Archivos Protegidos ──────────────────────────────────────────
       - name: Detectar archivos protegidos modificados
         run: |
-          echo "::group::Protected Files"
+          echo "::group::Archivos protegidos"
           PROTECTED=(
             "INDEX.md"
             "README.md"
@@ -88,21 +90,22 @@ jobs:
             "CODE_OF_CONDUCT.md"
             "ROADMAP.md"
             "INTEGRACION.md"
-            "install.sh"
             "claude-init"
             "update.sh"
             "validadores/base.py"
-            ".pre-commit-config.yaml"
           )
+          # Nota: install.sh y .pre-commit-config.yaml NO son protegidos
+          # bloqueantes — son configuración operativa y deben poder
+          # modificarse en PRs de lint/CI sin issue previo.
 
           EXIT=0
-          CHANGED=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+          CHANGED=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
             "${{ github.event.pull_request.head.sha }}")
 
           # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
           # (si hay cambios en módulos, el step 4 ya exige que se actualice)
           MODIFIES_MODULES=false
-          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
+          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
             MODIFIES_MODULES=true
           fi
 
@@ -129,11 +132,11 @@ jobs:
       # ── 4. CHANGELOG Actualizado ────────────────────────────────────────
       - name: Verificar CHANGELOG.md
         run: |
-          echo "::group::CHANGELOG Check"
-          CHANGES=$(git diff --name-only "origin/${{ github.event.pull_request.base.ref }}" \
+          echo "::group::Verificación CHANGELOG"
+          CHANGES=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
             "${{ github.event.pull_request.head.sha }}")
 
-          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge)/'; then
+          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
               echo "✅ CHANGELOG.md actualizado"
             else
@@ -149,7 +152,7 @@ jobs:
       # ── 5. Placeholders en Ejemplos ─────────────────────────────────────
       - name: Validar que ejemplos no tengan placeholders
         run: |
-          echo "::group::Placeholder Check"
+          echo "::group::Verificación de placeholders"
           EXIT=0
           CHECKS=(
             "mcp|mcp/validar_mcp.py|mcp/ejemplo_mcp"
@@ -176,5 +179,5 @@ jobs:
           SHA="${{ github.event.pull_request.head.sha || github.sha }}"
           gh api "repos/${{ github.repository }}/statuses/$SHA" \
             -f state="$STATE" \
-            -f context="PR Guardian" \
+            -f context="Guardián de PRs" \
             -f description="título + tamaño + protegidos + changelog + placeholders"

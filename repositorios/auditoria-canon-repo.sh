@@ -158,7 +158,9 @@ if [[ $ALL -eq 1 ]]; then
         audit_remote "$slug"
       done < <(yq -r '.repos | keys[]' "$REPOS_YAML")
     else
-      python3 - "$REPOS_YAML" <<'PY'
+      while IFS= read -r slug; do
+        audit_remote "$slug"
+      done < <(python3 - "$REPOS_YAML" <<'PY'
 import yaml, sys
 data = yaml.safe_load(open(sys.argv[1]))
 for slug, meta in (data.get('repos') or {}).items():
@@ -166,7 +168,7 @@ for slug, meta in (data.get('repos') or {}).items():
         continue
     print(slug)
 PY
-      | while read -r slug; do audit_remote "$slug"; done
+)
     fi
   } | tee "$out"
 

@@ -22,14 +22,15 @@ añadir módulos, validadores, y mejoras al sistema.
   Ejemplo: `feat(agentes): añade validador de subagentes`
 - **Tamaño del PR**: máximo ~500 líneas cambiadas. Divide PRs grandes.
 - **CHANGELOG**: si modificas módulos o validadores, actualiza `CHANGELOG.md`.
-- **Archivos protegidos**: `INDEX.md`, `README.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `CHANGELOG.md`, `INTEGRACION.md`, `CODE_OF_CONDUCT.md`, `install.sh`, `claude-init`, `update.sh`, `validadores/base.py`, `.pre-commit-config.yaml`. Si necesitas modificarlos, discútelo primero en un issue.
+- **Archivos protegidos** (bloquean PR Guardian si los modificas): `INDEX.md`, `README.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `CHANGELOG.md`, `INTEGRACION.md`, `CODE_OF_CONDUCT.md`, `claude-init`, `update.sh`, `validadores/base.py`. Si necesitas modificarlos, discútelo primero en un issue.
+- **Configuración operativa** (modificable en PRs de lint/CI sin issue previo): `install.sh`, `.pre-commit-config.yaml`. Siguen exigiendo entrada en `CHANGELOG.md` y revisión.
 
 ## Checks automáticos (CI/CD)
 
 Todo PR debe pasar:
 
 1. **CI Global** (`ci-global.yml`): lint de YAML, JSON, Markdown, Python (`ruff`), Shell (`shellcheck`), y estructura del repo (`validar_repo.py`).
-2. **PR Guardian** (`pr-guardian.yml`): título válido, tamaño razonable, archivos protegidos no tocados, CHANGELOG actualizado.
+2. **Guardián de PRs** (`pr-guardian.yml`): título válido, tamaño razonable, archivos protegidos no tocados, CHANGELOG actualizado.
 3. **Security Scan** (`security-scan.yml`): sin secrets, tokens ni archivos prohibidos en el repo.
 4. **Validación de módulos** (`validar-todos.yml`): todos los ejemplos pasan `--strict`.
 5. **Pre-commit hooks** (local): idénticos a CI para detectar problemas antes de pushear.

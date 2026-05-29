@@ -1,0 +1,42 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-detect-stack · Reusable workflow
+#
+# Propósito: exponer detect-stack como reusable wf para que callers puedan
+# referenciarlo vía `uses:` con outputs disponibles entre jobs.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · detect stack
+
+on:
+  workflow_call:
+    outputs:
+      has_ts: { description: TypeScript/JS, value: "${{ jobs.detect.outputs.has_ts }}" }
+      has_rust: { description: Rust, value: "${{ jobs.detect.outputs.has_rust }}" }
+      has_python: { description: Python, value: "${{ jobs.detect.outputs.has_python }}" }
+      has_docker: { description: Docker, value: "${{ jobs.detect.outputs.has_docker }}" }
+      has_markdown: { description: Markdown, value: "${{ jobs.detect.outputs.has_markdown }}" }
+      has_shell: { description: Shell, value: "${{ jobs.detect.outputs.has_shell }}" }
+      is_monorepo: { description: Monorepo, value: "${{ jobs.detect.outputs.is_monorepo }}" }
+      is_docs_only: { description: Docs only, value: "${{ jobs.detect.outputs.is_docs_only }}" }
+      languages: { description: JSON array, value: "${{ jobs.detect.outputs.languages }}" }
+      release_type: { description: Tipo release-please, value: "${{ jobs.detect.outputs.release_type }}" }
+
+jobs:
+  detect:
+    name: Detectar stack
+    runs-on: ubuntu-latest
+    outputs:
+      has_ts: ${{ steps.s.outputs.has_ts }}
+      has_rust: ${{ steps.s.outputs.has_rust }}
+      has_python: ${{ steps.s.outputs.has_python }}
+      has_docker: ${{ steps.s.outputs.has_docker }}
+      has_markdown: ${{ steps.s.outputs.has_markdown }}
+      has_shell: ${{ steps.s.outputs.has_shell }}
+      is_monorepo: ${{ steps.s.outputs.is_monorepo }}
+      is_docs_only: ${{ steps.s.outputs.is_docs_only }}
+      languages: ${{ steps.s.outputs.languages }}
+      release_type: ${{ steps.s.outputs.release_type }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: s
+        uses: Alexendros/plantillas/.github/actions/detect-stack@main

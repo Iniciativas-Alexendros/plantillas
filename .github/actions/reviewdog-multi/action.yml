@@ -1,0 +1,43 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# reviewdog-multi · Composite action
+#
+# Propósito: bootstrap de reviewdog con reporter `github-check`
+# (`fail_on_error: false`). Diseñado para post-merge: queremos anotaciones
+# sin bloquear el run (el merge ya pasó).
+#
+# Uso:
+#   - uses: ./.github/actions/reviewdog-multi
+#     with:
+#       tool_name: actionlint
+#       level: warning
+#
+# Tras este step, reviewdog binario está disponible en PATH. El caller invoca
+# directamente p. ej.: `actionlint -no-color | reviewdog -name=actionlint -reporter=github-check -level=warning -fail-on-error=false -f=actionlint`
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: reviewdog-multi
+description: Instala reviewdog y exporta su path. Reporter github-check, no bloqueante.
+
+inputs:
+  version:
+    description: Versión de reviewdog.
+    required: false
+    default: v0.20.3
+
+runs:
+  using: composite
+  steps:
+    - name: Install reviewdog
+      shell: bash
+      env:
+        RD_VERSION: ${{ inputs.version }}
+      run: |
+        set -Eeuo pipefail
+        if command -v reviewdog >/dev/null; then
+          echo "[reviewdog-multi] ya instalado: $(reviewdog -version)"
+          exit 0
+        fi
+        curl -sfL https://raw.githubusercontent.com/reviewdog/reviewdog/master/install.sh | \
+          sh -s -- -b "$HOME/.local/bin" "$RD_VERSION"
+        echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+        "$HOME/.local/bin/reviewdog" -version

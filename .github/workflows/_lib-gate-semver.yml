@@ -1,0 +1,104 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-gate-semver · Reusable workflow
+#
+# Propósito: validar que una ref/tag cumple SemVer 2.0.0 estricta antes de
+# acciones destructivas (docker push :latest, npm publish, GitHub release).
+#
+# Uso típico (en release.yml del consumidor):
+#
+#   on:
+#     push:
+#       tags: ['v*']
+#   jobs:
+#     gate:
+#       uses: Alexendros/plantillas/.github/workflows/_lib-gate-semver.yml@main
+#       with:
+#         ref: ${{ github.ref_name }}
+#     publish:
+#       needs: gate
+#       if: needs.gate.outputs.is-stable == 'true'
+#       ...
+#
+# Política:
+#   - Acepta v1.2.3, v1.2.3-rc.1, v1.2.3+build.5 — todo SemVer 2.0.
+#   - is-stable=true solo si NO hay pre-release (no -rc, -beta, etc.).
+#   - Falla con mensaje claro si la ref no cumple.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · Gate SemVer
+
+on:
+  workflow_call:
+    inputs:
+      ref:
+        description: Ref a validar (ej. tag name "v1.2.3" o "1.2.3").
+        required: true
+        type: string
+      require-stable:
+        description: Falla si ref es pre-release (rc/beta/alpha).
+        required: false
+        type: boolean
+        default: false
+    outputs:
+      version:
+        description: Versión normalizada sin prefijo "v".
+        value: ${{ jobs.validate.outputs.version }}
+      is-stable:
+        description: "true si la versión no tiene pre-release tag."
+        value: ${{ jobs.validate.outputs.is-stable }}
+      major:
+        description: Componente major.
+        value: ${{ jobs.validate.outputs.major }}
+      minor:
+        description: Componente minor.
+        value: ${{ jobs.validate.outputs.minor }}
+      patch:
+        description: Componente patch.
+        value: ${{ jobs.validate.outputs.patch }}
+
+jobs:
+  validate:
+    name: Validar SemVer
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.parse.outputs.version }}
+      is-stable: ${{ steps.parse.outputs.is-stable }}
+      major: ${{ steps.parse.outputs.major }}
+      minor: ${{ steps.parse.outputs.minor }}
+      patch: ${{ steps.parse.outputs.patch }}
+    steps:
+      - name: Parsear ref
+        id: parse
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          REQUIRE_STABLE: ${{ inputs.require-stable }}
+        run: |
+          set -Eeuo pipefail
+          REF="${INPUT_REF#v}"
+          # SemVer 2.0 regex oficial (https://semver.org)
+          SEMVER='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-((0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*)(\.(0|[1-9][0-9]*|[0-9]*[a-zA-Z-][0-9a-zA-Z-]*))*))?(\+([0-9a-zA-Z-]+(\.[0-9a-zA-Z-]+)*))?$'
+          if ! [[ "$REF" =~ $SEMVER ]]; then
+            echo "::error::Ref '$INPUT_REF' no cumple SemVer 2.0.0. Espera vX.Y.Z[-pre][+build]."
+            exit 1
+          fi
+          MAJOR="${BASH_REMATCH[1]}"
+          MINOR="${BASH_REMATCH[2]}"
+          PATCH="${BASH_REMATCH[3]}"
+          PRE="${BASH_REMATCH[5]:-}"
+          IS_STABLE=true
+          [ -n "$PRE" ] && IS_STABLE=false
+
+          if [ "$REQUIRE_STABLE" = "true" ] && [ "$IS_STABLE" = "false" ]; then
+            echo "::error::require-stable=true y la versión es pre-release ('-$PRE'). Aborto."
+            exit 1
+          fi
+
+          {
+            echo "version=$REF"
+            echo "is-stable=$IS_STABLE"
+            echo "major=$MAJOR"
+            echo "minor=$MINOR"
+            echo "patch=$PATCH"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "::notice::SemVer OK · v$REF · stable=$IS_STABLE"

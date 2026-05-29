@@ -1,0 +1,123 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# sticky-issue · Composite action
+#
+# Propósito: gestionar un ÚNICO issue de regresión, idempotente vía marker HTML.
+# Solo se crea si el operador así lo solicita (acción "create-or-update");
+# para cerrar tras N éxitos consecutivos use acción "close-if-streak".
+#
+# Anti-flake: el caller debe contabilizar fallos consecutivos y solo invocar
+# create-or-update tras ≥2 (configurable).
+#
+# Uso (open/update tras fallo):
+#   - uses: ./.github/actions/sticky-issue
+#     with:
+#       action: create-or-update
+#       marker: post-merge:auto
+#       label: post-merge-failure
+#       title: "[auto] Post-merge regresión detectada"
+#       body: |
+#         ## Estado actual
+#         ...
+#
+# Uso (cerrar tras racha verde):
+#   - uses: ./.github/actions/sticky-issue
+#     with:
+#       action: close-if-streak
+#       marker: post-merge:auto
+#       label: post-merge-failure
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: sticky-issue
+description: Crear/actualizar/cerrar un issue sticky por marker.
+
+inputs:
+  action:
+    description: "create-or-update | close-if-streak"
+    required: true
+  marker:
+    description: Identificador (kebab-case).
+    required: true
+  label:
+    description: Label a aplicar/buscar.
+    required: false
+    default: post-merge-failure
+  title:
+    description: Título cuando se crea (ignorado en update si ya existe).
+    required: false
+    default: "[auto] Post-merge regresión detectada"
+  body:
+    description: Cuerpo Markdown (para create-or-update).
+    required: false
+    default: ""
+  github-token:
+    description: Token con issues:write.
+    required: false
+    default: ${{ github.token }}
+
+outputs:
+  issue_number:
+    description: Número del issue afectado (vacío si no aplicó).
+    value: ${{ steps.do.outputs.issue_number }}
+
+runs:
+  using: composite
+  steps:
+    - name: Apply sticky-issue action
+      id: do
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.github-token }}
+        ACTION: ${{ inputs.action }}
+        MARKER: ${{ inputs.marker }}
+        LABEL: ${{ inputs.label }}
+        TITLE: ${{ inputs.title }}
+        BODY: ${{ inputs.body }}
+        REPO: ${{ github.repository }}
+      run: |
+        set -Eeuo pipefail
+        MARKER_TAG="<!-- bot:${MARKER} -->"
+
+        find_issue() {
+          gh api "repos/$REPO/issues?state=open&labels=$LABEL&per_page=50" --paginate \
+            --jq "[.[] | select(.body and (.body | startswith(\"$MARKER_TAG\")))] | .[0].number // empty"
+        }
+
+        ensure_label() {
+          gh api "repos/$REPO/labels/$LABEL" >/dev/null 2>&1 || \
+            gh api -X POST "repos/$REPO/labels" -f name="$LABEL" -f color=d93f0b -f description="Post-merge regresión auto-detectada" >/dev/null
+        }
+
+        case "$ACTION" in
+          create-or-update)
+            ensure_label
+            BODY_FILE=$(mktemp)
+            printf '%s\n%s\n' "$MARKER_TAG" "$BODY" > "$BODY_FILE"
+            N=$(find_issue)
+            if [ -n "$N" ]; then
+              gh api -X PATCH "repos/$REPO/issues/$N" -F body=@"$BODY_FILE" >/dev/null
+              echo "[sticky-issue] updated #$N"
+            else
+              N=$(gh api -X POST "repos/$REPO/issues" -f title="$TITLE" -F body=@"$BODY_FILE" -f labels[]="$LABEL" --jq '.number')
+              echo "[sticky-issue] created #$N"
+            fi
+            echo "issue_number=$N" >> "$GITHUB_OUTPUT"
+            ;;
+
+          close-if-streak)
+            N=$(find_issue)
+            if [ -n "$N" ]; then
+              gh api -X PATCH "repos/$REPO/issues/$N" -f state=closed -f state_reason=completed >/dev/null
+              gh api -X POST "repos/$REPO/issues/$N/comments" -f body="Cerrado automáticamente tras racha de runs verde-consecutivos." >/dev/null || true
+              echo "[sticky-issue] closed #$N"
+              echo "issue_number=$N" >> "$GITHUB_OUTPUT"
+            else
+              echo "[sticky-issue] no issue abierto · noop"
+              echo "issue_number=" >> "$GITHUB_OUTPUT"
+            fi
+            ;;
+
+          *)
+            echo "::error::sticky-issue · action desconocida: $ACTION"
+            exit 1
+            ;;
+        esac

@@ -1,0 +1,83 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-release-please · Reusable workflow
+#
+# Propósito: wrapper de googleapis/release-please-action@v4 con autotype.
+# Detecta el tipo de release a usar (manifest|node|rust|python|simple) según
+# detect-stack outputs o input explícito. Sin config en el consumidor (modo
+# por defecto). Si existe release-please-config.json + manifest, los respeta.
+#
+# Allowlist: el orchestrator solo invoca este lib si `enable_release=true`.
+# Repos sin necesidad (controlink-operator, xek-cluster) jamás disparan.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · release-please
+
+on:
+  workflow_call:
+    inputs:
+      release_type:
+        description: "node|rust|python|simple|manifest. Si vacío, autodetect via input release_type_auto."
+        type: string
+        required: false
+        default: ""
+      release_type_auto:
+        description: Salida de detect-stack.release_type.
+        type: string
+        required: false
+        default: simple
+      target_branch:
+        type: string
+        required: false
+        default: main
+    outputs:
+      release_created:
+        value: ${{ jobs.run.outputs.release_created }}
+      release_tag:
+        value: ${{ jobs.run.outputs.release_tag }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    name: release-please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.rp.outputs.release_created }}
+      release_tag: ${{ steps.rp.outputs.tag_name }}
+    steps:
+      - id: decide
+        name: Decidir release-type efectivo
+        env:
+          OVERRIDE: ${{ inputs.release_type }}
+          AUTO: ${{ inputs.release_type_auto }}
+        run: |
+          set -Eeuo pipefail
+          T="${OVERRIDE:-$AUTO}"
+          # Si el caller tiene release-please-config.json, forzar manifest.
+          if [ -f release-please-config.json ] && [ -f .release-please-manifest.json ]; then
+            T=manifest
+          fi
+          echo "type=$T" >> "$GITHUB_OUTPUT"
+          echo "::notice::release-please type=$T (override='${OVERRIDE}' auto='${AUTO}')"
+
+      - uses: actions/checkout@v5
+
+      - id: rp
+        name: googleapis/release-please-action
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ github.token }}
+          release-type: ${{ steps.decide.outputs.type }}
+          target-branch: ${{ inputs.target_branch }}
+
+      - name: Summary release-please
+        if: always()
+        run: |
+          {
+            echo "### release-please"
+            echo "**Release type:** \`${{ steps.decide.outputs.type }}\`"
+            echo "**release_created:** \`${{ steps.rp.outputs.release_created || 'false' }}\`"
+            echo "**tag_name:** \`${{ steps.rp.outputs.tag_name || 'n/a' }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

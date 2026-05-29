@@ -1,0 +1,101 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-supply-chain · Reusable workflow
+#
+# Cadena de suministro tecnología-punta 2026:
+#   - syft → SBOM CycloneDX (artifact + summary)
+#   - actions/attest-build-provenance@v2 sobre el SBOM (SLSA v1 L3 nativo)
+#
+# Mismo job para evitar artifact crossing (anchore/sbom-action y attest viven
+# en el mismo workspace, sin descarga intermedia).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · supply chain
+
+on:
+  workflow_call:
+    inputs:
+      enable_attest:
+        type: boolean
+        required: false
+        default: true
+      enable_sbom:
+        type: boolean
+        required: false
+        default: true
+      subject_path:
+        description: Path al artifact a atestar. Si vacío y enable_sbom, atesta el propio SBOM.
+        type: string
+        required: false
+        default: ""
+    outputs:
+      sbom_outcome:
+        value: ${{ jobs.supply.outputs.sbom_outcome }}
+        description: outcome SBOM
+      attest_outcome:
+        value: ${{ jobs.supply.outputs.attest_outcome }}
+        description: outcome attest
+
+permissions:
+  contents: read
+  id-token: write
+  attestations: write
+
+jobs:
+  supply:
+    name: SBOM + provenance
+    runs-on: ubuntu-latest
+    outputs:
+      sbom_outcome: ${{ steps.sbom.outcome }}
+      attest_outcome: ${{ steps.attest.outcome }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - id: sbom
+        name: syft → CycloneDX SBOM
+        if: inputs.enable_sbom
+        continue-on-error: true
+        uses: anchore/sbom-action@v0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          artifact-name: sbom-cyclonedx.json
+          upload-artifact: true
+
+      - name: Summary SBOM
+        if: always() && inputs.enable_sbom
+        continue-on-error: true
+        run: |
+          if [ -f sbom.cdx.json ]; then
+            N=$(jq '[.components[]?] | length' sbom.cdx.json 2>/dev/null || echo "?")
+            {
+              echo "### SBOM · CycloneDX"
+              echo "**Componentes:** $N"
+              echo "Artifact: \`sbom-cyclonedx.json\`"
+            } >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### SBOM · CycloneDX" >> "$GITHUB_STEP_SUMMARY"
+            echo "SBOM no generado." >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - id: attest
+        if: inputs.enable_attest && (steps.sbom.outcome == 'success' || inputs.subject_path != '')
+        continue-on-error: true
+        name: Atestar build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: ${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}
+
+      - name: Summary attest
+        if: always() && inputs.enable_attest
+        continue-on-error: true
+        env:
+          SP: ${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}
+          OUT: ${{ steps.attest.outcome }}
+        run: |
+          {
+            echo "### attest-build-provenance"
+            echo "**Subject:** \`$SP\`"
+            echo "**Outcome:** \`$OUT\`"
+            echo ""
+            echo "Verificación: \`gh attestation verify <artifact> --owner ${{ github.repository_owner }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"

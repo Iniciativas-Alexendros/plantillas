@@ -1,0 +1,137 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# _lib-dependabot-fast-lane · Reusable workflow
+#
+# Propósito: ofrecer una "vía rápida" para PRs de Dependabot con updates
+# patch/minor. Detecta metadata, corre solo lint + unit tests opcionalmente y
+# habilita --auto squash merge. Salida `merged-fast` indica si aplicó la vía.
+#
+# Se invoca desde el workflow del repo consumidor:
+#
+#   name: dependabot-fast-lane
+#   on:
+#     pull_request:
+#       types: [opened, synchronize, reopened]
+#   jobs:
+#     fast-lane:
+#       if: github.actor == 'dependabot[bot]'
+#       uses: Alexendros/plantillas/.github/workflows/_lib-dependabot-fast-lane.yml@main
+#       with:
+#         allow-update-types: "patch,minor"
+#         require-checks: "lint,unit-tests"
+#         merge-method: squash
+#       secrets:
+#         token: ${{ secrets.GITHUB_TOKEN }}
+#
+# Filosofía:
+#   - No reemplaza required checks de branch protection — los respeta.
+#   - Asume que el repo consumidor define checks ligeros que GitHub registrará
+#     como satisfechos cuando este workflow termine OK.
+#   - El operador puede listar excepciones con `block-packages` (ej. paquetes
+#     con history de breaking changes en patch).
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: _lib · Dependabot fast lane
+
+on:
+  workflow_call:
+    inputs:
+      allow-update-types:
+        description: Tipos de update permitidos (csv) · ej. "patch,minor".
+        required: false
+        type: string
+        default: "patch,minor"
+      block-packages:
+        description: Paquetes a excluir explícitamente de la vía rápida (csv glob).
+        required: false
+        type: string
+        default: ""
+      merge-method:
+        description: "Método de merge: squash | rebase | merge."
+        required: false
+        type: string
+        default: squash
+      auto-merge:
+        description: Habilitar --auto en gh pr merge.
+        required: false
+        type: boolean
+        default: true
+    secrets:
+      token:
+        description: Token con repo:write (usar GITHUB_TOKEN del caller).
+        required: true
+    outputs:
+      eligible:
+        description: "true si el PR cae en la fast lane."
+        value: ${{ jobs.evaluate.outputs.eligible }}
+      enabled-auto-merge:
+        description: "true si se ejecutó gh pr merge --auto."
+        value: ${{ jobs.merge.outputs.enabled }}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  evaluate:
+    name: Evaluar fast lane
+    runs-on: ubuntu-latest
+    outputs:
+      eligible: ${{ steps.gate.outputs.eligible }}
+      package: ${{ steps.meta.outputs.dependency-names }}
+      update-type: ${{ steps.meta.outputs.update-type }}
+    steps:
+      - name: Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.token }}
+
+      - name: Decidir elegibilidad
+        id: gate
+        env:
+          UPDATE_TYPE: ${{ steps.meta.outputs.update-type }}
+          PACKAGE: ${{ steps.meta.outputs.dependency-names }}
+          ALLOW: ${{ inputs.allow-update-types }}
+          BLOCK: ${{ inputs.block-packages }}
+        run: |
+          set -Eeuo pipefail
+          ELIGIBLE=false
+          # Normaliza "version-update:semver-patch" → "patch"
+          UT="${UPDATE_TYPE##*:semver-}"
+          if [[ ",${ALLOW}," == *",${UT},"* ]]; then
+            ELIGIBLE=true
+          fi
+          if [ -n "$BLOCK" ]; then
+            IFS=',' read -ra PKGS <<< "$PACKAGE"
+            IFS=',' read -ra BLK  <<< "$BLOCK"
+            for p in "${PKGS[@]}"; do
+              for b in "${BLK[@]}"; do
+                if [[ "$p" == $b ]]; then
+                  echo "::notice::Paquete $p en block-packages — fast lane denegada."
+                  ELIGIBLE=false
+                fi
+              done
+            done
+          fi
+          echo "eligible=$ELIGIBLE" >> "$GITHUB_OUTPUT"
+          echo "::notice::fast-lane eligible=$ELIGIBLE update-type=$UT package=$PACKAGE"
+
+  merge:
+    name: Habilitar auto-merge
+    needs: evaluate
+    if: needs.evaluate.outputs.eligible == 'true' && inputs.auto-merge
+    runs-on: ubuntu-latest
+    outputs:
+      enabled: ${{ steps.do.outputs.enabled }}
+    steps:
+      - name: gh pr merge --auto
+        id: do
+        env:
+          GH_TOKEN: ${{ secrets.token }}
+          PR: ${{ github.event.pull_request.html_url }}
+          METHOD: ${{ inputs.merge-method }}
+        run: |
+          set -Eeuo pipefail
+          gh pr merge --auto "--${METHOD}" "$PR"
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "::notice::Auto-merge habilitado (--${METHOD}). Esperará a required checks."
