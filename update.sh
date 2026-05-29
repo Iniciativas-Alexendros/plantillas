@@ -80,15 +80,15 @@ cp -r "$PLANTILLAS_DIR" "$BACKUP_DIR"
 
 # ─── Actualizar ────────────────────────────────────────────────────────────
 log "Descargando nueva versión…"
-TMPDIR=$(mktemp -d)
-trap 'rm -rf "$TMPDIR"' EXIT
+_TMPROOT=$(mktemp -d)
+trap 'rm -rf "$_TMPROOT"' EXIT
 
-git clone --depth 1 --branch "$LATEST_VERSION" "$REPO_URL" "$TMPDIR/repo" 2>/dev/null || \
-  git clone --depth 1 "$REPO_URL" "$TMPDIR/repo"
+git clone --depth 1 --branch "$LATEST_VERSION" "$REPO_URL" "$_TMPROOT/repo" 2>/dev/null || \
+  git clone --depth 1 "$REPO_URL" "$_TMPROOT/repo"
 
 rm -rf "$PLANTILLAS_DIR"
 mkdir -p "$(dirname "$PLANTILLAS_DIR")"
-mv "$TMPDIR/repo" "$PLANTILLAS_DIR"
+mv "$_TMPROOT/repo" "$PLANTILLAS_DIR"
 
 ok "Actualización completada: $CURRENT_VERSION → $LATEST_VERSION"
 log "Backup disponible en: $BACKUP_DIR"

@@ -79,7 +79,7 @@ if [[ "$COMMAND" == "list" ]]; then
     [[ "$base" == "proyecto" ]] && continue
     [[ "$base" == ".github" ]] && continue
     [[ "$base" == "tests" ]] && continue
-    if [[ -d "$dir/plantilla_$base" || -d "$dir/ejemplo_$base" ]]; then
+    if [[ -d "$dir/plantilla_$base" || -d "$dir/ejemplo_$base" || -n "$(ls "$dir"/plantilla_${base}.* 2>/dev/null)" || -n "$(ls "$dir"/ejemplo_${base}.* 2>/dev/null)" ]]; then
       printf "  • %s\n" "$base"
     fi
   done
@@ -160,14 +160,14 @@ if [[ "$COMMAND" == "proyecto" ]]; then
   mkdir -p "$DST"
   cp "$PLANTILLAS_DIR/proyecto/CLAUDE.md" "$DST/CLAUDE.md"
   cp "$PLANTILLAS_DIR/proyecto/settings.json" "$DST/settings.json"
-  mkdir -p "$DST/.github/workflows"
-  cp "$PLANTILLAS_DIR/proyecto/.github/workflows/ci.yml" "$DST/.github/workflows/ci.yml"
+  mkdir -p "$DESTINO/.github/workflows"
+  cp "$PLANTILLAS_DIR/proyecto/.github/workflows/ci.yml" "$DESTINO/.github/workflows/ci.yml"
 
   ok ".claude/ inicializado en: $DST"
   echo
   echo "Archivos creados:"
-  echo "  • CLAUDE.md      ← Contexto del proyecto"
-  echo "  • settings.json  ← Configuración de Claude"
+  echo "  • .claude/CLAUDE.md      ← Contexto del proyecto"
+  echo "  • .claude/settings.json  ← Configuración de Claude"
   echo "  • .github/workflows/ci.yml ← CI/CD mínimo"
   exit 0
 fi

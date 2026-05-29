@@ -86,22 +86,23 @@ if [[ "$DRY_RUN" -eq 1 ]]; then
   log "DRY-RUN · Descargaría plantillas en: $PREFIX"
 else
   # Crear directorio temporal
-  TMPDIR=$(mktemp -d)
-  trap 'rm -rf "$TMPDIR"' EXIT
+  _TMPROOT=$(mktemp -d)
+  trap 'rm -rf "$_TMPROOT"' EXIT
+  INSTALL_TMPDIR="$_TMPROOT"
 
   if [[ -n "$VERSION" ]]; then
     log "Descargando release $VERSION…"
-    curl -fsSL "${REPO_URL%.git}/archive/refs/tags/${VERSION}.tar.gz" | tar -xz -C "$TMPDIR" --strip-components=1
+    curl -fsSL "${REPO_URL%.git}/archive/refs/tags/${VERSION}.tar.gz" | tar -xz -C "$INSTALL_TMPDIR" --strip-components=1
   else
     log "Clonando repositorio…"
-    git clone --depth 1 "$REPO_URL" "$TMPDIR/repo"
-    TMPDIR="$TMPDIR/repo"
+    git clone --depth 1 "$REPO_URL" "$INSTALL_TMPDIR/repo"
+    INSTALL_TMPDIR="$INSTALL_TMPDIR/repo"
   fi
 
   # Limpiar destino si existe y copiar
   [[ -d "$PREFIX" ]] && rm -rf "$PREFIX"
   mkdir -p "$(dirname "$PREFIX")"
-  mv "$TMPDIR" "$PREFIX"
+  mv "$INSTALL_TMPDIR" "$PREFIX"
 
   ok "Plantillas instaladas en: $PREFIX"
 fi

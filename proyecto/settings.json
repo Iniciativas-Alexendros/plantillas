@@ -1,5 +1,4 @@
 {
-  "skillListingBudgetFraction": 0.07,
   "permissions": {
     "allow": [
       "Read",
@@ -16,12 +15,7 @@
       "Bash(rm -rf /)"
     ]
   },
-  "skills": {
-    "autoDiscover": true,
-    "preload": []
-  },
-  "output": {
-    "language": "es",
-    "style": "concise"
+  "env": {
+    "CLAUDE_LANG": "es"
   }
 }

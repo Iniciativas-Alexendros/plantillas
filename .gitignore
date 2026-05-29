@@ -1,36 +1,13 @@
-# ─── Entornos y secrets ──────────────────────────────────────────────────────
 .env
 .env.*
-!.env.example
 *.pem
 *.key
 secrets/
-
-# ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
-*.py[cod]
-*$py.class
-*.so
-.pytest_cache/
-
-# ─── Node ────────────────────────────────────────────────────────────────────
-node_modules/
-npm-debug.log*
-
-# ─── Editores / OS ───────────────────────────────────────────────────────────
 .DS_Store
-Thumbs.db
-.vscode/
-.idea/
-*.swp
-*.swo
-*~
-
-# ─── Archivos personales del operador (no parte del sistema modular) ─────────
 /vap/
 /cuaderno-plantilla/
 /artefactos/operador/
-
-# ─── Backups locales ─────────────────────────────────────────────────────────
-*.backup.*
-*.bak
+node_modules/
+.venv/
+*.pyc
