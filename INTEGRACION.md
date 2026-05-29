@@ -363,10 +363,10 @@ mi-proyecto/
 
 ## Referencias
 
-- [Claude Code: Subagents](https://code.claude.com/docs/en/sub-agents.md)
-- [Claude Code: Skills](https://code.claude.com/docs/en/skills.md)
-- [Claude Code: Commands](https://code.claude.com/docs/en/commands.md)
-- [Claude Code: Hooks](https://code.claude.com/docs/en/hooks.md)
-- [Claude Code: Settings](https://code.claude.com/docs/en/settings.md)
+- [Claude Code: Subagents](https://code.claude.com/docs/en/sub-agents)
+- [Claude Code: Skills](https://code.claude.com/docs/en/skills)
+- [Claude Code: Commands](https://code.claude.com/docs/en/commands)
+- [Claude Code: Hooks](https://code.claude.com/docs/en/hooks)
+- [Claude Code: Settings](https://code.claude.com/docs/en/settings)
 - [MCP Spec](https://modelcontextprotocol.io/specification/)
 - CHANGELOG entrada `[Unreleased]` (canon-runtime alignment) — este repo

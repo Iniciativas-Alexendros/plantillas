@@ -92,6 +92,17 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
   - `.pre-commit-config.yaml`:
     - hook `trailing-whitespace`: `args: ["--markdown-linebreak-ext=md"]` para preservar los saltos de línea markdown (dos espacios al final) en `.md`.
     - hook `detect-placeholders`: añadido `exclude: '(^|/)(_legacy_|plantilla_|__[A-Z_]+__)|^\.pre-commit-config\.yaml$'`. La regex matcheaba placeholders intencionales en las plantillas-fuente y en el propio archivo de configuración.
+- Creados `LICENSE` (MIT) y `.gitignore` faltantes en raíz.
+- `claude-init --list` ahora detecta módulos single-file además de directorios.
+- `claude-init --proyecto` coloca `ci.yml` en `.github/workflows/` del proyecto, no dentro de `.claude/`.
+- `proyecto/settings.json` limpio de claves obsoletas (`skillListingBudgetFraction`, `skills.autoDiscover`, `output`).
+- `install.sh` y `update.sh`: variable temporal renombrada para no sobrescribir `$TMPDIR` POSIX; directorio padre temporal ya no queda huérfano.
+- `dot-claude/plantilla_dot_claude/CLAUDE.md`: skills descritas correctamente como "auto-activables por descripción" (no "comandos slash").
+- `knowledge/ejemplo_knowledge.md`: eliminado campo `name` inexistente del ejemplo de command frontmatter.
+- CHANGELOG consolidado a una única sección `[Unreleased]` (Keep a Changelog).
+- README, ROADMAP, CONTRIBUTING: actualizados de 8 a 14 módulos (badge, tabla, métricas, loop de testing).
+- `validar_repo.py`: eliminadas entradas stale `/vap/` y `/cuaderno-plantilla/` de `GITIGNORE_MINIMO`; añadido `LICENSE` a `ARCHIVOS_RAIZ_REQUERIDOS`.
+- `CONTRIBUTING.md`: documentado formato single-file como alternativa válida a directorios.
 
 ### Migration notes
 

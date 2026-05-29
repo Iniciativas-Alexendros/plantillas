@@ -38,7 +38,7 @@ ARCHIVOS_CORE = [
     ".pre-commit-config.yaml",
 ]
 
-ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md"]
+ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md", "LICENSE"]
 
 DIRECTORIOS_PERMITIDOS = {
     "agentes",
@@ -126,8 +126,6 @@ GITIGNORE_MINIMO = [
     "secrets/",
     "__pycache__/",
     ".DS_Store",
-    "/vap/",
-    "/cuaderno-plantilla/",
     "/artefactos/operador/",
 ]
 
