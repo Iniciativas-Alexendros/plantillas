@@ -5,38 +5,7 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
-## [Unreleased] — Post-Merge Template v1.1 polish
-
-### Changed
-
-- **`.github/actions/detect-stack/action.yml`** — Detección de Docker ahora recursiva (`repo_find -name 'Dockerfile*'`). Monorepos con `apps/*/Dockerfile`, `services/*/Dockerfile`, etc. ahora activan correctamente el job `hadolint`. Antes solo se chequeaba la raíz.
-
-- **`.github/workflows/_lib-lint-aggregate.yml`** — `osv-scanner` migrado del wrapper `google/osv-scanner-action/osv-scanner-action@v2.3.8` (exit 127, no usable directamente según Google) al binario CLI oficial (`osv-scanner_linux_amd64`). Pre-check de lockfiles: si no hay (`package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` / `Cargo.lock` / `requirements.txt` / `poetry.lock` / `Pipfile.lock` / `go.sum` / `composer.lock`), outcome=skipped (no es failure). Vulnerabilidades detectadas → outcome=warn (no fail).
-
-- **`.github/workflows/_lib-failure-report.yml`** — Clasificador global pasa de 2 estados (ok/fail) a 3 tiers:
-  - 🟢 `ok` — todo verde o skipped
-  - 🟡 `warn` — solo linters tienen `failure` o `warn` outcome (informativo, no abre issue auto)
-  - 🔴 `fail` — supply-chain o release jobs estructurales fallan (sí abre issue auto tras racha)
-
-  Coherente con la filosofía "máxima info en fallo, no bloqueo fatal": OSV vulns o linters quisquillosos no degradan el sticky a rojo. Issue auto reservado para regresiones de blast radius alto.
-
-- **`.github/workflows/_lib-{detect-stack,lint-aggregate,release-please,supply-chain}.yml`** — Bump de actions a versiones Node 24-compatible: `actions/checkout@v4 → @v5`, `actions/upload-artifact@v4 → @v5`, `actions/setup-node@v4 → @v5`. Anticipa la deprecación de Node 20 en runners (forzada 2026-06-02).
-
----
-
-## [Unreleased] — Post-Merge Template · least-privilege polish
-
-### Changed
-
-- **`.github/workflows/_lib-post-merge.yml`**, **`_lib-supply-chain.yml`**, **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`**, **`.github/workflows/post-merge.yml`** (dogfood) — eliminado `packages: write` de todos los bloques `permissions:`. Era declarado pero nunca consumido por la lib. Los repos que publican imágenes a GHCR (trenchpass, proton-mail-mcp) lo declaran en su `release.yml` propio. Flag de Devin en `Alexendros/mi-website-profesional#42`.
-
-### Added
-
-- **`.github/workflows/README-post-merge.md`** — sección "Matriz de permisos" con tabla `permiso × feature` para que adoptantes puedan recortar a least-privilege estricto según los `enable_*` activos.
-
----
-
-## [Unreleased] — Post-Merge Template
+## [Unreleased]
 
 ### Added
 
@@ -51,30 +20,8 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **`.github/actions/sticky-issue/action.yml`** — Upsert idempotente vía marker HTML. Soporta `create-or-update` y `close-if-streak`.
 - **`.github/actions/sticky-commit-comment/action.yml`** — Comentario sticky al commit (no PR), marker HTML idempotente.
 - **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`** — Caller plantilla copy-paste-ready.
-- **`.github/workflows/README-post-merge.md`** — Documentación adopción (3 pasos), inputs, stacks soportados, troubleshooting, versionado.
-
-Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1`. Pilotos planificados: plantillas (dogfood), afiladocs, xek-cluster. Resto en sprint posterior tras validación.
-
----
-
-## [Unreleased] — Canon-Runtime Alignment (BREAKING)
-
-### Changed
-
-- **`.github/workflows/pr-guardian.yml`** — saca `install.sh` y `.pre-commit-config.yaml` de la lista `PROTECTED` (step 3). Son configuración operativa: deben poder modificarse en PRs de lint/CI sin issue previo. El resto del contrato (Conventional Commits, tamaño, CHANGELOG en cambios de módulo, placeholders) se mantiene. Workflow renombrado a "Guardián de PRs" (i18n).
-- **`CONTRIBUTING.md`** — sincroniza la lista de archivos protegidos con `pr-guardian.yml` (saca `install.sh` y `.pre-commit-config.yaml` de "protegidos" y los reclasifica como "configuración operativa"). Renombra "PR Guardian" → "Guardián de PRs" en la sección de checks.
-
-### Fixed
-
-- **Lint verde · pre-commit 13/13**:
-  - `repositorios/auditoria-canon-repo.sh`: la rama de fallback (sin `yq`) tenía un `|` al inicio de línea tras el heredoc `PY`, lo que rompía `bash -n` (SC1046/SC1047/SC1072/SC1073/SC1133). Reescrita usando `while read -r slug; do …; done < <(python3 - <<PY … PY)`, simétrica con la rama `yq`.
-  - `dot-claude/ejemplo_dot_claude/rc/xek-bash.sh`: añadida directiva `# shellcheck shell=bash` (SC2148) y reemplazado `alias localip="…"` por una función equivalente (SC2142: los aliases bash no admiten `$1/$2`).
-  - `.pre-commit-config.yaml`:
-    - hook `trailing-whitespace`: `args: ["--markdown-linebreak-ext=md"]` para preservar los saltos de línea markdown (dos espacios al final) en `.md`.
-    - hook `detect-placeholders`: añadido `exclude: '(^|/)(_legacy_|plantilla_|__[A-Z_]+__)|^\.pre-commit-config\.yaml$'`. La regex matcheaba placeholders intencionales en las plantillas-fuente y en el propio archivo de configuración.
-
-### Added
-
+- **`.github/workflows/README-post-merge.md`** — Documentación adopción (3 pasos), inputs, stacks soportados, troubleshooting, versionado. Sección "Matriz de permisos" con tabla `permiso × feature` para que adoptantes puedan recortar a least-privilege estricto según los `enable_*` activos.
+- Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@v1`. Pilotos planificados: plantillas (dogfood), afiladocs, xek-cluster. Resto en sprint posterior tras validación.
 - Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.
 - Composite action `setup-validadores` para setup DRY de Python + pyyaml.
 - Script `module-map.sh` para mapeo módulo→validador→ejemplo→plantilla.
@@ -109,6 +56,21 @@ Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-p
   - `env-vars.env` añade `XEK_ENV_NAME` (etiqueta de entorno en el banner) y `BUN_INSTALL=/home/user/.bun`.
   - README documenta la política Bun-first y advierte explícitamente del error común de pegar `bootstrap.sh` en el campo "Variables de entorno" del diálogo (que rompe el PATH al no expandir `$HOME`).
 
+### Changed
+
+- **`.github/actions/detect-stack/action.yml`** — Detección de Docker ahora recursiva (`repo_find -name 'Dockerfile*'`). Monorepos con `apps/*/Dockerfile`, `services/*/Dockerfile`, etc. ahora activan correctamente el job `hadolint`. Antes solo se chequeaba la raíz.
+- **`.github/workflows/_lib-lint-aggregate.yml`** — `osv-scanner` migrado del wrapper `google/osv-scanner-action/osv-scanner-action@v2.3.8` (exit 127, no usable directamente según Google) al binario CLI oficial (`osv-scanner_linux_amd64`). Pre-check de lockfiles: si no hay (`package-lock.json` / `pnpm-lock.yaml` / `yarn.lock` / `Cargo.lock` / `requirements.txt` / `poetry.lock` / `Pipfile.lock` / `go.sum` / `composer.lock`), outcome=skipped (no es failure). Vulnerabilidades detectadas → outcome=warn (no fail).
+- **`.github/workflows/_lib-failure-report.yml`** — Clasificador global pasa de 2 estados (ok/fail) a 3 tiers:
+  - 🟢 `ok` — todo verde o skipped
+  - 🟡 `warn` — solo linters tienen `failure` o `warn` outcome (informativo, no abre issue auto)
+  - 🔴 `fail` — supply-chain o release jobs estructurales fallan (sí abre issue auto tras racha)
+
+  Coherente con la filosofía "máxima info en fallo, no bloqueo fatal": OSV vulns o linters quisquillosos no degradan el sticky a rojo. Issue auto reservado para regresiones de blast radius alto.
+- **`.github/workflows/_lib-{detect-stack,lint-aggregate,release-please,supply-chain}.yml`** — Bump de actions a versiones Node 24-compatible: `actions/checkout@v4 → @v5`, `actions/upload-artifact@v4 → @v5`, `actions/setup-node@v4 → @v5`. Anticipa la deprecación de Node 20 en runners (forzada 2026-06-02).
+- **`.github/workflows/_lib-post-merge.yml`**, **`_lib-supply-chain.yml`**, **`repositorios/ejemplo_repositorio/.github/workflows/post-merge.yml`**, **`.github/workflows/post-merge.yml`** (dogfood) — eliminado `packages: write` de todos los bloques `permissions:`. Era declarado pero nunca consumido por la lib. Los repos que publican imágenes a GHCR (trenchpass, proton-mail-mcp) lo declaran en su `release.yml` propio. Flag de Devin en `Alexendros/mi-website-profesional#42`.
+- **`.github/workflows/pr-guardian.yml`** — saca `install.sh` y `.pre-commit-config.yaml` de la lista `PROTECTED` (step 3). Son configuración operativa: deben poder modificarse en PRs de lint/CI sin issue previo. El resto del contrato (Conventional Commits, tamaño, CHANGELOG en cambios de módulo, placeholders) se mantiene. Workflow renombrado a "Guardián de PRs" (i18n).
+- **`CONTRIBUTING.md`** — sincroniza la lista de archivos protegidos con `pr-guardian.yml` (saca `install.sh` y `.pre-commit-config.yaml` de "protegidos" y los reclasifica como "configuración operativa"). Renombra "PR Guardian" → "Guardián de PRs" en la sección de checks.
+
 ### Changed (BREAKING)
 
 - **`agentes/plantilla_agente/`** colapsado a single-file `agentes/plantilla_agente.md` con frontmatter runtime (`name`, `description`, `tools`, `model`, opcional `effort`/`permission_scope`/`primary_skill`) y secciones canon (`System`, `Persona`, `Tasks`, `Tools MCP`, `Memory`, `Subagents`, `References`). El dir antiguo queda en `agentes/_legacy_plantilla_agente_dir/`.
@@ -121,6 +83,15 @@ Disparable cross-repo vía `uses: Alexendros/plantillas/.github/workflows/_lib-p
 - **`dot-claude/plantilla_dot_claude/settings.json`** alineado al schema runtime real de Claude Code 2.1.x: `permissions.{allow, deny}` (listas), `hooks.<Evento>: [{matcher, hooks: [{type:"command", command:"..."}]}]`, `env: {KEY: VAL}`. Eliminadas claves obsoletas: `skillListingBudgetFraction`, `hooks.{enabled,sources,autoDiscover}`, `skills.{autoDiscover,preload}`, `mcp.servers`, `output.{language,style}` (esta última equivalente runtime es `env.CLAUDE_LANG`).
 - **`dot-claude/plantilla_dot_claude/CLAUDE.md`** y `ejemplo_dot_claude/CLAUDE.md` actualizados a árbol plano (sin `herramientas/`): 13 dirs canon en raíz `~/.claude/` (agents, skills, commands, hooks, scripts, plugins, mcp, miniapps, autoresearch, cuadernos, knowledge, artefactos, projects).
 - **`dot-claude/validar_dot_claude.py`** reescrito a v2.0.0: valida schema runtime real, detecta claves legacy (warning), comprueba `mcp.json` separado y `CLAUDE.md` sin referencias a `herramientas/`.
+
+### Fixed
+
+- **Lint verde · pre-commit 13/13**:
+  - `repositorios/auditoria-canon-repo.sh`: la rama de fallback (sin `yq`) tenía un `|` al inicio de línea tras el heredoc `PY`, lo que rompía `bash -n` (SC1046/SC1047/SC1072/SC1073/SC1133). Reescrita usando `while read -r slug; do …; done < <(python3 - <<PY … PY)`, simétrica con la rama `yq`.
+  - `dot-claude/ejemplo_dot_claude/rc/xek-bash.sh`: añadida directiva `# shellcheck shell=bash` (SC2148) y reemplazado `alias localip="…"` por una función equivalente (SC2142: los aliases bash no admiten `$1/$2`).
+  - `.pre-commit-config.yaml`:
+    - hook `trailing-whitespace`: `args: ["--markdown-linebreak-ext=md"]` para preservar los saltos de línea markdown (dos espacios al final) en `.md`.
+    - hook `detect-placeholders`: añadido `exclude: '(^|/)(_legacy_|plantilla_|__[A-Z_]+__)|^\.pre-commit-config\.yaml$'`. La regex matcheaba placeholders intencionales en las plantillas-fuente y en el propio archivo de configuración.
 
 ### Migration notes
 

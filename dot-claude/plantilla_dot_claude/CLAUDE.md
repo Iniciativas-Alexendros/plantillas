@@ -144,7 +144,7 @@ semántico claro:
 ```
 ~/.claude/
 ├── agents/          ← Agentes especializados (subagentes Claude Code)
-├── skills/          ← Skills reutilizables (comandos slash)
+├── skills/          ← Skills reutilizables (auto-activables por descripción)
 ├── commands/        ← Comandos slash personalizados adicionales
 ├── hooks/           ← Hooks de interceptación (PreToolUse, PostToolUse, etc.)
 ├── scripts/         ← Scripts de utilidad personal

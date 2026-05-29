@@ -63,7 +63,6 @@ puede invocar Claude durante la ejecución de ese command concreto.
 
 ```yaml
 ---
-name: mi-command
 description: Ejecuta un análisis rápido.
 allowed-tools:
   - Read
