@@ -6,9 +6,13 @@
 - Propósito: contexto y herramientas comunes a la ingeniería de software de la
   categoría (git/GitHub, CI/CD, build/test, revisión e integración de cambios).
 
-> Este scope se carga cuando abres `claude` con el cwd en `{{CATEGORY_PATH}}`.
-> Claude Code NO hereda CLAUDE.md de directorios padre: dentro de un repo hijo
-> (L2) rige el `.claude/` de ese repo; esta L1 es el contexto del hub de categoría.
+> **Dos regímenes de carga en Claude Code:**
+> - *CLAUDE.md (memoria)* hereda en cascada: el CLI asciende del cwd hasta `/` y
+>   concatena cada `CLAUDE.md`/`.claude/CLAUDE.md`. Por tanto **este CLAUDE.md lo
+>   heredan también los repos hijos** (L2), sumado a L0 y al del repo.
+> - *settings + agents/skills/commands* NO heredan de directorios intermedios: solo
+>   se cargan del usuario (`~/.claude/`) y del proyecto (cwd). El kit de tools de este
+>   scope se activa al abrir `claude` con cwd en `{{CATEGORY_PATH}}`.
 
 ## Identidad del scope
 
