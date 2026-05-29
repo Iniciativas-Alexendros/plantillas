@@ -53,6 +53,10 @@ Todo módulo sigue este patrón estricto:
         └── validar-<modulo>.yml ← CI/CD del módulo
 ```
 
+> **Nota**: Desde la reforma canon-runtime (2026-05-23), los módulos pueden usar
+> formato single-file (`plantilla_<modulo>.md` o `.sh.template`) en lugar de
+> directorios. El validador acepta ambos formatos.
+
 ### Reglas de naming
 
 - Directorio del módulo: `kebab-case` (ej: `dot-claude`).
@@ -174,7 +178,7 @@ Antes de enviar un PR:
 python <modulo>/validar_<modulo>.py <modulo>/ejemplo_<modulo>/ --strict
 
 # Validar todos los módulos
-for mod in agentes skills commands hooks mcp plugins dot-claude repositorios; do
+for mod in agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto miniapps autoresearch cuadernos knowledge; do
   python "$mod/validar_*.py" "$mod/ejemplo_$mod/" --strict
 done
 

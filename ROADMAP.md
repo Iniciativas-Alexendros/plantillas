@@ -275,8 +275,8 @@ test(mcp): añade tests de integración
 
 | Métrica | Meta Fase 2 | Meta Fase 3 | Medición |
 |---|---|---|---|
-| Módulos con validador | 8/8 | 8/8 | `ls */validar_*.py` |
-| Módulos con CI/CD | 8/8 | 8/8 | `ls */.github/workflows/` |
+| Módulos con validador | 14/14 | 14/14 | `ls */validar_*.py` |
+| Módulos con CI/CD | 14/14 | 14/14 | `ls */.github/workflows/` |
 | Ejemplos por módulo | 1 | ≥2 | Conteo manual |
 | Tiempo `claude init` | — | <30s | `time ./install.sh` |
 | Tests passing | — | 100% | `pytest --tb=short` |

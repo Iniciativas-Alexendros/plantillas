@@ -4,7 +4,7 @@
 > comandos, hooks, plugins, MCP servers, repositorios GitHub profesionales, y
 > configuraciones `.claude/` completas — con validación automática y CI/CD.
 
-[![Validación](https://img.shields.io/badge/validación-8/8%20✅-green)](./)
+[![Validación](https://img.shields.io/badge/validación-14/14%20✅-green)](./)
 [![Versión](https://img.shields.io/badge/versión-v1.0.0-blue)](./CHANGELOG.md)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-yellow)](./LICENSE)
 
@@ -35,6 +35,12 @@ Cada módulo sigue el mismo patrón:
 | 🔗 **MCP Servers** | Servidores MCP con tools y recursos | `claude-init --modulo mcp` |
 | 📦 **dot-claude** | Configuración `.claude/` completa | `cp -r dot-claude/ejemplo_dot_claude ./.claude` |
 | 🏛️ **Repositorios** | Repo GitHub profesional al 120% | `claude-init --repositorio` |
+| 🧩 **Modulo** | Meta-plantilla para crear nuevos módulos | `claude-init --modulo modulo` |
+| 🚀 **Proyecto** | Configuración `.claude/` para proyectos | `claude-init --proyecto` |
+| 📱 **Miniapps** | SPA single-file tipo Claude artifact | `claude-init --modulo miniapps` |
+| 🔬 **Autoresearch** | Cuadernos de investigación automatizada | `claude-init --modulo autoresearch` |
+| 📓 **Cuadernos** | Notas estructuradas del operador | `claude-init --modulo cuadernos` |
+| 📚 **Knowledge** | Artículos KB referenciables | `claude-init --modulo knowledge` |
 
 > **Índice completo con estructura visual → [`INDEX.md`](./INDEX.md)**
 
@@ -79,8 +85,8 @@ python agentes/validar_agente.py ~/.claude/agents/mi-agente --strict
 ## Validación y CI/CD
 
 - **Motor reusable** en [`validadores/`](./validadores/): `BaseValidator`, checks reutilizables, reporte formateado.
-- **8 validadores** individuales, todos pasan `--strict`.
-- **8 workflows** de GitHub Actions + workflow central [`validar-todos.yml`](./.github/workflows/validar-todos.yml).
+- **14 validadores** individuales, todos pasan `--strict`.
+- **14 workflows** de GitHub Actions + workflow central [`validar-todos.yml`](./.github/workflows/validar-todos.yml).
 - **Pre-commit hooks** en [`.pre-commit-config.yaml`](./.pre-commit-config.yaml): lint YAML/JSON, detectar placeholders, validar módulos.
 
 ---
