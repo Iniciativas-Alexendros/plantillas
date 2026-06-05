@@ -94,6 +94,7 @@ python agentes/validar_agente.py ~/.claude/agents/mi-agente --strict
 | [`CHANGELOG.md`](./CHANGELOG.md) | Historia de versiones |
 | [`CONTRIBUTING.md`](./CONTRIBUTING.md) | Cómo añadir nuevos módulos |
 | [`INTEGRACION.md`](./INTEGRACION.md) | Cómo combinar módulos entre sí |
+| [`PROMPT_INICIO.md`](./PROMPT_INICIO.md) | Prompt de contexto para abrir un hilo de Claude sobre este repo |
 | [`CODE_OF_CONDUCT.md`](./CODE_OF_CONDUCT.md) | Código de conducta |
 
 ---

@@ -185,6 +185,10 @@
 | [`claude-init`](./claude-init) | Inicializa módulos, proyectos o repositorios | `claude-init --modulo agentes --nombre mi-agente` |
 | [`update.sh`](./update.sh) | Actualiza el sistema a la última versión | `./update.sh` |
 
+> **Contexto de mantenedor:** [`PROMPT_INICIO.md`](./PROMPT_INICIO.md) — prompt listo
+> para pegar al abrir un hilo de Claude que vaya a trabajar sobre este repo (ubicación,
+> reglas de oro, comandos rápidos y stack).
+
 ---
 
 ## Integración entre módulos
