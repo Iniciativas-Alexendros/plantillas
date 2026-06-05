@@ -295,22 +295,18 @@ plantillas/
 ├── agentes/
 │   ├── plantilla_agente.md           ← 🤖 Single-file canon
 │   ├── ejemplo_agente.md
-│   ├── validar_agente.py
-│   ├── _legacy_plantilla_agente_dir/  (preservado, retrocompat)
-│   └── _legacy_ejemplo_agente_dir/
+│   └── validar_agente.py
 │
 ├── commands/
 │   ├── plantilla_command.md          ← ⌨️ Single-file canon
 │   ├── ejemplo_command.md
-│   ├── validar_command.py
-│   └── _legacy_*_dir/
+│   └── validar_command.py
 │
 ├── hooks/
 │   ├── plantilla_hook.sh.template    ← ⚓ Single-file canon
 │   ├── ejemplo_hook.sh.template
 │   ├── HOOK.md
-│   ├── validar_hook.py
-│   └── _legacy_*_dir/
+│   └── validar_hook.py
 │
 ├── miniapps/                         ← 🖥️ Canon nuevo
 │   ├── plantilla_miniapps.md
