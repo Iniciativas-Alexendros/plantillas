@@ -5,6 +5,18 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Optimización deep-scroll
+
+### Changed
+
+- **`validadores/checks.py`**, **`validadores/__init__.py`**, **`validar_repo.py`** — Extraídos a `checks.py` cinco checks genéricos a nivel repositorio, ahora reutilizables por cualquier validador: `check_archivos_prohibidos`, `check_tamanio_maximo`, `check_merge_conflicts`, `check_secrets`, `check_gitignore_minimo`. `validar_repo.py` pasa de 517 a 416 líneas; sus métodos `_check_*` correspondientes son wrappers finos sobre el motor compartido. Comportamiento idéntico (mismos nombres de check y mensajes).
+
+### Added
+
+- **`tests/test_validadores.py`** — 12 tests nuevos para los checks reutilizables (`TestCheckArchivosProhibidos`, `TestCheckTamanioMaximo`, `TestCheckMergeConflicts`, `TestCheckSecrets`, `TestCheckGitignoreMinimo`).
+
+---
+
 ## [Unreleased] — Post-Merge Template v1.1 polish
 
 ### Changed
