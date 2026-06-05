@@ -21,6 +21,10 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 - **`agentes/_legacy_{plantilla,ejemplo}_agente_dir/`**, **`commands/_legacy_{plantilla,ejemplo}_command_dir/`**, **`hooks/_legacy_{plantilla,ejemplo}_hook_dir/`** — Purgados los 6 directorios legacy de la estructura multi-archivo previa a la reforma Canon-Runtime. Estaban preservados como retrocompat pero ya no se validan activamente; el canon single-file (`*.md` / `*.sh.template`) los sustituye por completo. Referencias eliminadas del árbol visual de `INDEX.md`. El historial de la migración se conserva en las entradas previas de este CHANGELOG.
 
+- **`mceod-overlays/`** y **`.github/workflows/validar-mceod-overlays.yml`** — Eliminado el módulo MCEOD overlays (L0–L3 + `validar_mceod_overlays.py`) por estar deprecado/descatalogado. No estaba registrado en `DIRECTORIOS_PERMITIDOS`, por lo que hacía fallar `validar_repo.py --strict` (exit 1) en `main`. Todas las referencias estaban contenidas en su propio subárbol + el workflow; no quedan referencias colgantes en el repo. Nota operativa: el symlink local `~/.claude/templates → mceod-overlays` queda obsoleto.
+
+- **`agentes/ejemplo_agente/`** — Eliminado un directorio fantasma (solo `tools/custom/README.md`) remanente de la estructura multi-archivo previa a Canon-Runtime, que coexistía con el fichero canónico `ejemplo_agente.md` y rompía `tests/test_smoke.py` al resolver el ejemplo al directorio en lugar del `.md`.
+
 ---
 
 ## [Unreleased] — Post-Merge Template v1.1 polish
