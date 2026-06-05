@@ -4,6 +4,7 @@ Cada función devuelve una lista de Resultados.
 """
 
 import json
+import re
 from pathlib import Path
 from typing import List, Optional
 
@@ -109,7 +110,6 @@ def check_yaml_frontmatter(
 
     # Validar formato de 'name' si existe
     if "name" in data and isinstance(data["name"], str):
-        import re
         if not re.match(r"^[a-z0-9-]+$", data["name"]):
             resultados.append(
                 Resultado(
@@ -291,4 +291,146 @@ def check_estructura(
                 )
             )
 
+    return resultados
+
+
+# ──────────────────────────────────────────────────────────────────────────
+# Checks a nivel repositorio (reutilizables por validadores globales)
+#
+# Recorren todo el árbol bajo validator.ruta. _archivos() incluye .git, así
+# que estos checks lo excluyen explícitamente para preservar el comportamiento.
+# ──────────────────────────────────────────────────────────────────────────
+
+def check_archivos_prohibidos(
+    validator: BaseValidator,
+    patrones_prohibidos: List[str],
+) -> List[Resultado]:
+    """Detecta archivos que nunca deben estar en el repo (nombre exacto o glob '*.ext')."""
+    resultados: List[Resultado] = []
+    for path in validator._archivos():
+        if ".git" in path.parts:
+            continue
+        name = path.name
+        for prohibido in patrones_prohibidos:
+            if prohibido.startswith("*"):
+                if name.endswith(prohibido.lstrip("*")):
+                    resultados.append(
+                        Resultado(
+                            Nivel.ERROR, "archivos_prohibidos",
+                            f"Archivo prohibido detectado: {name}",
+                            validator._rel(path),
+                        )
+                    )
+            elif name == prohibido:
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR, "archivos_prohibidos",
+                        f"Archivo prohibido detectado: {name}",
+                        validator._rel(path),
+                    )
+                )
+    return resultados
+
+
+def check_tamanio_maximo(
+    validator: BaseValidator,
+    max_kb: float,
+) -> List[Resultado]:
+    """Ningún archivo debe superar max_kb kilobytes."""
+    resultados: List[Resultado] = []
+    for path in validator._archivos():
+        if ".git" in path.parts:
+            continue
+        size_kb = path.stat().st_size / 1024
+        if size_kb > max_kb:
+            resultados.append(
+                Resultado(
+                    Nivel.ERROR, "tamanio_archivos",
+                    f"Archivo excede {max_kb}KB ({size_kb:.1f}KB): {path.name}",
+                    validator._rel(path),
+                )
+            )
+    return resultados
+
+
+def check_merge_conflicts(
+    validator: BaseValidator,
+    max_bytes: int = 5 * 1024 * 1024,
+) -> List[Resultado]:
+    """Detecta marcadores de conflicto de merge no resueltos."""
+    resultados: List[Resultado] = []
+    for path in validator._archivos():
+        if ".git" in path.parts:
+            continue
+        if path.stat().st_size > max_bytes:
+            continue  # Ignorar archivos muy grandes
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        if any(line.startswith("<<<<<<<") for line in text.splitlines()):
+            resultados.append(
+                Resultado(
+                    Nivel.ERROR, "merge_conflicts",
+                    f"Marcadores de merge conflict no resueltos en: {path.name}",
+                    validator._rel(path),
+                )
+            )
+    return resultados
+
+
+def check_secrets(
+    validator: BaseValidator,
+    patrones: "List[re.Pattern]",
+    max_bytes: int = 2 * 1024 * 1024,
+) -> List[Resultado]:
+    """Heurística básica de detección de secrets en texto plano."""
+    resultados: List[Resultado] = []
+    for path in validator._archivos():
+        if ".git" in path.parts:
+            continue
+        if path.stat().st_size > max_bytes:
+            continue  # Ignorar binarios y archivos grandes
+        try:
+            text = path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, OSError):
+            continue
+        for pattern in patrones:
+            matches = pattern.findall(text)
+            if matches:
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR, "secrets_texto_plano",
+                        f"Posible secret/token detectado en {path.name}: {matches[0][:20]}...",
+                        validator._rel(path),
+                    )
+                )
+                break  # Un hallazgo por archivo es suficiente
+    return resultados
+
+
+def check_gitignore_minimo(
+    validator: BaseValidator,
+    entradas: List[str],
+) -> List[Resultado]:
+    """Verifica que .gitignore (en validator.ruta) contenga exclusiones mínimas."""
+    resultados: List[Resultado] = []
+    gi = validator.ruta / ".gitignore"
+    if not gi.is_file():
+        resultados.append(
+            Resultado(Nivel.ERROR, "gitignore", "Falta .gitignore en raíz", ".gitignore")
+        )
+        return resultados
+
+    content = gi.read_text(encoding="utf-8")
+    for req in entradas:
+        pattern = req.lstrip("/")
+        if pattern not in content and f"/{pattern}" not in content:
+            resultados.append(
+                Resultado(
+                    Nivel.WARNING, "gitignore",
+                    f".gitignore no excluye explícitamente: {req}",
+                    ".gitignore",
+                )
+            )
     return resultados

@@ -24,6 +24,11 @@ from .checks import (
     check_placeholders,
     check_archivos_vacios,
     check_estructura,
+    check_archivos_prohibidos,
+    check_tamanio_maximo,
+    check_merge_conflicts,
+    check_secrets,
+    check_gitignore_minimo,
 )
 from .reporte import reportar_resultados
 
@@ -38,5 +43,10 @@ __all__ = [
     "check_placeholders",
     "check_archivos_vacios",
     "check_estructura",
+    "check_archivos_prohibidos",
+    "check_tamanio_maximo",
+    "check_merge_conflicts",
+    "check_secrets",
+    "check_gitignore_minimo",
     "reportar_resultados",
 ]

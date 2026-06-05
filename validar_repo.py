@@ -18,7 +18,17 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from validadores import BaseValidator, Check, Resultado, Nivel
+from validadores import (
+    BaseValidator,
+    Check,
+    Resultado,
+    Nivel,
+    check_archivos_prohibidos,
+    check_gitignore_minimo,
+    check_merge_conflicts,
+    check_secrets,
+    check_tamanio_maximo,
+)
 
 
 # ──────────────────────────────────────────────────────────────────────────
@@ -357,134 +367,23 @@ class ValidadorGlobal(BaseValidator):
 
     def _check_gitignore(self) -> list[Resultado]:
         """Verifica que .gitignore contenga exclusiones mínimas."""
-        resultados = []
-        gi = self.ruta / ".gitignore"
-        if not gi.is_file():
-            resultados.append(
-                Resultado(Nivel.ERROR, "gitignore", "Falta .gitignore en raíz", ".gitignore")
-            )
-            return resultados
-
-        content = gi.read_text(encoding="utf-8")
-        for req in GITIGNORE_MINIMO:
-            # Soporta comentarios y variaciones de formato
-            pattern = req.lstrip("/")
-            if pattern not in content and f"/{pattern}" not in content:
-                resultados.append(
-                    Resultado(
-                        Nivel.WARNING,
-                        "gitignore",
-                        f".gitignore no excluye explícitamente: {req}",
-                        ".gitignore",
-                    )
-                )
-        return resultados
+        return check_gitignore_minimo(self, GITIGNORE_MINIMO)
 
     def _check_archivos_prohibidos(self) -> list[Resultado]:
         """Detecta archivos que nunca deben estar en el repo."""
-        resultados = []
-        for path in self.ruta.rglob("*"):
-            if not path.is_file():
-                continue
-            # Ignorar .git
-            if ".git" in path.parts:
-                continue
-            name = path.name
-            for prohibido in ARCHIVOS_PROHIBIDOS:
-                if prohibido.startswith("*"):
-                    if name.endswith(prohibido.lstrip("*")):
-                        resultados.append(
-                            Resultado(
-                                Nivel.ERROR,
-                                "archivos_prohibidos",
-                                f"Archivo prohibido detectado: {name}",
-                                str(path.relative_to(self.ruta)),
-                            )
-                        )
-                elif name == prohibido:
-                    resultados.append(
-                        Resultado(
-                            Nivel.ERROR,
-                            "archivos_prohibidos",
-                            f"Archivo prohibido detectado: {name}",
-                            str(path.relative_to(self.ruta)),
-                        )
-                    )
-        return resultados
+        return check_archivos_prohibidos(self, ARCHIVOS_PROHIBIDOS)
 
     def _check_tamanio(self) -> list[Resultado]:
         """Ningún archivo debe superar MAX_FILE_SIZE_KB."""
-        resultados = []
-        for path in self.ruta.rglob("*"):
-            if not path.is_file():
-                continue
-            if ".git" in path.parts:
-                continue
-            size_kb = path.stat().st_size / 1024
-            if size_kb > MAX_FILE_SIZE_KB:
-                resultados.append(
-                    Resultado(
-                        Nivel.ERROR,
-                        "tamanio_archivos",
-                        f"Archivo excede {MAX_FILE_SIZE_KB}KB ({size_kb:.1f}KB): {path.name}",
-                        str(path.relative_to(self.ruta)),
-                    )
-                )
-        return resultados
+        return check_tamanio_maximo(self, MAX_FILE_SIZE_KB)
 
     def _check_merge_conflicts(self) -> list[Resultado]:
         """Detecta marcadores de conflicto no resueltos."""
-        resultados = []
-        for path in self.ruta.rglob("*"):
-            if not path.is_file():
-                continue
-            if ".git" in path.parts:
-                continue
-            if path.stat().st_size > 5 * 1024 * 1024:
-                continue  # Ignorar archivos muy grandes
-            try:
-                text = path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                continue
-            if any(line.startswith("<<<<<<<") for line in text.splitlines()):
-                resultados.append(
-                    Resultado(
-                        Nivel.ERROR,
-                        "merge_conflicts",
-                        f"Marcadores de merge conflict no resueltos en: {path.name}",
-                        str(path.relative_to(self.ruta)),
-                    )
-                )
-        return resultados
+        return check_merge_conflicts(self)
 
     def _check_secrets(self) -> list[Resultado]:
         """Heurística básica de detección de secrets en texto plano."""
-        resultados = []
-        for path in self.ruta.rglob("*"):
-            if not path.is_file():
-                continue
-            if ".git" in path.parts:
-                continue
-            # Ignorar binarios y archivos grandes
-            if path.stat().st_size > 2 * 1024 * 1024:
-                continue
-            try:
-                text = path.read_text(encoding="utf-8")
-            except (UnicodeDecodeError, OSError):
-                continue
-            for pattern in PATRONES_SECRETO:
-                matches = pattern.findall(text)
-                if matches:
-                    resultados.append(
-                        Resultado(
-                            Nivel.ERROR,
-                            "secrets_texto_plano",
-                            f"Posible secret/token detectado en {path.name}: {matches[0][:20]}...",
-                            str(path.relative_to(self.ruta)),
-                        )
-                    )
-                    break  # Un hallazgo por archivo es suficiente
-        return resultados
+        return check_secrets(self, PATRONES_SECRETO)
 
 
 # ──────────────────────────────────────────────────────────────────────────

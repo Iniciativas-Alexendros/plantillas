@@ -5,6 +5,28 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Optimización deep-scroll
+
+### Changed
+
+- **`validadores/checks.py`**, **`validadores/__init__.py`**, **`validar_repo.py`** — Extraídos a `checks.py` cinco checks genéricos a nivel repositorio, ahora reutilizables por cualquier validador: `check_archivos_prohibidos`, `check_tamanio_maximo`, `check_merge_conflicts`, `check_secrets`, `check_gitignore_minimo`. `validar_repo.py` pasa de 517 a 416 líneas; sus métodos `_check_*` correspondientes son wrappers finos sobre el motor compartido. Comportamiento idéntico (mismos nombres de check y mensajes).
+
+- **`README.md`**, **`INDEX.md`** — `PROMPT_INICIO.md` (prompt de contexto de mantenedor) referenciado en la tabla «Documentación clave» del README y en «Scripts de bootstrap» de INDEX. Antes existía en raíz sin ninguna referencia en el repo (archivo huérfano).
+
+### Added
+
+- **`tests/test_validadores.py`** — 12 tests nuevos para los checks reutilizables (`TestCheckArchivosProhibidos`, `TestCheckTamanioMaximo`, `TestCheckMergeConflicts`, `TestCheckSecrets`, `TestCheckGitignoreMinimo`).
+
+### Removed
+
+- **`agentes/_legacy_{plantilla,ejemplo}_agente_dir/`**, **`commands/_legacy_{plantilla,ejemplo}_command_dir/`**, **`hooks/_legacy_{plantilla,ejemplo}_hook_dir/`** — Purgados los 6 directorios legacy de la estructura multi-archivo previa a la reforma Canon-Runtime. Estaban preservados como retrocompat pero ya no se validan activamente; el canon single-file (`*.md` / `*.sh.template`) los sustituye por completo. Referencias eliminadas del árbol visual de `INDEX.md`. El historial de la migración se conserva en las entradas previas de este CHANGELOG.
+
+- **`mceod-overlays/`** y **`.github/workflows/validar-mceod-overlays.yml`** — Eliminado el módulo MCEOD overlays (L0–L3 + `validar_mceod_overlays.py`) por estar deprecado/descatalogado. No estaba registrado en `DIRECTORIOS_PERMITIDOS`, por lo que hacía fallar `validar_repo.py --strict` (exit 1) en `main`. Todas las referencias estaban contenidas en su propio subárbol + el workflow; no quedan referencias colgantes en el repo. Nota operativa: el symlink local `~/.claude/templates → mceod-overlays` queda obsoleto.
+
+- **`agentes/ejemplo_agente/`** — Eliminado un directorio fantasma (solo `tools/custom/README.md`) remanente de la estructura multi-archivo previa a Canon-Runtime, que coexistía con el fichero canónico `ejemplo_agente.md` y rompía `tests/test_smoke.py` al resolver el ejemplo al directorio en lugar del `.md`.
+
+---
+
 ## [Unreleased] — Post-Merge Template v1.1 polish
 
 ### Changed
