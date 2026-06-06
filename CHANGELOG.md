@@ -5,6 +5,14 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Fix CI Security Scan
+
+### Fixed
+
+- **`.github/workflows/security-scan.yml`** — El step de TruffleHog pasaba `base: default_branch` y `head: HEAD`, que en un push/merge a `main` resuelven al mismo commit → la action abortaba con `BASE and HEAD commits are the same` (exit 1). El job `Security Scan` llevaba fallando en cada merge a `main` (8+ pushes consecutivos). Ahora escanea el árbol de trabajo completo (`path: ./` sin `base`/`head`), cubriendo PR, push y `workflow_dispatch` por igual, manteniendo `--only-verified`.
+
+---
+
 ## [Unreleased] — Optimización deep-scroll
 
 ### Changed

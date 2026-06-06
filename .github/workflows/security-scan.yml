@@ -117,14 +117,16 @@ jobs:
           echo "::endgroup::"
           exit $EXIT
 
-      # ── 3. TruffleHog ─────────────────────────────────────────────────
+      # ── 3. TruffleHog (scan de filesystem) ────────────────────────────
+      # Sin `base`/`head`: TruffleHog escanea el árbol de trabajo completo en
+      # vez de un diff git. Evita el error "BASE and HEAD commits are the same"
+      # que rompía este job en cada push/merge a main (donde default_branch ==
+      # HEAD). Cubre PR, push y workflow_dispatch por igual.
       - name: Ejecutar TruffleHog
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: ${{ github.event.repository.default_branch }}
-          head: HEAD
-          extra_args: --debug --only-verified
+          extra_args: --only-verified
 
       - name: Reportar estado
         if: always()
