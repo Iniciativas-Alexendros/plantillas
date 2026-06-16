@@ -56,14 +56,33 @@ runs:
   steps:
     - name: Render summary
       shell: bash
+      # Todos los valores dinámicos (inputs + contexto github) se pasan por `env:`,
+      # NUNCA interpolados con ${{ }} dentro de `run:`. Interpolar directamente en el
+      # script hacía que un input con backticks (p.ej. notes con `latest`) se evaluara
+      # como command substitution de bash → `latest: command not found` (exit 127) y,
+      # peor, abría la puerta a command injection. Por env, bash los lee como datos.
+      env:
+        IN_TITLE: ${{ inputs.title }}
+        IN_STATUS: ${{ inputs.status }}
+        IN_ITEMS: ${{ inputs.items }}
+        IN_ARTIFACTS: ${{ inputs.artifacts }}
+        IN_DURATION: ${{ inputs.duration }}
+        IN_NOTES: ${{ inputs.notes }}
+        GH_WORKFLOW: ${{ github.workflow }}
+        GH_RUN_NUMBER: ${{ github.run_number }}
+        GH_SERVER_URL: ${{ github.server_url }}
+        GH_REPOSITORY: ${{ github.repository }}
+        GH_RUN_ID: ${{ github.run_id }}
+        GH_SHA: ${{ github.sha }}
+        GH_REF_NAME: ${{ github.ref_name }}
       run: |
         set -Eeuo pipefail
-        TITLE="${{ inputs.title }}"
-        STATUS="${{ inputs.status }}"
-        ITEMS="${{ inputs.items }}"
-        ARTIFACTS="${{ inputs.artifacts }}"
-        DURATION="${{ inputs.duration }}"
-        NOTES="${{ inputs.notes }}"
+        TITLE="$IN_TITLE"
+        STATUS="$IN_STATUS"
+        ITEMS="$IN_ITEMS"
+        ARTIFACTS="$IN_ARTIFACTS"
+        DURATION="$IN_DURATION"
+        NOTES="$IN_NOTES"
 
         case "$STATUS" in
           success)   ICON="🟢" ;;
@@ -77,8 +96,8 @@ runs:
           echo "## $ICON $TITLE"
           echo ""
           [ -n "$DURATION" ] && echo "**Duración:** \`$DURATION\`  "
-          echo "**Workflow:** \`${{ github.workflow }}\` · **Run:** [#${{ github.run_number }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})  "
-          echo "**Commit:** \`${{ github.sha }}\` (${{ github.ref_name }})"
+          echo "**Workflow:** \`$GH_WORKFLOW\` · **Run:** [#$GH_RUN_NUMBER]($GH_SERVER_URL/$GH_REPOSITORY/actions/runs/$GH_RUN_ID)  "
+          echo "**Commit:** \`$GH_SHA\` ($GH_REF_NAME)"
           echo ""
 
           if [ -n "$ITEMS" ]; then
