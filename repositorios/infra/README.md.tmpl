@@ -1,0 +1,74 @@
+<!-- canon-managed: true -->
+# {{REPO_NAME}}
+
+> {{DESCRIPTION}}
+
+[![CI](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml/badge.svg)](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml)
+
+## Qué es
+
+Colección de stacks Docker Compose para {{DESCRIPTION}}. Cada subdirectorio
+es un stack autónomo que se despliega de forma independiente.
+
+## Stack
+
+- Docker Compose v2
+- Imágenes pinadas por versión exacta (`:latest` prohibido)
+- Variables de entorno por fichero `.env` (no versionado; `.env.example` como
+  referencia versionada)
+
+## Instala
+
+Requisitos: Docker >= 24, Docker Compose plugin v2.
+
+```bash
+git clone git@github.com:{{REPO_OWNER}}/{{REPO_NAME}}.git
+cd {{REPO_NAME}}
+```
+
+## Despliegue
+
+```bash
+# Arrancar un stack concreto
+cd <nombre-stack>/
+cp .env.example .env   # rellena las variables antes de continuar
+docker compose up -d
+
+# Ver logs
+docker compose logs -f
+
+# Parar y limpiar
+docker compose down
+```
+
+## Variables de entorno
+
+Cada stack incluye un `.env.example` con todas las variables y su descripción.
+Las variables con valor real van en `.env` (no versionado, excluido en
+`.gitignore`).
+
+| Variable | Stack | Descripción |
+|----------|-------|-------------|
+| `EXAMPLE_VAR` | `<stack>` | Descripción breve |
+
+## Estructura de stacks
+
+```
+{{REPO_NAME}}/
+├── <stack-a>/
+│   ├── docker-compose.yml
+│   ├── .env.example
+│   └── config/          · ficheros de configuración del servicio
+├── <stack-b>/
+│   ├── docker-compose.yml
+│   └── .env.example
+└── docs/                · ADRs y documentación operativa
+```
+
+## Licencia
+
+MIT. Ver [`LICENSE`](LICENSE).
+
+## Contacto
+
+{{CONTACT_EMAIL}}

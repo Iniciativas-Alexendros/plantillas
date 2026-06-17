@@ -1,0 +1,93 @@
+# .pre-commit-config.yaml — Plantilla genérica para repos consumidores
+#
+# Instalación:
+#   pip install pre-commit
+#   pre-commit install
+#
+# Uso:
+#   - El bloque BASE y GITLEAKS son OBLIGATORIOS para todos los stacks.
+#   - Los bloques por stack están comentados: descomenta el que corresponda a tu repo.
+#   - Todos los revs están pineados por tag (no SHA, no HEAD, no latest).
+#
+# Verificar que todo pasa:
+#   pre-commit run --all-files
+
+repos:
+  # ===========================================================================
+  # BASE — Obligatorio para todos los stacks
+  # ===========================================================================
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: ["--markdown-linebreak-ext=md"]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-json
+      - id: check-added-large-files
+        args: ["--maxkb=500"]
+      - id: check-merge-conflict
+      - id: detect-private-key
+      - id: check-case-conflict
+      - id: mixed-line-ending
+        args: ["--fix=lf"]
+
+  # ===========================================================================
+  # GITLEAKS — Secret scanning. Obligatorio para todos los stacks.
+  # ===========================================================================
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.30.1
+    hooks:
+      - id: gitleaks
+
+  # ===========================================================================
+  # === JS/TS (descomentar en repos Node) ===
+  #
+  # NOTA: mirrors-prettier (pre-commit/mirrors-prettier) está ARCHIVADO desde
+  # 2024 y no se mantiene. Usa un hook local con pnpm en su lugar.
+  # ===========================================================================
+  # - repo: local
+  #   hooks:
+  #     - id: prettier
+  #       name: Prettier (formato JS/TS/CSS/JSON/MD)
+  #       entry: pnpm exec prettier --write
+  #       language: node
+  #       files: \.(js|jsx|ts|tsx|css|json|md|yaml|yml)$
+  #       pass_filenames: true
+  #       additional_dependencies: ["prettier"]
+  #
+  #     - id: eslint
+  #       name: ESLint
+  #       entry: pnpm lint
+  #       language: system
+  #       files: \.(js|jsx|ts|tsx)$
+  #       pass_filenames: false
+
+  # ===========================================================================
+  # === Python (descomentar en repos Python) ===
+  # ===========================================================================
+  # - repo: https://github.com/astral-sh/ruff-pre-commit
+  #   rev: v0.15.17
+  #   hooks:
+  #     - id: ruff
+  #       args: ["--fix"]
+  #     - id: ruff-format
+
+  # ===========================================================================
+  # === Rust (descomentar en repos Rust) ===
+  # ===========================================================================
+  # - repo: local
+  #   hooks:
+  #     - id: cargo-fmt
+  #       name: cargo fmt --check
+  #       entry: cargo fmt --all -- --check
+  #       language: system
+  #       files: \.rs$
+  #       pass_filenames: false
+  #
+  #     - id: cargo-clippy
+  #       name: cargo clippy
+  #       entry: cargo clippy -- -D warnings
+  #       language: system
+  #       files: \.rs$
+  #       pass_filenames: false

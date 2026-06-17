@@ -1,0 +1,80 @@
+# Arquitectura de {{REPO_NAME}}
+
+Servidor MCP en Rust que envuelve una API externa y la expone a clientes que
+soportan el [Model Context Protocol](https://modelcontextprotocol.io).
+
+## Visión general
+
+```mermaid
+flowchart LR
+  cliente[Claude Code / Desktop] -- stdio --> server[{{REPO_NAME}}]
+  server --> http[API externa]
+  server --> auth[Bearer / OAuth]
+```
+
+## Componentes
+
+### `src/main.rs`
+
+Entrypoint. Inicializa el runtime Tokio, lee configuración del entorno y
+arranca el servidor MCP por stdio.
+
+### `src/server.rs`
+
+Registra tools, resources y prompts. Despacha peticiones del cliente al
+handler correspondiente y gestiona el ciclo de vida del servidor.
+
+### `src/client.rs`
+
+Cliente HTTP asíncrono (`reqwest`). Gestiona reintentos exponenciales y
+serialización JSON con `serde`.
+
+### `src/auth.rs`
+
+Lectura del token desde el entorno (`std::env`). Falla rápido en arranque si
+la variable requerida no está presente.
+
+### `src/tools/`
+
+Cada archivo expone un grupo lógico de tools. Las tools devuelven estructuras
+serializables y declaran su esquema en el registro del servidor.
+
+### `src/resources/`
+
+Recursos navegables (URIs `mcp://...`).
+
+## Decisiones cardinales
+
+- **Rust stable** para seguridad de memoria sin GC y binario estático portable.
+- **stdio transport** por compatibilidad amplia con clientes MCP locales.
+- **tokio** como runtime asíncrono estándar del ecosistema.
+- **Read-only por defecto**: las tools de escritura requieren un flag explícito
+  para evitar acciones destructivas en modo agente.
+- **AGPL-3.0-or-later**: cualquier derivado que se ofrezca como servicio debe
+  publicar su código fuente.
+
+Más detalle en `docs/adr/`.
+
+## Manejo de errores
+
+- Errores de red: reintento exponencial 3 veces con `backoff` o equivalente.
+- 401/403: el servidor reporta `auth-required` al cliente y termina.
+- 429: respeta la cabecera `Retry-After`.
+- 5xx: registra con `tracing` y reporta como error transitorio.
+
+## Observabilidad
+
+Logs estructurados con `tracing` + `tracing-subscriber`. Para activar trazas
+detalladas:
+
+```bash
+RUST_LOG=debug cargo run
+```
+
+## Riesgos conocidos
+
+- Cambios no anunciados en la API externa pueden romper tools.
+- El cliente MCP debe respetar el modo read-only; documentamos cómo
+  configurarlo.
+- `cargo audit` en CI detecta CVEs en dependencias transitivas; mantener
+  `Cargo.lock` actualizado con `cargo update` regularmente.
