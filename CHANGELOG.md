@@ -5,6 +5,12 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Fix job-summary command injection
+
+### Fixed
+
+- **`.github/actions/job-summary/action.yml`** — Los valores dinámicos (`inputs.*` y contexto `github.*`) se interpolaban con `${{ }}` directamente dentro del bloque `run:` de bash. Un `input` con backticks (p.ej. `notes` conteniendo `` `latest` ``) se evaluaba como command substitution → `latest: command not found` (exit 127), tumbando todo job que usara la action (Release de los repos consumidores fallaba en cada push a `main`). Además abría una vía de command injection. Ahora todos los valores se pasan por bloque `env:` (`IN_*`, `GH_*`) y el script los lee como `$VAR` (datos, no código). Cierra el exit 127 y la superficie de inyección de golpe.
+
 ## [Unreleased] — Fix CI Security Scan
 
 ### Fixed
