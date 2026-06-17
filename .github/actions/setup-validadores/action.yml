@@ -2,7 +2,7 @@
 # Composite Action · Setup del entorno de validación
 #
 # Reusable: Python 3.12 + pip cache + pyyaml
-# NOTA: Requiere actions/checkout@v4 ANTES de usar esta action.
+# NOTA: Requiere actions/checkout@v6 ANTES de usar esta action.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: Setup Validadores
@@ -11,7 +11,7 @@ description: Configura Python 3.12 con pyyaml y cache de pip para los validadore
 runs:
   using: composite
   steps:
-    - uses: actions/setup-python@v5
+    - uses: actions/setup-python@v6
       with:
         python-version: "3.12"
         cache: pip

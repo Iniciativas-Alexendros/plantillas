@@ -49,7 +49,7 @@ jobs:
       actionlint: ${{ steps.al.outcome }}
       zizmor: ${{ steps.zz.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: al
         name: actionlint via reviewdog
@@ -84,7 +84,7 @@ jobs:
     outputs:
       gitleaks: ${{ steps.gl.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with: { fetch-depth: 0 }
       - id: gl
         continue-on-error: true
@@ -99,8 +99,8 @@ jobs:
     outputs:
       yamllint: ${{ steps.yl.outcome }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - run: pip install --quiet yamllint
       - id: yl
@@ -122,7 +122,7 @@ jobs:
     outputs:
       shellcheck: ${{ steps.sh.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: sh
         continue-on-error: true
@@ -142,7 +142,7 @@ jobs:
     outputs:
       hadolint: ${{ steps.hd.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: hd
         continue-on-error: true
@@ -164,7 +164,7 @@ jobs:
       markdownlint: ${{ steps.ml.outcome }}
       lychee: ${{ steps.lc.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: ml
         continue-on-error: true
@@ -197,7 +197,7 @@ jobs:
     outputs:
       ts_linter: ${{ steps.run.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: pnpm/action-setup@v4
         continue-on-error: true
         with: { run_install: false }
@@ -231,8 +231,8 @@ jobs:
     outputs:
       ruff: ${{ steps.rf.outcome }}
     steps:
-      - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: rf
@@ -254,7 +254,7 @@ jobs:
       cargo_deny: ${{ steps.cd.outcome }}
       clippy: ${{ steps.cl.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: dtolnay/rust-toolchain@stable
         with: { components: clippy }
       - id: cd
@@ -278,7 +278,7 @@ jobs:
     outputs:
       osv: ${{ steps.osv.outputs.outcome }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - id: osv
         name: OSV-Scanner CLI
         continue-on-error: true
