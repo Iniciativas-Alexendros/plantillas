@@ -5,6 +5,12 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Bump actions a Node 24 (fin deprecación Node 20)
+
+### Changed
+
+- **`.github/workflows/ci-global.yml`**, **`.github/workflows/link-check.yml`**, **`.github/workflows/pr-guardian.yml`**, **`.github/workflows/release.yml`**, **`.github/workflows/security-scan.yml`**, **`.github/workflows/validar-todos.yml`**, **`.github/workflows/_lib-lint-aggregate.yml`**, **`.github/actions/setup-validadores/action.yml`** — Bump de `actions/checkout@v4 → @v6` y `actions/setup-python@v5 → @v6` en los 8 ficheros con deuda Node 20. GitHub fuerza el runtime **Node 24** para las actions desde **2026-06-16** y ha deprecado Node 20: `checkout@v4` y `setup-python@v5` corren sobre Node 20 y emitían warnings de deprecación camino a fallo duro. Las nuevas majors (`checkout@v6.0.3`, `setup-python@v6.2.0`, últimas estables) corren sobre Node 24. Se fija a tag de major (`@v6`), no a `@main` ni a SHA. Las entradas `actions/checkout@v5` ya existentes en `_lib-*.yml` no se tocan: v5 ya corre sobre Node 24 y no es deuda Node 20.
+
 ## [Unreleased] — Fix job-summary command injection
 
 ### Fixed

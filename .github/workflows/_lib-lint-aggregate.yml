@@ -100,7 +100,7 @@ jobs:
       yamllint: ${{ steps.yl.outcome }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - run: pip install --quiet yamllint
       - id: yl
@@ -232,7 +232,7 @@ jobs:
       ruff: ${{ steps.rf.outcome }}
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with: { python-version: "3.12" }
       - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
       - id: rf
