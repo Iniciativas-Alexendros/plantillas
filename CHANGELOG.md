@@ -5,6 +5,14 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — lychee docs-only: no fallar sin enlaces
+
+### Fixed
+
+- **`repositorios/docs-only/ci.yml.tmpl`** — Añadido `failIfEmpty: false` al job `link-check`. lychee-action trae `failIfEmpty: true` por defecto, que marcaba fallo cuando los globs acotados (docs de proyecto) no contenían ningún enlace externo — caso normal en repos docs pequeños. «Sin enlaces» no es un error.
+
+---
+
 ## [Unreleased] — Acotar CI docs-only a docs de proyecto
 
 ### Changed
