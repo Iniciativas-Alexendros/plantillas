@@ -2,8 +2,16 @@
 
 Todos los cambios destacables de este proyecto se documentan en este archivo.
 
-El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
+El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
+
+## [Unreleased] — Corregir enlace roto Keep a Changelog (es → es-ES)
+
+### Fixed
+
+- **`CHANGELOG.md`**, **`repositorios/comun/CHANGELOG.md.tmpl`**, **`repositorios/ejemplo_repositorio/CHANGELOG.md`** — El enlace a Keep a Changelog en español usaba el slug `/es/1.1.0/`, que devuelve **404** (Keep a Changelog cambió el slug a `/es-ES/1.1.0/`). Corregido en la plantilla común y sus instancias. Afectaba a todo repo docs-only que instanciara el CHANGELOG (lo detectó el `link-check` del piloto enfoke).
+
+---
 
 ## [Unreleased] — lychee docs-only: no fallar sin enlaces
 
