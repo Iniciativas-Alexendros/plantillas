@@ -5,6 +5,18 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Calibrar CI docs-only
+
+### Fixed
+
+- **`repositorios/docs-only/ci.yml.tmpl`** — CI para el perfil docs-only, inexistente hasta ahora. Dos jobs: `markdownlint` (DavidAnson/markdownlint-cli2-action@v23.2.0, glob `**/*.md`, recoge `.markdownlint.json` automáticamente) y `link-check` (lycheeverse/lychee-action@v2.8.0, args `--verbose --no-progress --exclude-loopback`). Eliminado `--exclude-mail`, que no existe en lychee-action v2.8.0 y causaba `unexpected argument` (exit 2). Los correos no se tratan como enlaces por defecto en lychee, así que el flag no era necesario.
+
+### Added
+
+- **`repositorios/docs-only/.markdownlint.json.tmpl`** — Configuración markdownlint para repos docs-only: `default: true` + desactiva **MD013** (line-length), **MD034** (no-bare-urls), **MD041** (first-line-heading), y configura **MD024** con `siblings_only: true` (permite headings duplicados en secciones distintas, compatible con CHANGELOG Keep-a-Changelog con múltiples secciones "Añadido"/"Fixed").
+
+---
+
 ## [Unreleased] — Bump actions a Node 24 (fin deprecación Node 20)
 
 ### Changed
