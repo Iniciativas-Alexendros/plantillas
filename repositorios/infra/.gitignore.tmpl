@@ -1,0 +1,50 @@
+# Secretos y entorno local (NUNCA versionar)
+.env
+.env.local
+.env*.local
+!.env.example
+!.env.ci
+
+*.pem
+*.key
+*.gpg
+.secrets/
+secrets.local
+
+# Logs
+*.log
+logs/
+
+# Estado de Terraform (contiene IDs y outputs sensibles)
+*.tfstate
+*.tfstate.backup
+.terraform/
+.terraform.lock.hcl
+terraform.tfvars
+terraform.tfvars.json
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Docker / compose: datos de volúmenes locales y override privado
+docker-compose.override.yml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor / IDE
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Backups y temporales
+*.bak
+*.tmp
+*~
+
+# Claude Code project-scope
+.claude/cache/
+.claude/history/
+.claude/settings.local.json

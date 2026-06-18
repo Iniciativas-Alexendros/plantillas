@@ -65,7 +65,9 @@ LICENSE_FILES = ["LICENSE", "COPYRIGHT.md"]
 
 
 class RepoValidator(BaseValidator):
-    def __init__(self, repo_dir: Path, strict: bool = False, visibility: str = "public"):
+    def __init__(
+        self, repo_dir: Path, strict: bool = False, visibility: str = "public"
+    ):
         super().__init__(repo_dir, strict)
         self.visibility = visibility
         self.checks = [
@@ -90,7 +92,9 @@ class RepoValidator(BaseValidator):
             p = self.ruta / f
             if not p.is_file():
                 resultados.append(
-                    Resultado(Nivel.ERROR, "estructura", f"Falta archivo obligatorio: {f}")
+                    Resultado(
+                        Nivel.ERROR, "estructura", f"Falta archivo obligatorio: {f}"
+                    )
                 )
 
         if self.visibility == "public":
@@ -98,7 +102,9 @@ class RepoValidator(BaseValidator):
                 p = self.ruta / f
                 if not p.is_file():
                     resultados.append(
-                        Resultado(Nivel.ERROR, "estructura", f"Falta archivo obligatorio: {f}")
+                        Resultado(
+                            Nivel.ERROR, "estructura", f"Falta archivo obligatorio: {f}"
+                        )
                     )
 
         # Licencia: LICENSE o COPYRIGHT.md (al menos uno)
@@ -118,22 +124,49 @@ class RepoValidator(BaseValidator):
 
         content = readme.read_text(encoding="utf-8")
 
+        # Repos docs-only (sin manifiesto de código) no tienen Stack ni
+        # instalación de dependencias: esas secciones no aplican. Se detecta
+        # por ausencia de manifiestos de los stacks soportados.
+        manifiestos = [
+            "package.json",
+            "pyproject.toml",
+            "requirements.txt",
+            "go.mod",
+            "Cargo.toml",
+        ]
+        es_docs_only = not any((self.ruta / m).is_file() for m in manifiestos)
+
         secciones_obligatorias = [
             ("## Qué es", "Qué es"),
-            ("## Stack", "Stack"),
-            ("## Instala", "Instala"),
             ("## Estructura", "Estructura"),
             ("## Licencia", "Licencia"),
         ]
+        if not es_docs_only:
+            secciones_obligatorias.extend(
+                [
+                    ("## Stack", "Stack"),
+                    ("## Instala", "Instala"),
+                ]
+            )
         for marcador, nombre in secciones_obligatorias:
             if marcador not in content:
                 resultados.append(
-                    Resultado(Nivel.WARNING, "readme", f"README.md debería tener '{nombre}'", "README.md")
+                    Resultado(
+                        Nivel.WARNING,
+                        "readme",
+                        f"README.md debería tener '{nombre}'",
+                        "README.md",
+                    )
                 )
 
         if "badge" not in content.lower() and "![" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "readme", "README.md debería tener un badge de CI", "README.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "readme",
+                    "README.md debería tener un badge de CI",
+                    "README.md",
+                )
             )
 
         return resultados
@@ -156,7 +189,12 @@ class RepoValidator(BaseValidator):
         content = licencia.read_text(encoding="utf-8")
         if "{{YEAR}}" in content or "{{COPYRIGHT_HOLDER}}" in content:
             resultados.append(
-                Resultado(Nivel.ERROR, "licencia", f"{licencia.name} contiene placeholders sin rellenar", licencia.name)
+                Resultado(
+                    Nivel.ERROR,
+                    "licencia",
+                    f"{licencia.name} contiene placeholders sin rellenar",
+                    licencia.name,
+                )
             )
 
         return resultados
@@ -171,7 +209,12 @@ class RepoValidator(BaseValidator):
 
         if "## [Unreleased]" not in content and "## [Sin publicar]" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "changelog", "CHANGELOG.md debería tener '[Unreleased]'", "CHANGELOG.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "changelog",
+                    "CHANGELOG.md debería tener '[Unreleased]'",
+                    "CHANGELOG.md",
+                )
             )
 
         secciones_map = {
@@ -185,7 +228,12 @@ class RepoValidator(BaseValidator):
         for seccion, variantes in secciones_map.items():
             if not any(v in content for v in variantes):
                 resultados.append(
-                    Resultado(Nivel.WARNING, "changelog", f"CHANGELOG.md falta sección '{seccion}'", "CHANGELOG.md")
+                    Resultado(
+                        Nivel.WARNING,
+                        "changelog",
+                        f"CHANGELOG.md falta sección '{seccion}'",
+                        "CHANGELOG.md",
+                    )
                 )
 
         return resultados
@@ -200,12 +248,22 @@ class RepoValidator(BaseValidator):
 
         if "conventional commits" not in content.lower():
             resultados.append(
-                Resultado(Nivel.WARNING, "contributing", "CONTRIBUTING.md debería mencionar Conventional Commits", "CONTRIBUTING.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "contributing",
+                    "CONTRIBUTING.md debería mencionar Conventional Commits",
+                    "CONTRIBUTING.md",
+                )
             )
 
         if "signed" not in content.lower() and "firma" not in content.lower():
             resultados.append(
-                Resultado(Nivel.WARNING, "contributing", "CONTRIBUTING.md debería mencionar commits firmados", "CONTRIBUTING.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "contributing",
+                    "CONTRIBUTING.md debería mencionar commits firmados",
+                    "CONTRIBUTING.md",
+                )
             )
 
         return resultados
@@ -220,7 +278,12 @@ class RepoValidator(BaseValidator):
 
         if "report" not in content.lower() and "reportar" not in content.lower():
             resultados.append(
-                Resultado(Nivel.WARNING, "security", "SECURITY.md debería explicar cómo reportar vulnerabilidades", "SECURITY.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "security",
+                    "SECURITY.md debería explicar cómo reportar vulnerabilidades",
+                    "SECURITY.md",
+                )
             )
 
         return resultados
@@ -235,7 +298,12 @@ class RepoValidator(BaseValidator):
 
         if "*" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "codeowners", "CODEOWNERS debería tener un owner por defecto (*)", ".github/CODEOWNERS")
+                Resultado(
+                    Nivel.WARNING,
+                    "codeowners",
+                    "CODEOWNERS debería tener un owner por defecto (*)",
+                    ".github/CODEOWNERS",
+                )
             )
 
         return resultados
@@ -247,15 +315,28 @@ class RepoValidator(BaseValidator):
             content = pr_template.read_text(encoding="utf-8")
             if "Qué" not in content or "Por qué" not in content:
                 resultados.append(
-                    Resultado(Nivel.WARNING, "github", "PR template debería tener 'Qué' y 'Por qué'", ".github/PULL_REQUEST_TEMPLATE.md")
+                    Resultado(
+                        Nivel.WARNING,
+                        "github",
+                        "PR template debería tener 'Qué' y 'Por qué'",
+                        ".github/PULL_REQUEST_TEMPLATE.md",
+                    )
                 )
 
         if self.visibility == "public":
-            for tmpl in ["bug.yml", "feature.yml", "question.yml", "security.yml", "config.yml"]:
+            for tmpl in [
+                "bug.yml",
+                "feature.yml",
+                "question.yml",
+                "security.yml",
+                "config.yml",
+            ]:
                 p = self.ruta / ".github/ISSUE_TEMPLATE" / tmpl
                 if not p.exists():
                     resultados.append(
-                        Resultado(Nivel.ERROR, "github", f"Falta template de issue: {tmpl}")
+                        Resultado(
+                            Nivel.ERROR, "github", f"Falta template de issue: {tmpl}"
+                        )
                     )
 
         return resultados
@@ -280,7 +361,12 @@ class RepoValidator(BaseValidator):
             content = yml.read_text(encoding="utf-8")
             if "permissions:" not in content:
                 resultados.append(
-                    Resultado(Nivel.WARNING, "ci", f"{self._rel(yml)} debería definir 'permissions' explícitos", self._rel(yml))
+                    Resultado(
+                        Nivel.WARNING,
+                        "ci",
+                        f"{self._rel(yml)} debería definir 'permissions' explícitos",
+                        self._rel(yml),
+                    )
                 )
 
         return resultados
@@ -297,7 +383,12 @@ class RepoValidator(BaseValidator):
         content = dependabot.read_text(encoding="utf-8")
         if "package-ecosystem" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "dependabot", "dependabot.yml debería tener 'package-ecosystem'", ".github/dependabot.yml")
+                Resultado(
+                    Nivel.WARNING,
+                    "dependabot",
+                    "dependabot.yml debería tener 'package-ecosystem'",
+                    ".github/dependabot.yml",
+                )
             )
 
         return resultados
@@ -322,22 +413,37 @@ class RepoValidator(BaseValidator):
             content = adr.read_text(encoding="utf-8")
             if "status:" not in content.lower() and "estado:" not in content.lower():
                 resultados.append(
-                    Resultado(Nivel.WARNING, "adr", f"{self._rel(adr)} debería tener 'status'", self._rel(adr))
+                    Resultado(
+                        Nivel.WARNING,
+                        "adr",
+                        f"{self._rel(adr)} debería tener 'status'",
+                        self._rel(adr),
+                    )
                 )
 
         return resultados
 
     def _check_placeholders(self):
-        return check_placeholders(self, extensiones=(".md", ".json", ".yaml", ".yml", ".txt"))
+        return check_placeholders(
+            self, extensiones=(".md", ".json", ".yaml", ".yml", ".txt")
+        )
 
     def _check_empty_files(self):
-        return check_archivos_vacios(self, min_bytes=30)
+        # VERSIÓN/VERSION: ficheros de versión semántica cuyo contenido mínimo
+        # ("0.2.0\n") es correcto por diseño, no son ficheros vacíos.
+        return check_archivos_vacios(
+            self, min_bytes=30, archivos_ignorados=["VERSIÓN", "VERSION"]
+        )
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Valida un repositorio GitHub profesional.")
+    parser = argparse.ArgumentParser(
+        description="Valida un repositorio GitHub profesional."
+    )
     parser.add_argument("repo_dir", help="Directorio del repositorio a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores"
+    )
     parser.add_argument(
         "--visibility",
         choices=["public", "private"],

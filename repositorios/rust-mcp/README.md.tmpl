@@ -1,0 +1,112 @@
+<!-- canon-managed: true -->
+# {{REPO_NAME}}
+
+> {{DESCRIPTION}}
+
+[![CI](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml/badge.svg)](https://github.com/{{REPO_OWNER}}/{{REPO_NAME}}/actions/workflows/ci.yml)
+[![License: AGPL-3.0-or-later](https://img.shields.io/badge/License-AGPL--3.0--or--later-blue.svg)](LICENSE)
+
+## Qué es
+
+Servidor [MCP (Model Context Protocol)](https://modelcontextprotocol.io)
+escrito en Rust que expone {{DESCRIPTION}} a clientes compatibles (Claude Desktop,
+Claude Code, Cursor, Continue, etc.).
+
+## Stack
+
+- Rust (edición 2021, stable)
+- `rmcp` / `mcp-server` crate (o equivalente según implementación)
+- `tokio` runtime asíncrono
+- `serde` / `serde_json`
+
+## Instala
+
+### Desde fuentes
+
+```bash
+cargo build --release
+```
+
+El binario queda en `target/release/{{REPO_NAME}}`.
+
+### Desde crates.io (si publicado)
+
+```bash
+cargo install {{REPO_NAME}}
+```
+
+## Configura
+
+Variables de entorno requeridas (revisa `src/auth.rs`):
+
+```
+EXAMPLE_API_TOKEN=...
+```
+
+Para clientes MCP locales, añade el bloque correspondiente a tu archivo
+`mcp.json` o `~/.claude/.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "{{REPO_NAME}}": {
+      "command": "/ruta/absoluta/target/release/{{REPO_NAME}}",
+      "args": [],
+      "env": {
+        "EXAMPLE_API_TOKEN": "${EXAMPLE_API_TOKEN}"
+      }
+    }
+  }
+}
+```
+
+## Smoke test
+
+```bash
+cargo run -- --help
+```
+
+## Comandos
+
+| Comando | Propósito |
+|---------|-----------|
+| `cargo build` | Compila en modo debug. |
+| `cargo build --release` | Compila optimizado. |
+| `cargo test --all-features` | Ejecuta toda la suite. |
+| `cargo clippy --all-targets --all-features -- -D warnings` | Lint estricto. |
+| `cargo fmt --all` | Formatea el código. |
+| `cargo audit` | Audita dependencias por CVEs (requiere `cargo-audit`). |
+
+## Tools y resources expuestos
+
+Documentados en [`ARCHITECTURE.md`](ARCHITECTURE.md). Resumen:
+
+- (lista de tools cuando se implementen)
+
+## Estructura
+
+```
+src/
+  main.rs         — Entrypoint y arranque del servidor MCP
+  server.rs       — Registro de tools, resources y prompts
+  client.rs       — Cliente HTTP hacia la API externa
+  auth.rs         — Lectura y validación del token desde el entorno
+  tools/          — Un módulo por grupo lógico de tools
+  resources/      — Recursos navegables (URIs mcp://...)
+```
+
+## Documentación
+
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) · diseño del servidor.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) · cómo contribuir.
+- [`SECURITY.md`](SECURITY.md) · política de seguridad.
+- [`CHANGELOG.md`](CHANGELOG.md) · cambios destacables.
+
+## Licencia
+
+GNU Affero General Public License v3.0 o posterior (AGPL-3.0-or-later).
+Ver [`LICENSE`](LICENSE).
+
+## Contacto
+
+{{CONTACT_EMAIL}}

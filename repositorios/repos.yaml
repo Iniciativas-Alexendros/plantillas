@@ -8,7 +8,7 @@
 #     visibility: public | private
 #     archived: bool                 # default false
 #     default_branch: main           # o el real
-#     profile: web-nextjs | mcp-server | library-design-system | dotfiles-config | docs-only
+#     profile: web-nextjs | mcp-server | library-design-system | dotfiles-config | docs-only | infra | rust-mcp
 #     license: MIT | Apache-2.0 | AGPL-3.0 | CC-BY-4.0 | PROPRIETARY
 #     license_secondary: <SPDX>      # opcional · típicamente CC-BY-4.0 para contenido
 #     description: "..."
@@ -169,6 +169,81 @@ repos:
     description: "Cuaderno personal sincronizado con Notion."
     status: tier-2
     notes: "Único repo bajo el usuario Alexendros previo al plan."
+
+  # ============================================================
+  # Tier-2 · repos en disco catalogados en la homologación 2026-06
+  # (reconciliados por URL de remoto; alta en repos.yaml)
+  # ============================================================
+
+  check-scripts:
+    owner: Alexendros
+    visibility: public
+    default_branch: main
+    profile: docs-only
+    license: MIT
+    description: "Helpers y scripts de CI/CD del ecosistema."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. Reconciliado por remoto Alexendros/check-scripts."
+
+  design-system_azero:
+    owner: Alexendros
+    visibility: public
+    default_branch: main
+    profile: library-design-system
+    license: MIT
+    description: "Design system OKLCH light-first (azero)."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. brand-book.pdf + logo-kit.zip pendientes de externalizar."
+
+  enfoke:
+    owner: Alexendros
+    visibility: private
+    default_branch: main
+    profile: docs-only
+    license: MIT
+    description: "ENFOQUES — actitudes conmutables en caliente para agentes IA (Claude Code). Eje ortogonal a la verbosidad."
+    status: tier-2
+    notes: "Piloto de homologación 2026-06 (rama homologacion-canon). README stub→LÉEME.md."
+
+  infra-runners:
+    owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: infra
+    license: MIT
+    description: "Self-hosted GitHub Actions runners (docker-compose)."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. .env.example era un character device (anomalía a corregir)."
+
+  infra-stacks:
+    owner: Iniciativas-Alexendros
+    visibility: private
+    default_branch: main
+    profile: infra
+    license: MIT
+    description: "Stacks docker-compose self-hosted (Supabase, OTEL Collector, SigNoz)."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. Tiene validate.py propio + .gitattributes."
+
+  trenchpass:
+    owner: Alexendros
+    visibility: private
+    default_branch: main
+    profile: rust-mcp
+    license: AGPL-3.0
+    description: "Credential gateway MCP en Rust (mTLS, Vault, audit log)."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. AGPL obligatorio: enlaza sequoia-openpgp (copyleft). MIT infringiría."
+
+  website-alexendrosdev:
+    owner: Alexendros
+    visibility: public
+    default_branch: main
+    profile: web-nextjs
+    license: MIT
+    description: "Sitio web de desarrollo de Alexendros."
+    status: tier-2
+    notes: "Alta en homologación 2026-06. Reconciliado por remoto Alexendros/website-alexendrosdev."
 
   # ============================================================
   # Tier-3 · archivados (NO se tocan, salvo dotClaudeMatrixMap)

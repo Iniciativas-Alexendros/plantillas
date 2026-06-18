@@ -17,6 +17,22 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 - **`.github/actions/job-summary/action.yml`** — Los valores dinámicos (`inputs.*` y contexto `github.*`) se interpolaban con `${{ }}` directamente dentro del bloque `run:` de bash. Un `input` con backticks (p.ej. `notes` conteniendo `` `latest` ``) se evaluaba como command substitution → `latest: command not found` (exit 127), tumbando todo job que usara la action (Release de los repos consumidores fallaba en cada push a `main`). Además abría una vía de command injection. Ahora todos los valores se pasan por bloque `env:` (`IN_*`, `GH_*`) y el script los lee como `$VAR` (datos, no código). Cierra el exit 127 y la superficie de inyección de golpe.
 
+## [Unreleased] — Homologación: perfiles rust-mcp/infra, fix motor docs-only, catálogo
+
+### Added
+
+- **`repositorios/rust-mcp/`** — Perfil para MCP servers en Rust (caso `trenchpass`). CI `fmt`/`clippy`/`test`/`build`/`audit` (`rustsec/audit-check@v2`), `.gitignore` Rust (conserva `Cargo.lock`), `README`/`ARCHITECTURE`, `dependabot` cargo. Licencia documentada **AGPL-3.0** (compatibilidad copyleft con `sequoia-openpgp`; MIT infringiría).
+- **`repositorios/infra/`** — Perfil Docker/compose (`infra-stacks`, `infra-runners`). CI con `validate-compose`, `yamllint`, `hadolint` y **gate anti `:latest`** (regla dura del proyecto).
+- **`repositorios/comun/.pre-commit-config.yaml.tmpl`** — Pre-commit portable con **gitleaks v8.30.1** (secret-scan, antes inexistente) + base, y bloques por stack (JS/Python/Rust) activables.
+- **`repositorios/repos.yaml`** — Perfil `infra` y `rust-mcp` añadidos al esquema; 7 fichas nuevas (`check-scripts`, `design-system_azero`, `enfoke`, `infra-runners`, `infra-stacks`, `trenchpass`, `website-alexendrosdev`) reconciliadas por URL de remoto en la homologación 2026-06.
+
+### Fixed
+
+- **`validadores/checks.py`** — `check_archivos_vacios` excluye `.git/` del escaneo (sus objetos se marcaban como falsos «ficheros vacíos»).
+- **`repositorios/validar_repositorio.py`** — `_check_readme` exime a repos docs-only (sin manifiesto de código) de las secciones `Stack`/`Instala`, que no aplican; siguen exigiéndose `Qué es`/`Estructura`/`Licencia`. `_check_empty_files` ignora `VERSIÓN`/`VERSION` (versión semántica de pocos bytes, contenido válido por diseño).
+
+---
+
 ## [Unreleased] — Fix CI Security Scan
 
 ### Fixed
