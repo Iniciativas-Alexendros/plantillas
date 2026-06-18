@@ -42,3 +42,7 @@ jobs:
         with:
           args: --verbose --no-progress --exclude-loopback './*.md' './docs/**/*.md' './.github/**/*.md'
           fail: true
+          # failIfEmpty por defecto es true: marcaría fallo si los globs no
+          # contienen ningún enlace (repo docs pequeño sin enlaces externos).
+          # Lo desactivamos: "sin enlaces" no es un error.
+          failIfEmpty: false
