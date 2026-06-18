@@ -5,6 +5,14 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Acotar CI docs-only a docs de proyecto
+
+### Changed
+
+- **`repositorios/docs-only/ci.yml.tmpl`** — `markdownlint` y `link-check` se limitan a los **docs de proyecto** (ficheros canónicos en raíz, `docs/**`, `.github/**`) en lugar de `**/*.md`. El **contenido de autor** (p.ej. `definiciones/`, `documentacion/`) deja de lintearse: es prosa, no documentación de proyecto, y aplicarle reglas de estilo markdown (MD040/MD033/MD036/MD060…) generaba ruido sin valor (172→11→0 errores tras acotar). Cada repo puede ampliar los globs en su copia si quiere lintar su contenido.
+
+---
+
 ## [Unreleased] — Calibrar CI docs-only
 
 ### Fixed
