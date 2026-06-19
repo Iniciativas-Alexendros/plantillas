@@ -1,0 +1,11 @@
+<!-- MCEOD:BEGIN v2.0.0 -->
+- Versión MCEOD: 2.0.0
+- Nivel: {{LEVEL}} (subproyecto)
+- Scope: `{{SCOPE_PATH}}`
+- Padre: `{{PARENT_REPO}}`
+- Fecha consolidación: {{CONSOLIDATED_AT}}
+- Hereda de: `~/.claude/CLAUDE.md` (L0), CLAUDE.md de la categoría padre (L1) y CLAUDE.md del repo padre (L2).
+- Owners: {{REPO_OWNERS}}
+
+> Cabecera gestionada por MCEOD. El cuerpo, fuera de este bloque, fue generado por `/init` de Claude Code.
+<!-- MCEOD:END -->

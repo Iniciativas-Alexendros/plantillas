@@ -10,7 +10,11 @@
 
 ---
 
-## Módulos canónicos (14)
+## Módulos canónicos (15)
+
+> 📢 **2026-05-28** — añadido módulo `mceod-overlays/` (scaffolding L0–L3 importado desde `~/.claude/templates/`). Detalle en [`mceod-overlays/README.md`](./mceod-overlays/README.md) y [`mceod-overlays/CHANGELOG.md`](./mceod-overlays/CHANGELOG.md).
+
+
 
 ### Single-file `.md` con frontmatter runtime
 

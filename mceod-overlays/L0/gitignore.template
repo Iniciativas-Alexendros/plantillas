@@ -1,0 +1,11 @@
+settings.local.json
+history.jsonl
+sessions/
+daemon/
+paste-cache/
+shell-snapshots/
+jobs/
+cache/
+backups/
+.credentials.json
+.last-cleanup

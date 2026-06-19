@@ -59,6 +59,7 @@ DIRECTORIOS_PERMITIDOS = {
     "dot-claude",
     "hooks",
     "knowledge",
+    "mceod-overlays",
     "mcp",
     "miniapps",
     "modulo",
