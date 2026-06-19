@@ -58,6 +58,42 @@ class BaseValidator:
 
     MIN_FILE_SIZE = 50
 
+    # ──────────────────────────────────────────────────────────────────────
+    # Bug B4 · Exclusión de directorios vendorizados / generados
+    # ──────────────────────────────────────────────────────────────────────
+    # Antes, `_archivos()` hacía `self.ruta.rglob(patron)` sin filtro alguno y
+    # recursaba dentro de árboles ajenos al canon como node_modules/, .venv/,
+    # .git/ o .claude/worktrees/. Eso inflaba artificialmente los hallazgos
+    # (cada dependencia vendorizada aportaba sus propios "archivos vacíos",
+    # placeholders, etc.) y dejaba `--strict` inservible al convertir miles de
+    # warnings ajenos en errores. La corrección B4 descarta cualquier ruta que
+    # contenga uno de estos nombres como componente de su ruta relativa.
+    EXCLUDE_DIRS = frozenset({
+        ".git",
+        "node_modules",
+        ".venv",
+        "venv",
+        "__pycache__",
+        ".mypy_cache",
+        ".pytest_cache",
+        ".ruff_cache",
+        ".next",
+        ".turbo",
+        "dist",
+        "build",
+        "out",
+        "target",
+        "coverage",
+        ".cache",
+        "vendor",
+        "site-packages",
+    })
+
+    # Caso especial: `.claude/worktrees` son DOS segmentos consecutivos; no
+    # basta con mirar un único componente, así que se comprueba como subcadena
+    # sobre la ruta relativa en formato POSIX.
+    EXCLUDE_PATH_SUBSTRINGS = (".claude/worktrees",)
+
     def __init__(self, ruta_modulo: Path, strict: bool = False):
         self.ruta = Path(ruta_modulo).resolve()
         self.strict = strict
@@ -107,9 +143,34 @@ class BaseValidator:
     # Helpers protegidos
     # ──────────────────────────────────────────────────────────────────────
 
+    def _excluido(self, p: Path) -> bool:
+        """Indica si `p` cae dentro de un directorio vendorizado/generado.
+
+        Forma parte de la corrección del bug B4: descarta rutas que pertenezcan
+        a árboles que NO son parte del canon del módulo (dependencias, cachés,
+        artefactos de build, worktrees…). Se evalúa sobre la ruta RELATIVA al
+        módulo para no excluir por accidente si la propia raíz del módulo se
+        llamara, p.ej., "build".
+        """
+        rel = p.relative_to(self.ruta)
+        # Caso general: algún componente de la ruta es un dir excluido.
+        if set(rel.parts) & self.EXCLUDE_DIRS:
+            return True
+        # Caso especial multi-segmento (p.ej. ".claude/worktrees").
+        rel_posix = rel.as_posix()
+        return any(sub in rel_posix for sub in self.EXCLUDE_PATH_SUBSTRINGS)
+
     def _archivos(self, patron: str = "*") -> List[Path]:
-        """Devuelve archivos dentro del módulo que coinciden con el patrón."""
-        return [p for p in self.ruta.rglob(patron) if p.is_file()]
+        """Devuelve archivos dentro del módulo que coinciden con el patrón.
+
+        Excluye (bug B4) cualquier archivo dentro de directorios vendorizados o
+        generados; ver `EXCLUDE_DIRS` / `EXCLUDE_PATH_SUBSTRINGS`.
+        """
+        return [
+            p
+            for p in self.ruta.rglob(patron)
+            if p.is_file() and not self._excluido(p)
+        ]
 
     def _rel(self, p: Path) -> str:
         """Devuelve la ruta relativa al módulo."""
