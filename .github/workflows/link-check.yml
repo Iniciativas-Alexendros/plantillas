@@ -31,7 +31,7 @@ jobs:
 
       - name: Ejecutar lychee
         id: lychee
-        uses: lycheeverse/lychee-action@v2
+        uses: lycheeverse/lychee-action@v2.8.0
         with:
           fail: false
           format: markdown
