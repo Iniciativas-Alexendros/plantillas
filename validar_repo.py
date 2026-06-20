@@ -57,6 +57,7 @@ DIRECTORIOS_PERMITIDOS = {
     "commands",
     "cuadernos",
     "dot-claude",
+    "estandares",
     "hooks",
     "knowledge",
     "mceod-overlays",

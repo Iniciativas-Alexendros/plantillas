@@ -181,6 +181,13 @@
 
 ---
 
+#### 📐 Estándares (módulo canónico)
+> Módulo canónico de estándares del portfolio: la metodología común (CLAUDE.md, frontmatter, versionado, pre-commit, .env.example, matriz CI) que el resto de repos adoptan.
+
+`estandares/` — raíz es la plantilla; consultar `estandares/ESTANDARES.md` y homologar cada repo.
+
+---
+
 ## Scripts de bootstrap
 
 | Script | Para qué sirve | Uso rápido |
@@ -220,6 +227,7 @@
 | Crear un repo GitHub profesional | `repositorios/ejemplo_repositorio/` | `claude-init --repositorio --nombre mi-repo` |
 | Inicializar `.claude/` en proyecto | `proyecto/` | `claude-init --proyecto` |
 | Crear un nuevo módulo | `modulo/` | `cp -r modulo mi-modulo` |
+| Homologar un repo a los estándares | `estandares/ESTANDARES.md` | `python estandares/validar_estandares.py estandares --strict` |
 
 ---
 
@@ -243,6 +251,7 @@ Cada módulo tiene su propio validador y workflow de CI/CD. Todos usan el **moto
 | 📚 Knowledge | [`validar_knowledge.py`](./knowledge/validar_knowledge.py) | [`validar-knowledge.yml`](./knowledge/.github/workflows/validar-knowledge.yml) |
 | 🧩 Módulo (template) | [`validar_modulo.py`](./modulo/validar_modulo.py) | [`validar-modulo.yml`](./modulo/.github/workflows/validar-modulo.yml) |
 | 📁 Proyecto (template) | [`validar_proyecto.py`](./proyecto/validar_proyecto.py) | [`validar-proyecto.yml`](./proyecto/.github/workflows/validar-proyecto.yml) |
+| 📐 Estándares (canónico) | [`validar_estandares.py`](./estandares/validar_estandares.py) | [`validar-todos.yml`](./.github/workflows/validar-todos.yml) |
 
 **Workflow central** (todos los módulos en matriz declarativa): [`validar-todos.yml`](./.github/workflows/validar-todos.yml)
 

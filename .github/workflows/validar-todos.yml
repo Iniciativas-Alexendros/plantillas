@@ -70,6 +70,7 @@ jobs:
             "repositorios|repositorios/validar_repositorio.py|repositorios/ejemplo_repositorio|repositorios/plantilla_repositorio"
             "modulo|modulo/validar_modulo.py|modulo|"
             "proyecto|proyecto/validar_proyecto.py|proyecto|"
+            "estandares|estandares/validar_estandares.py|estandares|"
           )
 
           for entry in "${MODULES[@]}"; do
