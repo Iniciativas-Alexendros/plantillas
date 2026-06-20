@@ -5,6 +5,14 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Módulo canónico de estándares del portfolio
+
+### Añadido
+
+- Módulo `estandares/`: catálogo canónico de estándares del portfolio (CLAUDE.md, frontmatter, versionado, pre-commit, .env.example, matriz CI).
+
+---
+
 ## [Unreleased] — Arreglar Link Check del repo raíz (lychee 404)
 
 ### Fixed
