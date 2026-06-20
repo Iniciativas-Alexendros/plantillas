@@ -5,6 +5,14 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Arreglar Link Check del repo raíz (lychee 404)
+
+### Fixed
+
+- **`.github/workflows/link-check.yml`** — El paso instalaba lychee descargando `v0.18.0`, release inexistente → **404** → `tar` exit 2 (no eran enlaces rotos). Migrado a la acción oficial `lycheeverse/lychee-action@v2.8.0` (misma versión que las plantillas docs-only), preservando excludes/accept/retries/timeout y el reporte a `/tmp/lychee-report.md`. Run manual del workflow en verde.
+
+---
+
 ## [Unreleased] — Corregir enlace roto Keep a Changelog (es → es-ES)
 
 ### Fixed
