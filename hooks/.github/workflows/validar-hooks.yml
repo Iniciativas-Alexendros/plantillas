@@ -74,11 +74,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
       - run: |
-        env:
-          ITEM: ${{ matrix.hook }}
           echo "::group::Validando ${ITEM}"
           python hooks/validar_hook.py "${ITEM}" --strict
           echo "::endgroup::"
+        env:
+          ITEM: ${{ matrix.hook }}
 
   resumen:
     name: Resumen
