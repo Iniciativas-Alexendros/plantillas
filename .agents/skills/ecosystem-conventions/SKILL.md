@@ -36,7 +36,8 @@ Cada módulo sigue el patrón canónico:
 ├── plantilla_<modulo>/    # Template para crear nuevos (con placeholders)
 ├── ejemplo_<modulo>/      # Referencia funcional (pasa --strict)
 ├── validar_<modulo>.py    # Validador Python con BaseValidator
-└── README.md              # Documentación del módulo
+├── README.md              # Documentación del módulo
+└── .github/workflows/validar-<modulo>.yml  # CI workflow obligatorio
 ```
 
 ## Motor de validación (validadores/)
@@ -48,7 +49,7 @@ Cada módulo sigue el patrón canónico:
 ## Archivos protegidos (PR Guardian)
 Modificar estos archivos requiere issue previo:
 - INDEX.md, README.md, CONTRIBUTING.md, CODE_OF_CONDUCT.md, ROADMAP.md
-- INTEGRACION.md, claude-init, update.sh, validadores/base.py
+- CHANGELOG.md, INTEGRACION.md, claude-init, update.sh, validadores/base.py
 
 ## Workflows CI
 - `ci-global.yml`: lint YAML/JSON/Python + validar estructura
