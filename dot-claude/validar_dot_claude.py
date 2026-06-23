@@ -136,6 +136,23 @@ class DotClaudeValidator(BaseValidator):
         if not p.is_file():
             return resultados  # _check_estructura ya lo reporta
 
+        data = self._load_settings_json(p, resultados)
+        if data is None:
+            return resultados
+
+        resultados.extend(self._validate_permissions(data))
+        resultados.extend(self._validate_hooks(data))
+
+        if not resultados:
+            resultados.append(Resultado(
+                Nivel.OK, "settings_json",
+                "settings.json válido (schema canon-runtime)",
+                "settings.json",
+            ))
+        return resultados
+
+    def _load_settings_json(self, p: Path, resultados: list):
+        """Carga settings.json; si falla, añade errores y devuelve None."""
         try:
             data = json.loads(p.read_text(encoding="utf-8"))
         except json.JSONDecodeError as e:
@@ -144,7 +161,7 @@ class DotClaudeValidator(BaseValidator):
                 f"settings.json JSON inválido: {e}",
                 "settings.json",
             ))
-            return resultados
+            return None
 
         if not isinstance(data, dict):
             resultados.append(Resultado(
@@ -152,125 +169,150 @@ class DotClaudeValidator(BaseValidator):
                 "settings.json debe ser un objeto JSON (dict)",
                 "settings.json",
             ))
-            return resultados
+            return None
+        return data
 
-        # Verificar 'permissions'
+    def _validate_permissions(self, data: dict):
+        """Valida la sección 'permissions' de settings.json."""
+        resultados = []
         if "permissions" not in data:
             resultados.append(Resultado(
                 Nivel.ERROR, "settings_json",
                 "settings.json falta clave 'permissions'",
                 "settings.json",
             ))
-        else:
-            perms = data["permissions"]
-            if not isinstance(perms, dict):
+            return resultados
+
+        perms = data["permissions"]
+        if not isinstance(perms, dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                "'permissions' debe ser un objeto",
+                "settings.json",
+            ))
+            return resultados
+
+        for campo in ("allow", "deny"):
+            if campo not in perms:
                 resultados.append(Resultado(
                     Nivel.ERROR, "settings_json",
-                    "'permissions' debe ser un objeto",
+                    f"'permissions' falta campo '{campo}'",
                     "settings.json",
                 ))
-            else:
-                for campo in ("allow", "deny"):
-                    if campo not in perms:
-                        resultados.append(Resultado(
-                            Nivel.ERROR, "settings_json",
-                            f"'permissions' falta campo '{campo}'",
-                            "settings.json",
-                        ))
-                    elif not isinstance(perms[campo], list):
-                        resultados.append(Resultado(
-                            Nivel.ERROR, "settings_json",
-                            f"'permissions.{campo}' debe ser una lista",
-                            "settings.json",
-                        ))
-                    else:
-                        for item in perms[campo]:
-                            if not isinstance(item, str):
-                                resultados.append(Resultado(
-                                    Nivel.ERROR, "settings_json",
-                                    f"'permissions.{campo}' contiene un elemento no-string: {item!r}",
-                                    "settings.json",
-                                ))
-                                break
+                continue
+            if not isinstance(perms[campo], list):
+                resultados.append(Resultado(
+                    Nivel.ERROR, "settings_json",
+                    f"'permissions.{campo}' debe ser una lista",
+                    "settings.json",
+                ))
+                continue
+            for item in perms[campo]:
+                if not isinstance(item, str):
+                    resultados.append(Resultado(
+                        Nivel.ERROR, "settings_json",
+                        f"'permissions.{campo}' contiene un elemento no-string: {item!r}",
+                        "settings.json",
+                    ))
+                    break
+        return resultados
 
-        # Verificar 'hooks'
+    def _validate_hooks(self, data: dict):
+        """Valida la sección 'hooks' de settings.json."""
+        resultados = []
         if "hooks" not in data:
             resultados.append(Resultado(
                 Nivel.ERROR, "settings_json",
                 "settings.json falta clave 'hooks'",
                 "settings.json",
             ))
-        else:
-            hooks = data["hooks"]
-            if not isinstance(hooks, dict):
+            return resultados
+
+        hooks = data["hooks"]
+        if not isinstance(hooks, dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                "'hooks' debe ser un objeto (dict con eventos como claves)",
+                "settings.json",
+            ))
+            return resultados
+
+        for evento, entradas in hooks.items():
+            if evento not in VALID_EVENTOS_HOOK:
                 resultados.append(Resultado(
-                    Nivel.ERROR, "settings_json",
-                    "'hooks' debe ser un objeto (dict con eventos como claves)",
+                    Nivel.WARNING, "settings_json",
+                    f"'hooks.{evento}' no es un evento reconocido por el runtime "
+                    f"(válidos: {sorted(VALID_EVENTOS_HOOK)})",
                     "settings.json",
                 ))
-            else:
-                for evento, entradas in hooks.items():
-                    if evento not in VALID_EVENTOS_HOOK:
-                        resultados.append(Resultado(
-                            Nivel.WARNING, "settings_json",
-                            f"'hooks.{evento}' no es un evento reconocido por el runtime "
-                            f"(válidos: {sorted(VALID_EVENTOS_HOOK)})",
-                            "settings.json",
-                        ))
-                    if not isinstance(entradas, list):
-                        resultados.append(Resultado(
-                            Nivel.ERROR, "settings_json",
-                            f"'hooks.{evento}' debe ser una lista",
-                            "settings.json",
-                        ))
-                        continue
-                    for i, entrada in enumerate(entradas):
-                        if not isinstance(entrada, dict):
-                            resultados.append(Resultado(
-                                Nivel.ERROR, "settings_json",
-                                f"'hooks.{evento}[{i}]' debe ser un objeto",
-                                "settings.json",
-                            ))
-                            continue
-                        if "matcher" not in entrada:
-                            resultados.append(Resultado(
-                                Nivel.ERROR, "settings_json",
-                                f"'hooks.{evento}[{i}]' falta 'matcher'",
-                                "settings.json",
-                            ))
-                        if "hooks" not in entrada or not isinstance(entrada["hooks"], list):
-                            resultados.append(Resultado(
-                                Nivel.ERROR, "settings_json",
-                                f"'hooks.{evento}[{i}]' falta 'hooks' (lista)",
-                                "settings.json",
-                            ))
-                            continue
-                        for j, h in enumerate(entrada["hooks"]):
-                            if not isinstance(h, dict):
-                                resultados.append(Resultado(
-                                    Nivel.ERROR, "settings_json",
-                                    f"'hooks.{evento}[{i}].hooks[{j}]' debe ser un objeto",
-                                    "settings.json",
-                                ))
-                                continue
-                            if h.get("type") != "command":
-                                resultados.append(Resultado(
-                                    Nivel.ERROR, "settings_json",
-                                    f"'hooks.{evento}[{i}].hooks[{j}].type' debe ser 'command'",
-                                    "settings.json",
-                                ))
-                            cmd = h.get("command", "")
-                            if not isinstance(cmd, str) or not cmd.strip():
-                                resultados.append(Resultado(
-                                    Nivel.ERROR, "settings_json",
-                                    f"'hooks.{evento}[{i}].hooks[{j}].command' debe ser string no vacío",
-                                    "settings.json",
-                                ))
+            resultados.extend(self._validate_hook_event(evento, entradas))
+        return resultados
 
-        if not resultados:
+    def _validate_hook_event(self, evento: str, entradas):
+        """Valida una lista de entradas para un evento de hooks."""
+        resultados = []
+        if not isinstance(entradas, list):
             resultados.append(Resultado(
-                Nivel.OK, "settings_json",
-                "settings.json válido (schema canon-runtime)",
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}' debe ser una lista",
+                "settings.json",
+            ))
+            return resultados
+
+        for i, entrada in enumerate(entradas):
+            if not isinstance(entrada, dict):
+                resultados.append(Resultado(
+                    Nivel.ERROR, "settings_json",
+                    f"'hooks.{evento}[{i}]' debe ser un objeto",
+                    "settings.json",
+                ))
+                continue
+            resultados.extend(self._validate_hook_entry(evento, i, entrada))
+        return resultados
+
+    def _validate_hook_entry(self, evento: str, i: int, entrada: dict):
+        """Valida una entrada {matcher, hooks: [...]} de un evento."""
+        resultados = []
+        if "matcher" not in entrada:
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}[{i}]' falta 'matcher'",
+                "settings.json",
+            ))
+        if "hooks" not in entrada or not isinstance(entrada["hooks"], list):
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}[{i}]' falta 'hooks' (lista)",
+                "settings.json",
+            ))
+            return resultados
+
+        for j, h in enumerate(entrada["hooks"]):
+            resultados.extend(self._validate_hook_command(evento, i, j, h))
+        return resultados
+
+    def _validate_hook_command(self, evento: str, i: int, j: int, h):
+        """Valida un comando {type, command} dentro de hooks."""
+        resultados = []
+        if not isinstance(h, dict):
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}[{i}].hooks[{j}]' debe ser un objeto",
+                "settings.json",
+            ))
+            return resultados
+
+        if h.get("type") != "command":
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}[{i}].hooks[{j}].type' debe ser 'command'",
+                "settings.json",
+            ))
+        cmd = h.get("command", "")
+        if not isinstance(cmd, str) or not cmd.strip():
+            resultados.append(Resultado(
+                Nivel.ERROR, "settings_json",
+                f"'hooks.{evento}[{i}].hooks[{j}].command' debe ser string no vacío",
                 "settings.json",
             ))
         return resultados

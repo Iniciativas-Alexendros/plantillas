@@ -49,8 +49,10 @@ jobs:
       actionlint: ${{ steps.al.outcome }}
       zizmor: ${{ steps.zz.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
       - id: al
         name: actionlint via reviewdog
         continue-on-error: true
@@ -58,7 +60,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          curl -sfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- latest "$HOME/.local/bin"
+          curl -sfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- v1.7.7 "$HOME/.local/bin"
           "$HOME/.local/bin/actionlint" -no-color 2>&1 | \
             reviewdog -name=actionlint -reporter=github-check -level=warning -fail-on-error=false -f=actionlint || true
       - id: zz
@@ -68,10 +70,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          pipx install zizmor || pip install --user zizmor
+          pipx install zizmor==1.6.0 || pip install --user zizmor==1.6.0
           zizmor --format sarif . > zizmor.sarif 2>/dev/null || true
           zizmor --format plain . 2>&1 | tail -60 >> "$GITHUB_STEP_SUMMARY" || true
-      - uses: github/codeql-action/upload-sarif@v3
+      - uses: github/codeql-action/upload-sarif@b0c4fd77f6c559021d78430ec4d0d169ae74a4eb # v3
         if: hashFiles('zizmor.sarif') != ''
         continue-on-error: true
         with:
@@ -84,11 +86,13 @@ jobs:
     outputs:
       gitleaks: ${{ steps.gl.outcome }}
     steps:
-      - uses: actions/checkout@v6
-        with: { fetch-depth: 0 }
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
       - id: gl
         continue-on-error: true
-        uses: gitleaks/gitleaks-action@v2
+        uses: gitleaks/gitleaks-action@dcedce43c6f43de0b836d1fe38946645c9c638dc # v2
         env:
           GITHUB_TOKEN: ${{ github.token }}
           GITLEAKS_ENABLE_SUMMARY: "true"
@@ -99,10 +103,12 @@ jobs:
     outputs:
       yamllint: ${{ steps.yl.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with: { python-version: "3.12" }
-      - run: pip install --quiet yamllint
+      - run: pip install --quiet yamllint==0.33.0
       - id: yl
         continue-on-error: true
         run: |
@@ -122,15 +128,21 @@ jobs:
     outputs:
       shellcheck: ${{ steps.sh.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
       - id: sh
         continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          sudo apt-get update -qq && sudo apt-get install -y -qq shellcheck
+          # shellcheck v0.10.0 binario estático (evita apt + versiones flotantes)
+          curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | \
+            tar -xJf - -C /tmp
+          install -m755 /tmp/shellcheck-v0.10.0/shellcheck "$HOME/.local/bin/shellcheck"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './node_modules/*' -not -path './.git/*' \
             -print0 | xargs -0 -r shellcheck -f gcc 2>&1 | \
             reviewdog -name=shellcheck -reporter=github-check -level=warning -fail-on-error=false -f=gcc || true
@@ -142,15 +154,17 @@ jobs:
     outputs:
       hadolint: ${{ steps.hd.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
       - id: hd
         continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          curl -sfL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 -o "$HOME/.local/bin/hadolint"
+          curl -sfL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o "$HOME/.local/bin/hadolint"
           chmod +x "$HOME/.local/bin/hadolint"
           find . -name 'Dockerfile*' -not -path './node_modules/*' -not -path './.git/*' -print0 | \
             xargs -0 -r "$HOME/.local/bin/hadolint" --no-color --format=tty 2>&1 | \
@@ -164,16 +178,24 @@ jobs:
       markdownlint: ${{ steps.ml.outcome }}
       lychee: ${{ steps.lc.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+          repository: Alexendros/plantillas
+          path: .plantillas-tooling
+      - name: Instalar markdownlint-cli2 desde lockfile
+        run: npm ci --prefix .plantillas-tooling
       - id: ml
         continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          npm i -g markdownlint-cli2 >/dev/null 2>&1
-          markdownlint-cli2 "**/*.md" "#node_modules" "#.git" 2>&1 | tee md.log | \
+          .plantillas-tooling/node_modules/.bin/markdownlint-cli2 "**/*.md" "#node_modules" "#.git" "#.plantillas-tooling" 2>&1 | tee md.log | \
             reviewdog -name=markdownlint -reporter=github-check -level=info -fail-on-error=false \
               -efm='%f:%l:%c %m' -efm='%f:%l %m' || true
           {
@@ -185,7 +207,7 @@ jobs:
       - id: lc
         name: lychee link-check (advisory)
         continue-on-error: true
-        uses: lycheeverse/lychee-action@v2
+        uses: lycheeverse/lychee-action@8646ba30535128ac92d33dfc9133794bfdd9b411 # v2.8.0
         with:
           args: '--no-progress --max-retries 3 --timeout 30 --accept 200,201,202,203,204,206,300..=399,403,429 --exclude-mail "**/*.md"'
           fail: false
@@ -197,12 +219,14 @@ jobs:
     outputs:
       ts_linter: ${{ steps.run.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
         continue-on-error: true
         with: { run_install: false }
-      - uses: actions/setup-node@v5
-        with: { node-version: '22' }
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with: { node-version: "22" }
       - id: run
         continue-on-error: true
         run: |
@@ -210,7 +234,7 @@ jobs:
           # Prefer Biome si existe biome.json(c)
           if [ -f biome.json ] || [ -f biome.jsonc ]; then
             echo "[ts] Biome detectado"
-            npx --yes @biomejs/biome ci . || true
+            npx --yes @biomejs/biome@1.8.3 ci . || true
           elif [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f .eslintrc.json ] || [ -f .eslintrc.cjs ]; then
             echo "[ts] ESLint detectado"
             if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ] || [ -f yarn.lock ]; then
@@ -219,7 +243,7 @@ jobs:
               ( npm ci 2>/dev/null ) || \
               ( npm install 2>/dev/null )
             fi
-            npx eslint . --no-error-on-unmatched-pattern || true
+            npx eslint@9.11.0 . --no-error-on-unmatched-pattern || true
           else
             echo "[ts] sin config TS lint · skip"
           fi
@@ -231,17 +255,19 @@ jobs:
     outputs:
       ruff: ${{ steps.rf.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with: { python-version: "3.12" }
-      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@main
+      - uses: Alexendros/plantillas/.github/actions/reviewdog-multi@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
       - id: rf
         continue-on-error: true
         env:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          pip install --quiet ruff
+          pip install --quiet ruff==0.11.0
           ruff check --output-format=concise . 2>&1 | \
             reviewdog -name=ruff -reporter=github-check -level=warning -fail-on-error=false \
               -efm='%f:%l:%c: %m' || true
@@ -254,13 +280,15 @@ jobs:
       cargo_deny: ${{ steps.cd.outcome }}
       clippy: ${{ steps.cl.outcome }}
     steps:
-      - uses: actions/checkout@v6
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@29eef336d9b2848a0b548edc03f92a220660cdb8 # stable
         with: { components: clippy }
       - id: cd
         continue-on-error: true
         run: |
-          cargo install --locked cargo-deny --quiet || true
+          cargo install --locked cargo-deny@2.0.16 --quiet || true
           cargo deny check 2>&1 | tee deny.log
           {
             echo "### cargo-deny"
@@ -278,7 +306,9 @@ jobs:
     outputs:
       osv: ${{ steps.osv.outputs.outcome }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
       - id: osv
         name: OSV-Scanner CLI
         continue-on-error: true
@@ -301,8 +331,8 @@ jobs:
           fi
           # Install CLI binario oficial
           curl -sfL -o /tmp/osv-scanner.tar.gz \
-            "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64.tar.gz" ||           curl -sfL -o /tmp/osv-scanner \
-            "https://github.com/google/osv-scanner/releases/latest/download/osv-scanner_linux_amd64"
+            "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64.tar.gz" ||           curl -sfL -o /tmp/osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64"
           if [ -f /tmp/osv-scanner.tar.gz ]; then
             tar -xzf /tmp/osv-scanner.tar.gz -C /tmp osv-scanner
           fi
@@ -330,7 +360,7 @@ jobs:
           else
             echo "outcome=success" >> "$GITHUB_OUTPUT"
           fi
-      - uses: actions/upload-artifact@v5
+      - uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5
         if: always()
         with:
           name: osv-results
@@ -340,29 +370,55 @@ jobs:
 
   aggregate:
     name: Agregar outcome JSON
-    needs: [workflows, secrets-scan, yaml, shell, docker, markdown, typescript, python, rust, vulns]
+    needs:
+      [
+        workflows,
+        secrets-scan,
+        yaml,
+        shell,
+        docker,
+        markdown,
+        typescript,
+        python,
+        rust,
+        vulns,
+      ]
     if: always()
     runs-on: ubuntu-latest
     outputs:
       outcome_json: ${{ steps.j.outputs.json }}
     steps:
       - id: j
+        env:
+          ACTIONLINT: ${{ needs.workflows.outputs.actionlint || 'skipped' }}
+          ZIZMOR: ${{ needs.workflows.outputs.zizmor || 'skipped' }}
+          GITLEAKS: ${{ needs.secrets-scan.outputs.gitleaks || 'skipped' }}
+          YAMLLINT: ${{ needs.yaml.outputs.yamllint || 'skipped' }}
+          SHELLCHECK: ${{ needs.shell.outputs.shellcheck || 'skipped' }}
+          HADOLINT: ${{ needs.docker.outputs.hadolint || 'skipped' }}
+          MARKDOWNLINT: ${{ needs.markdown.outputs.markdownlint || 'skipped' }}
+          LYCHEE: ${{ needs.markdown.outputs.lychee || 'skipped' }}
+          TS_LINTER: ${{ needs.typescript.outputs.ts_linter || 'skipped' }}
+          RUFF: ${{ needs.python.outputs.ruff || 'skipped' }}
+          CARGO_DENY: ${{ needs.rust.outputs.cargo_deny || 'skipped' }}
+          CLIPPY: ${{ needs.rust.outputs.clippy || 'skipped' }}
+          OSV: ${{ needs.vulns.outputs.osv || 'skipped' }}
         run: |
           set -Eeuo pipefail
           OUT=$(jq -nc \
-            --arg actionlint "${{ needs.workflows.outputs.actionlint || 'skipped' }}" \
-            --arg zizmor "${{ needs.workflows.outputs.zizmor || 'skipped' }}" \
-            --arg gitleaks "${{ needs.secrets-scan.outputs.gitleaks || 'skipped' }}" \
-            --arg yamllint "${{ needs.yaml.outputs.yamllint || 'skipped' }}" \
-            --arg shellcheck "${{ needs.shell.outputs.shellcheck || 'skipped' }}" \
-            --arg hadolint "${{ needs.docker.outputs.hadolint || 'skipped' }}" \
-            --arg markdownlint "${{ needs.markdown.outputs.markdownlint || 'skipped' }}" \
-            --arg lychee "${{ needs.markdown.outputs.lychee || 'skipped' }}" \
-            --arg ts_linter "${{ needs.typescript.outputs.ts_linter || 'skipped' }}" \
-            --arg ruff "${{ needs.python.outputs.ruff || 'skipped' }}" \
-            --arg cargo_deny "${{ needs.rust.outputs.cargo_deny || 'skipped' }}" \
-            --arg clippy "${{ needs.rust.outputs.clippy || 'skipped' }}" \
-            --arg osv "${{ needs.vulns.outputs.osv || 'skipped' }}" \
+            --arg actionlint "$ACTIONLINT" \
+            --arg zizmor "$ZIZMOR" \
+            --arg gitleaks "$GITLEAKS" \
+            --arg yamllint "$YAMLLINT" \
+            --arg shellcheck "$SHELLCHECK" \
+            --arg hadolint "$HADOLINT" \
+            --arg markdownlint "$MARKDOWNLINT" \
+            --arg lychee "$LYCHEE" \
+            --arg ts_linter "$TS_LINTER" \
+            --arg ruff "$RUFF" \
+            --arg cargo_deny "$CARGO_DENY" \
+            --arg clippy "$CLIPPY" \
+            --arg osv "$OSV" \
             '{actionlint:$actionlint, zizmor:$zizmor, gitleaks:$gitleaks, yamllint:$yamllint, shellcheck:$shellcheck, hadolint:$hadolint, markdownlint:$markdownlint, lychee:$lychee, ts_linter:$ts_linter, ruff:$ruff, cargo_deny:$cargo_deny, clippy:$clippy, osv:$osv}')
           echo "json=$OUT" >> "$GITHUB_OUTPUT"
           {

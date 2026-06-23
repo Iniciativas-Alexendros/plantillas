@@ -37,5 +37,5 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 - Versión inicial del repositorio con canon de documentación aplicado.
 
-[Sin publicar]: https://github.com/alexendros/ejemplo-repositorio/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/alexendros/ejemplo-repositorio/releases/tag/v0.1.0
+[Sin publicar]: https://github.com/Alexendros/plantillas
+[0.1.0]: https://github.com/Alexendros/plantillas

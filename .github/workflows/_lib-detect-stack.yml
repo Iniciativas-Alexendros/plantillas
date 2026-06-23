@@ -10,16 +10,44 @@ name: _lib · detect stack
 on:
   workflow_call:
     outputs:
-      has_ts: { description: TypeScript/JS, value: "${{ jobs.detect.outputs.has_ts }}" }
-      has_rust: { description: Rust, value: "${{ jobs.detect.outputs.has_rust }}" }
-      has_python: { description: Python, value: "${{ jobs.detect.outputs.has_python }}" }
-      has_docker: { description: Docker, value: "${{ jobs.detect.outputs.has_docker }}" }
-      has_markdown: { description: Markdown, value: "${{ jobs.detect.outputs.has_markdown }}" }
-      has_shell: { description: Shell, value: "${{ jobs.detect.outputs.has_shell }}" }
-      is_monorepo: { description: Monorepo, value: "${{ jobs.detect.outputs.is_monorepo }}" }
-      is_docs_only: { description: Docs only, value: "${{ jobs.detect.outputs.is_docs_only }}" }
-      languages: { description: JSON array, value: "${{ jobs.detect.outputs.languages }}" }
-      release_type: { description: Tipo release-please, value: "${{ jobs.detect.outputs.release_type }}" }
+      has_ts:
+        {
+          description: TypeScript/JS,
+          value: "${{ jobs.detect.outputs.has_ts }}",
+        }
+      has_rust:
+        { description: Rust, value: "${{ jobs.detect.outputs.has_rust }}" }
+      has_python:
+        { description: Python, value: "${{ jobs.detect.outputs.has_python }}" }
+      has_docker:
+        { description: Docker, value: "${{ jobs.detect.outputs.has_docker }}" }
+      has_markdown:
+        {
+          description: Markdown,
+          value: "${{ jobs.detect.outputs.has_markdown }}",
+        }
+      has_shell:
+        { description: Shell, value: "${{ jobs.detect.outputs.has_shell }}" }
+      is_monorepo:
+        {
+          description: Monorepo,
+          value: "${{ jobs.detect.outputs.is_monorepo }}",
+        }
+      is_docs_only:
+        {
+          description: Docs only,
+          value: "${{ jobs.detect.outputs.is_docs_only }}",
+        }
+      languages:
+        {
+          description: JSON array,
+          value: "${{ jobs.detect.outputs.languages }}",
+        }
+      release_type:
+        {
+          description: Tipo release-please,
+          value: "${{ jobs.detect.outputs.release_type }}",
+        }
 
 jobs:
   detect:
@@ -37,6 +65,8 @@ jobs:
       languages: ${{ steps.s.outputs.languages }}
       release_type: ${{ steps.s.outputs.release_type }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
       - id: s
-        uses: Alexendros/plantillas/.github/actions/detect-stack@main
+        uses: Alexendros/plantillas/.github/actions/detect-stack@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)

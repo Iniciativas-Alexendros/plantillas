@@ -62,11 +62,13 @@ jobs:
           echo "type=$T" >> "$GITHUB_OUTPUT"
           echo "::notice::release-please type=$T (override='${OVERRIDE}' auto='${AUTO}')"
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
 
       - id: rp
         name: googleapis/release-please-action
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@8b8fd2cc23b2e18957157a9d923d75aa0c6f6ad5 # v4
         with:
           token: ${{ github.token }}
           release-type: ${{ steps.decide.outputs.type }}
@@ -74,10 +76,14 @@ jobs:
 
       - name: Summary release-please
         if: always()
+        env:
+          RP_TYPE: ${{ steps.decide.outputs.type }}
+          RP_RELEASE_CREATED: ${{ steps.rp.outputs.release_created || 'false' }}
+          RP_TAG_NAME: ${{ steps.rp.outputs.tag_name || 'n/a' }}
         run: |
           {
             echo "### release-please"
-            echo "**Release type:** \`${{ steps.decide.outputs.type }}\`"
-            echo "**release_created:** \`${{ steps.rp.outputs.release_created || 'false' }}\`"
-            echo "**tag_name:** \`${{ steps.rp.outputs.tag_name || 'n/a' }}\`"
+            echo "**Release type:** \`$RP_TYPE\`"
+            echo "**release_created:** \`$RP_RELEASE_CREATED\`"
+            echo "**tag_name:** \`$RP_TAG_NAME\`"
           } >> "$GITHUB_STEP_SUMMARY"
