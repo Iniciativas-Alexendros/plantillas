@@ -63,6 +63,34 @@ install_apt() {
   sudo -n apt-get install -y -qq --no-install-recommends "$@" 2>&1 | tail -2 || true
 }
 
+# Descarga un script a archivo temporal y lo ejecuta localmente.
+# Evita `curl | sh` para reducir riesgo de MITM/servidor comprometido.
+# Nota: idealmente se verificaría checksum/firma GPG; aquí se mantiene el
+# compromise de confianza en el upstream hasta que haya hashes publicados.
+download_and_run() {
+  local url="$1" tmp
+  tmp=$(mktemp)
+  curl -fsSL "$url" -o "$tmp" || { rm -f "$tmp"; return 1; }
+  shift
+  sh "$tmp" "$@"
+  rm -f "$tmp"
+}
+
+# Descarga un archivo binario a ruta destino.
+download_to() {
+  local url="$1" dest="$2"
+  curl -fsSL "$url" -o "$dest" || return 1
+}
+
+# Descarga un tar.gz a archivo temporal y extrae un único binario.
+download_and_extract() {
+  local url="$1" bin="$2" tmp
+  tmp=$(mktemp)
+  curl -fsSL "$url" -o "$tmp" || { rm -f "$tmp"; return 1; }
+  tar -xzf "$tmp" -C "$HOME/.local/bin" "$bin" 2>/dev/null || { rm -f "$tmp"; return 1; }
+  rm -f "$tmp"
+}
+
 # ─── 4 · Tier CORE ────────────────────────────────────────────────────
 if [ "${XEK_TIER_CORE:-1}" = 1 ] && [ "$SKIP" = 0 ]; then
   echo "[XEK] · CORE"
@@ -78,7 +106,7 @@ fi
 if [ "${XEK_TIER_RUNTIMES:-1}" = 1 ] && [ "$SKIP" = 0 ]; then
   echo "[XEK] · RUNTIMES (node@${NODE_VERSION:-24} python@${PYTHON_VERSION:-3.13})"
   command -v mise >/dev/null || \
-    curl -fsSL https://mise.run | sh >/dev/null 2>&1 || true
+    download_and_run https://mise.run >/dev/null 2>&1 || true
   if command -v mise >/dev/null; then
     mise use --global --quiet "node@${NODE_VERSION:-24}"   2>/dev/null || true
     [ -n "${PYTHON_VERSION:-}" ] && \
@@ -109,9 +137,9 @@ if [ "${XEK_TIER_SHELL:-1}" = 1 ] && [ "$SKIP" = 0 ]; then
   echo "[XEK] · SHELL"
   install_apt zsh
   command -v starship >/dev/null || \
-    curl -fsSL https://starship.rs/install.sh | sh -s -- -y -b "$HOME/.local/bin" >/dev/null 2>&1 || true
+    download_and_run https://starship.rs/install.sh -y -b "$HOME/.local/bin" >/dev/null 2>&1 || true
   command -v atuin >/dev/null || \
-    curl -fsSL https://setup.atuin.sh | sh >/dev/null 2>&1 || true
+    download_and_run https://setup.atuin.sh >/dev/null 2>&1 || true
   ZI="$HOME/.local/share/zinit/zinit.git"
   [ ! -d "$ZI" ] && \
     git clone --depth 1 https://github.com/zdharma-continuum/zinit.git "$ZI" >/dev/null 2>&1 || true
@@ -153,8 +181,7 @@ if [ "${XEK_TIER_NET:-0}" = 1 ] && [ "$SKIP" = 0 ]; then
   if [ ! -x "$HOME/.local/bin/croc" ]; then
     CV=$(curl -fsSL https://api.github.com/repos/schollz/croc/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
     [ -n "$CV" ] && \
-      curl -fsSL "https://github.com/schollz/croc/releases/download/${CV}/croc_${CV#v}_Linux-64bit.tar.gz" | \
-      tar -xz -C "$HOME/.local/bin" croc 2>/dev/null || true
+      download_and_extract "https://github.com/schollz/croc/releases/download/${CV}/croc_${CV#v}_Linux-64bit.tar.gz" croc 2>/dev/null || true
   fi
 fi
 
@@ -165,21 +192,19 @@ if [ "${XEK_TIER_DOCKER:-0}" = 1 ] && [ "$SKIP" = 0 ]; then
   if [ ! -x "$HOME/.local/bin/lazydocker" ]; then
     LV=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazydocker/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
     [ -n "$LV" ] && \
-      curl -fsSL "https://github.com/jesseduffield/lazydocker/releases/download/${LV}/lazydocker_${LV#v}_Linux_x86_64.tar.gz" | \
-      tar -xz -C "$HOME/.local/bin" lazydocker 2>/dev/null || true
+      download_and_extract "https://github.com/jesseduffield/lazydocker/releases/download/${LV}/lazydocker_${LV#v}_Linux_x86_64.tar.gz" lazydocker 2>/dev/null || true
   fi
   if [ ! -x "$HOME/.local/bin/dive" ]; then
     DV=$(curl -fsSL https://api.github.com/repos/wagoodman/dive/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
     [ -n "$DV" ] && \
-      curl -fsSL "https://github.com/wagoodman/dive/releases/download/${DV}/dive_${DV#v}_linux_amd64.tar.gz" | \
-      tar -xz -C "$HOME/.local/bin" dive 2>/dev/null || true
+      download_and_extract "https://github.com/wagoodman/dive/releases/download/${DV}/dive_${DV#v}_linux_amd64.tar.gz" dive 2>/dev/null || true
   fi
   [ ! -x "$HOME/.local/bin/ctop" ] && \
-    curl -fsSL https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 \
-      -o "$HOME/.local/bin/ctop"     2>/dev/null && chmod +x "$HOME/.local/bin/ctop"     2>/dev/null || true
+    download_to https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 "$HOME/.local/bin/ctop" && \
+    chmod +x "$HOME/.local/bin/ctop" 2>/dev/null || true
   [ ! -x "$HOME/.local/bin/hadolint" ] && \
-    curl -fsSL https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 \
-      -o "$HOME/.local/bin/hadolint" 2>/dev/null && chmod +x "$HOME/.local/bin/hadolint" 2>/dev/null || true
+    download_to https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 "$HOME/.local/bin/hadolint" && \
+    chmod +x "$HOME/.local/bin/hadolint" 2>/dev/null || true
   if ! command -v trivy >/dev/null && [ ! -f /usr/share/keyrings/trivy.gpg ]; then
     curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | \
       sudo -n gpg --dearmor -o /usr/share/keyrings/trivy.gpg 2>/dev/null || true
