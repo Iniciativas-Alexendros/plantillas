@@ -74,11 +74,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
       - run: |
-        env:
-          ITEM: ${{ matrix.plugin }}
           echo "::group::Validando ${ITEM}"
           python plugins/validar_plugin.py "${ITEM}" --strict
           echo "::endgroup::"
+        env:
+          ITEM: ${{ matrix.plugin }}
 
   resumen:
     name: Resumen

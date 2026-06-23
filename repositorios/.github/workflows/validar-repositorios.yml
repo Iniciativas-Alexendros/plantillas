@@ -74,11 +74,11 @@ jobs:
           python -m pip install --upgrade pip
           pip install pyyaml
       - run: |
-        env:
-          ITEM: ${{ matrix.repo }}
           echo "::group::Validando ${ITEM}"
           python repositorios/validar_repositorio.py "${ITEM}" --strict --visibility public
           echo "::endgroup::"
+        env:
+          ITEM: ${{ matrix.repo }}
 
   resumen:
     name: Resumen
