@@ -13,6 +13,22 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 ---
 
+## [Unreleased] — Hardening CI/CD y lockfile para markdownlint
+
+### Changed
+
+- **`.github/workflows/ci-global.yml`**, **`.github/workflows/_lib-lint-aggregate.yml`** — Migradas las instalaciones ad-hoc de `markdownlint-cli` y `markdownlint-cli2` a un `package.json` + `package-lock.json` en la raíz. `ci-global` usa `npm ci`; `_lib-lint-aggregate` hace checkout de `Alexendros/plantillas` en `.plantillas-tooling` y ejecuta `markdownlint-cli2` desde el lockfile.
+- **`.github/workflows/ci-global.yml`** — Actualiza `yamllint==0.33.0` a `yamllint==1.38.0` y `ruff==0.11.0` a `ruff==0.11.0` (versión disponible en PyPI).
+- **`.github/dependabot.yml`** — Añade grupo `github-actions` para agrupar actualizaciones de actions.
+
+### Security
+
+- Pinea todas las acciones de terceros a SHA con comentario de versión.
+- Añade `permissions` explícitos y `persist-credentials: false` en los workflows de submódulos.
+- Añade `actionlint` y `zizmor` al CI global; `zizmor` reporta 0 findings.
+
+---
+
 ## [Unreleased] — Arreglar Link Check del repo raíz (lychee 404)
 
 ### Fixed
