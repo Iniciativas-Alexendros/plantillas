@@ -63,32 +63,65 @@ install_apt() {
   sudo -n apt-get install -y -qq --no-install-recommends "$@" 2>&1 | tail -2 || true
 }
 
-# Descarga un script a archivo temporal y lo ejecuta localmente.
-# Evita `curl | sh` para reducir riesgo de MITM/servidor comprometido.
-# Nota: idealmente se verificaría checksum/firma GPG; aquí se mantiene el
-# compromise de confianza en el upstream hasta que haya hashes publicados.
-download_and_run() {
-  local url="$1" tmp
+# Versiones pinedas de binarios descargados. Rotar solo tras verificar
+# manualmente el nuevo checksum con `sha256sum` sobre el asset oficial.
+MISE_VERSION=v2026.6.12
+STARSHIP_VERSION=v1.25.1
+ATUIN_VERSION=v18.16.1
+CROC_VERSION=v10.4.4
+LAZYDOCKER_VERSION=v0.25.2
+DIVE_VERSION=v0.13.1
+CTOP_VERSION=v0.7.7
+HADOLINT_VERSION=v2.14.0
+
+# Checksums SHA256 de los assets oficiales (linux amd64).
+declare -A XEK_CHECKSUMS=(
+  [mise]="ff0cf4917acc96b7ffdd0382261d17f405572e9240f95fafb980e44aaf60c514"
+  [starship.tar.gz]="4488c11ca632327d1f1f16fb2f102c0646094c35479cd5435991385da43c61ac"
+  [atuin.tar.gz]="5c41e20c0130ac84fa4bfa42c19bb55a07855838506063caad0d2922593b39be"
+  [croc.tar.gz]="715e6d4756b18e2cafe2ceaf476989f8311ba4715d6008d73dd14b2cd8498334"
+  [lazydocker.tar.gz]="0d9dbfc26068b218e7ed84b104748cadc6e3cf733c0afd35465306fb39b9523c"
+  [dive.tar.gz]="0970549eb4a306f8825a84145a2534153badb4d7dcf3febd1967c706367c3d0e"
+  [ctop]="b78374734ebe3d14b6edee3d5512c911c250d7fa7f3f964cb00acd3bc5a02a09"
+  [hadolint]="6bf226944684f56c84dd014e8b979d27425c0148f61b3bd99bcc6f39e9dc5a47"
+)
+
+# Descarga un asset a archivo temporal y verifica su SHA256.
+download_and_verify() {
+  local key="$1" url="$2" tmp expected actual
+  expected="${XEK_CHECKSUMS[$key]:-}"
+  [ -z "$expected" ] && { echo "[XEK] no hay checksum para $key" >&2; return 1; }
   tmp=$(mktemp)
   curl -fsSL "$url" -o "$tmp" || { rm -f "$tmp"; return 1; }
-  shift
-  sh "$tmp" "$@"
+  actual=$(sha256sum "$tmp" | awk '{print $1}')
+  if [ "$actual" != "$expected" ]; then
+    echo "[XEK] checksum inválido para $key ($url)" >&2
+    rm -f "$tmp"
+    return 1
+  fi
+  echo "$tmp"
+}
+
+# Descarga un asset y lo instala como binario ejecutable.
+install_binary() {
+  local key="$1" url="$2" dest="$3" tmp
+  tmp=$(download_and_verify "$key" "$url") || return 1
+  install -m 755 "$tmp" "$dest"
   rm -f "$tmp"
 }
 
-# Descarga un archivo binario a ruta destino.
-download_to() {
-  local url="$1" dest="$2"
-  curl -fsSL "$url" -o "$dest" || return 1
-}
-
-# Descarga un tar.gz a archivo temporal y extrae un único binario.
-download_and_extract() {
-  local url="$1" bin="$2" tmp
-  tmp=$(mktemp)
-  curl -fsSL "$url" -o "$tmp" || { rm -f "$tmp"; return 1; }
-  tar -xzf "$tmp" -C "$HOME/.local/bin" "$bin" 2>/dev/null || { rm -f "$tmp"; return 1; }
-  rm -f "$tmp"
+# Descarga un tar.gz verificado, extrae un binario y lo instala.
+install_tar_binary() {
+  local key="$1" url="$2" bin="$3" dest="$4" tmp dir
+  tmp=$(download_and_verify "$key" "$url") || return 1
+  dir=$(mktemp -d)
+  tar -xzf "$tmp" -C "$dir" || { rm -rf "$dir" "$tmp"; return 1; }
+  # atuin viene en subdirectorio; buscamos el binario por nombre.
+  local src
+  src=$(find "$dir" -maxdepth 2 -name "$bin" -type f | head -1)
+  [ -z "$src" ] && { rm -rf "$dir" "$tmp"; return 1; }
+  install -m 755 "$src" "$dest"
+  rm -rf "$dir" "$tmp"
 }
 
 # ─── 4 · Tier CORE ────────────────────────────────────────────────────
@@ -100,6 +133,8 @@ if [ "${XEK_TIER_CORE:-1}" = 1 ] && [ "$SKIP" = 0 ]; then
   [ -x /usr/bin/batcat ] && ln -sf /usr/bin/batcat "$HOME/.local/bin/bat"
   [ "${BUN_AUTO_UPGRADE:-1}" = 1 ] && command -v bun >/dev/null && \
     bun upgrade --stable >/dev/null 2>&1 || true
+  command -v mise >/dev/null || \
+    install_binary mise "https://github.com/jdx/mise/releases/download/$MISE_VERSION/mise-${MISE_VERSION}-linux-x64" "$HOME/.local/bin/mise" >/dev/null 2>&1 || true
 fi
 
 # ─── 5 · Tier RUNTIMES (mise · node@$NODE_VERSION · python@$PYTHON_VERSION) ──
@@ -137,9 +172,9 @@ if [ "${XEK_TIER_SHELL:-1}" = 1 ] && [ "$SKIP" = 0 ]; then
   echo "[XEK] · SHELL"
   install_apt zsh
   command -v starship >/dev/null || \
-    download_and_run https://starship.rs/install.sh -y -b "$HOME/.local/bin" >/dev/null 2>&1 || true
+    install_tar_binary starship.tar.gz "https://github.com/starship/starship/releases/download/$STARSHIP_VERSION/starship-x86_64-unknown-linux-gnu.tar.gz" starship "$HOME/.local/bin/starship" >/dev/null 2>&1 || true
   command -v atuin >/dev/null || \
-    download_and_run https://setup.atuin.sh >/dev/null 2>&1 || true
+    install_tar_binary atuin.tar.gz "https://github.com/atuinsh/atuin/releases/download/$ATUIN_VERSION/atuin-x86_64-unknown-linux-gnu.tar.gz" atuin "$HOME/.local/bin/atuin" >/dev/null 2>&1 || true
   ZI="$HOME/.local/share/zinit/zinit.git"
   [ ! -d "$ZI" ] && \
     git clone --depth 1 https://github.com/zdharma-continuum/zinit.git "$ZI" >/dev/null 2>&1 || true
@@ -179,9 +214,7 @@ if [ "${XEK_TIER_NET:-0}" = 1 ] && [ "$SKIP" = 0 ]; then
     [ -x "$HOME/.cargo/bin/bandwhich" ] || cargo install --quiet bandwhich 2>/dev/null || true
   fi
   if [ ! -x "$HOME/.local/bin/croc" ]; then
-    CV=$(curl -fsSL https://api.github.com/repos/schollz/croc/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
-    [ -n "$CV" ] && \
-      download_and_extract "https://github.com/schollz/croc/releases/download/${CV}/croc_${CV#v}_Linux-64bit.tar.gz" croc 2>/dev/null || true
+    install_tar_binary croc.tar.gz "https://github.com/schollz/croc/releases/download/$CROC_VERSION/croc_${CROC_VERSION}_Linux-64bit.tar.gz" croc "$HOME/.local/bin/croc" 2>/dev/null || true
   fi
 fi
 
@@ -190,21 +223,15 @@ if [ "${XEK_TIER_DOCKER:-0}" = 1 ] && [ "$SKIP" = 0 ]; then
   echo "[XEK] · DOCKER"
   install_apt docker-compose-plugin docker-buildx-plugin buildah skopeo
   if [ ! -x "$HOME/.local/bin/lazydocker" ]; then
-    LV=$(curl -fsSL https://api.github.com/repos/jesseduffield/lazydocker/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
-    [ -n "$LV" ] && \
-      download_and_extract "https://github.com/jesseduffield/lazydocker/releases/download/${LV}/lazydocker_${LV#v}_Linux_x86_64.tar.gz" lazydocker 2>/dev/null || true
+    install_tar_binary lazydocker.tar.gz "https://github.com/jesseduffield/lazydocker/releases/download/$LAZYDOCKER_VERSION/lazydocker_${LAZYDOCKER_VERSION}_Linux_x86_64.tar.gz" lazydocker "$HOME/.local/bin/lazydocker" 2>/dev/null || true
   fi
   if [ ! -x "$HOME/.local/bin/dive" ]; then
-    DV=$(curl -fsSL https://api.github.com/repos/wagoodman/dive/releases/latest 2>/dev/null | jq -r '.tag_name // empty')
-    [ -n "$DV" ] && \
-      download_and_extract "https://github.com/wagoodman/dive/releases/download/${DV}/dive_${DV#v}_linux_amd64.tar.gz" dive 2>/dev/null || true
+    install_tar_binary dive.tar.gz "https://github.com/wagoodman/dive/releases/download/$DIVE_VERSION/dive_${DIVE_VERSION}_linux_amd64.tar.gz" dive "$HOME/.local/bin/dive" 2>/dev/null || true
   fi
   [ ! -x "$HOME/.local/bin/ctop" ] && \
-    download_to https://github.com/bcicen/ctop/releases/download/v0.7.7/ctop-0.7.7-linux-amd64 "$HOME/.local/bin/ctop" && \
-    chmod +x "$HOME/.local/bin/ctop" 2>/dev/null || true
+    install_binary ctop "https://github.com/bcicen/ctop/releases/download/$CTOP_VERSION/ctop-${CTOP_VERSION}-linux-amd64" "$HOME/.local/bin/ctop" 2>/dev/null || true
   [ ! -x "$HOME/.local/bin/hadolint" ] && \
-    download_to https://github.com/hadolint/hadolint/releases/latest/download/hadolint-Linux-x86_64 "$HOME/.local/bin/hadolint" && \
-    chmod +x "$HOME/.local/bin/hadolint" 2>/dev/null || true
+    install_binary hadolint "https://github.com/hadolint/hadolint/releases/download/$HADOLINT_VERSION/hadolint-Linux-x86_64" "$HOME/.local/bin/hadolint" 2>/dev/null || true
   if ! command -v trivy >/dev/null && [ ! -f /usr/share/keyrings/trivy.gpg ]; then
     curl -fsSL https://aquasecurity.github.io/trivy-repo/deb/public.key | \
       sudo -n gpg --dearmor -o /usr/share/keyrings/trivy.gpg 2>/dev/null || true

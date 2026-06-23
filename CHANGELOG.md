@@ -9,7 +9,7 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 ### Security
 
-- **`dot-claude/ejemplo_dot_claude/cloud-env/bootstrap.sh`** — Reemplazadas las instalaciones que ejecutaban código remoto directamente desde la red (`curl | sh`, `curl | tar`) por descargas a archivos temporales y ejecución/extracción local. Añadidos helpers `download_and_run`, `download_to` y `download_and_extract` con advertencia sobre verificación de checksum/firma GPG como mejora futura.
+- **`dot-claude/ejemplo_dot_claude/cloud-env/bootstrap.sh`** — Reemplazadas las instalaciones que ejecutaban código remoto directamente desde la red (`curl | sh`, `curl | tar`) por descargas a archivos temporales y verificación de SHA256. Añadidos helpers `download_and_verify`, `install_binary` e `install_tar_binary` con tabla de checksums pineda. Versiones de mise, starship, atuin, croc, lazydocker, dive, ctop y hadolint fijadas a releases concretos.
 
 ## [Unreleased] — Módulo canónico de estándares del portfolio
 
