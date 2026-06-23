@@ -1,11 +1,15 @@
 {
-  "name": "plantillas",
+  "name": "plantillas-ci-tools",
   "version": "1.0.0",
-  "description": "Sistema de Plantillas Modulares para Claude Code",
   "private": true,
+  "description": "Lockfile para herramientas de lint de CI",
   "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/Alexendros/plantillas.git"
+  "devDependencies": {
+    "markdownlint-cli": "0.49.0",
+    "markdownlint-cli2": "0.22.1"
+  },
+  "overrides": {
+    "js-yaml": ">=4.2.0",
+    "markdown-it": ">=14.1.2"
   }
 }

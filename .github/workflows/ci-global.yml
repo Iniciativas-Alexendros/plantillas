@@ -42,15 +42,18 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Instalar herramientas
+      - name: Instalar herramientas Python
         run: |
           pip install yamllint==0.33.0 ruff==0.11.0 pyyaml==6.0.2
-          npm install -g markdownlint-cli@0.44.0
           # shellcheck v0.10.0 binario estático (evita apt + versiones flotantes)
           curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | \
             tar -xJf - -C /tmp
           install -m755 /tmp/shellcheck-v0.10.0/shellcheck "$HOME/.local/bin/shellcheck"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+      - name: Instalar markdownlint-cli desde lockfile
+        run: npm ci
+      - name: Agregar binarios de node al PATH
+        run: echo "$PWD/node_modules/.bin" >> "$GITHUB_PATH"
 
       # ── Bloqueantes ──────────────────────────────────────────────────────
       - name: Lint YAML
