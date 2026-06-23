@@ -10,16 +10,16 @@ description: >
 
 ## Eventos soportados
 
-| Evento | Cuándo se dispara | Salida esperada |
-|---|---|---|
-| `PreToolUse` | Antes de ejecutar cualquier herramienta | `allow` o `deny` |
-| `PostToolUse` | Tras la ejecución de una herramienta | `allow` o `continue` |
-| `SessionStart` | Al iniciar una sesión de Claude Code | `allow` |
-| `SessionEnd` | Al cerrar una sesión | `allow` |
-| `UserPromptSubmit` | Justo antes de enviar el prompt del operador | `allow` o `deny` |
-| `Stop` | Cuando Claude Code va a detener el turno | `allow` o `deny` |
-| `Notification` | Evento de notificación del sistema | `allow` |
-| `PreCompact` | Antes de compactar el contexto | `allow` o `deny` |
+| Evento             | Cuándo se dispara                            | Salida esperada      |
+| ------------------ | -------------------------------------------- | -------------------- |
+| `PreToolUse`       | Antes de ejecutar cualquier herramienta      | `allow` o `deny`     |
+| `PostToolUse`      | Tras la ejecución de una herramienta         | `allow` o `continue` |
+| `SessionStart`     | Al iniciar una sesión de Claude Code         | `allow`              |
+| `SessionEnd`       | Al cerrar una sesión                         | `allow`              |
+| `UserPromptSubmit` | Justo antes de enviar el prompt del operador | `allow` o `deny`     |
+| `Stop`             | Cuando Claude Code va a detener el turno     | `allow` o `deny`     |
+| `Notification`     | Evento de notificación del sistema           | `allow`              |
+| `PreCompact`       | Antes de compactar el contexto               | `allow` o `deny`     |
 
 El campo `matcher` en la cabecera del hook restringe qué herramientas lo activan.
 Usa glob: `Bash(*)` para cualquier invocación de Bash, `Write(*.md)` para
@@ -88,8 +88,7 @@ python hooks/validar_hook.py hooks/ejemplo_hook.sh.template --strict
 
 ## Referencias
 
-- Claude Code Hooks: https://code.claude.com/docs/en/hooks.md
-- Claude Code Hooks Guide: https://code.claude.com/docs/en/hooks-guide.md
-- Claude Code Hooks Reference: https://code.claude.com/docs/en/hooks-reference.md
+- Claude Code Hooks (reference): https://code.claude.com/docs/en/hooks.md
+- Claude Code Hooks Guide: https://code.claude.com/docs/en/hooks-guide
 - Plantilla canon: `hooks/plantilla_hook.sh.template`
 - Ejemplo funcional: `hooks/ejemplo_hook.sh.template`

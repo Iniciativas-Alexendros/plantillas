@@ -24,11 +24,12 @@ jobs:
     name: Guardián de PRs
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
           fetch-depth: 0
+          persist-credentials: false
 
-      - uses: actions/setup-python@v6
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
 
@@ -61,10 +62,13 @@ jobs:
       - name: Contar líneas cambiadas
         id: pr_size
         continue-on-error: true
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           echo "::group::Tamaño del PR"
-          BASE_REF="origin/${{ github.event.pull_request.base.ref }}"
-          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          BASE_REF="origin/$PR_BASE_REF"
+          HEAD_SHA="$PR_HEAD_SHA"
           BASE=$(git merge-base "$BASE_REF" "$HEAD_SHA")
           LINES=$(git diff --numstat "$BASE" "$HEAD_SHA" | \
             awk '{added+=$1; removed+=$2} END {print added+removed}')
@@ -81,6 +85,9 @@ jobs:
 
       # ── 3. Archivos Protegidos ──────────────────────────────────────────
       - name: Detectar archivos protegidos modificados
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           echo "::group::Archivos protegidos"
           PROTECTED=(
@@ -99,8 +106,8 @@ jobs:
           # modificarse en PRs de lint/CI sin issue previo.
 
           EXIT=0
-          CHANGED=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
-            "${{ github.event.pull_request.head.sha }}")
+          CHANGED=$(git diff --name-only "$(git merge-base "origin/$PR_BASE_REF" "$PR_HEAD_SHA")" \
+            "$PR_HEAD_SHA")
 
           # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
           # (si hay cambios en módulos, el step 4 ya exige que se actualice)
@@ -131,10 +138,13 @@ jobs:
 
       # ── 4. CHANGELOG Actualizado ────────────────────────────────────────
       - name: Verificar CHANGELOG.md
+        env:
+          PR_BASE_REF: ${{ github.event.pull_request.base.ref }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
           echo "::group::Verificación CHANGELOG"
-          CHANGES=$(git diff --name-only "$(git merge-base "origin/${{ github.event.pull_request.base.ref }}" "${{ github.event.pull_request.head.sha }}")" \
-            "${{ github.event.pull_request.head.sha }}")
+          CHANGES=$(git diff --name-only "$(git merge-base "origin/$PR_BASE_REF" "$PR_HEAD_SHA")" \
+            "$PR_HEAD_SHA")
 
           if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
@@ -173,10 +183,14 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
+          set -Eeuo pipefail
           STATE="success"
-          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
-          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          if [ "$JOB_STATUS" != "success" ]; then STATE="failure"; fi
+          SHA="${PR_HEAD_SHA:-$GITHUB_SHA}"
           gh api "repos/${{ github.repository }}/statuses/$SHA" \
             -f state="$STATE" \
             -f context="Guardián de PRs" \

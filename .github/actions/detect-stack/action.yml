@@ -77,12 +77,10 @@ runs:
                   -o -type f "$@" -print 2>/dev/null
         }
 
-        # TS/JS
+        # TS/JS (solo si hay evidencia real: typescript en package.json, tsconfig o archivos .ts/.tsx)
         if [ -f package.json ]; then
-          if grep -q '"typescript"' package.json 2>/dev/null || ls tsconfig*.json >/dev/null 2>&1; then
-            has_ts=true
-          else
-            # JS sin TS también cuenta como "node" para release-please
+          if grep -qE '"typescript"' package.json 2>/dev/null || ls tsconfig*.json >/dev/null 2>&1 || \
+             [ -n "$(repo_find -name '*.ts' -o -name '*.tsx' | head -1)" ]; then
             has_ts=true
           fi
         fi

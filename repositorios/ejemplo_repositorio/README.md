@@ -2,7 +2,7 @@
 
 > Ejemplo de repositorio profesional siguiendo el canon de plantillas de Alexendros.
 
-[![CI](https://github.com/alexendros/ejemplo-repositorio/actions/workflows/ci.yml/badge.svg)](https://github.com/alexendros/ejemplo-repositorio/actions/workflows/ci.yml)
+[![CI](https://github.com/Alexendros/plantillas/actions/workflows/ci-global.yml/badge.svg)](https://github.com/Alexendros/plantillas/actions/workflows/ci-global.yml)
 
 ## Qué es
 
@@ -27,11 +27,11 @@ cd ejemplo-repositorio
 
 ## Comandos
 
-| Comando | Propósito |
-|---------|-----------|
+| Comando                     | Propósito                       |
+| --------------------------- | ------------------------------- |
 | `git log --oneline --graph` | Ver historia lineal con merges. |
-| `make test` | Ejecutar tests (si aplica). |
-| `make lint` | Ejecutar linter (si aplica). |
+| `make test`                 | Ejecutar tests (si aplica).     |
+| `make lint`                 | Ejecutar linter (si aplica).    |
 
 ## Estructura
 

@@ -32,19 +32,25 @@ jobs:
     name: Lint & Estructura
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.12"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: "20"
 
       - name: Instalar herramientas
         run: |
-          pip install yamllint ruff pyyaml
-          npm install -g markdownlint-cli
-          sudo apt-get update && sudo apt-get install -y shellcheck
+          pip install yamllint==0.33.0 ruff==0.11.0 pyyaml==6.0.2
+          npm install -g markdownlint-cli@0.44.0
+          # shellcheck v0.10.0 binario estático (evita apt + versiones flotantes)
+          curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | \
+            tar -xJf - -C /tmp
+          install -m755 /tmp/shellcheck-v0.10.0/shellcheck "$HOME/.local/bin/shellcheck"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       # ── Bloqueantes ──────────────────────────────────────────────────────
       - name: Lint YAML
@@ -112,10 +118,14 @@ jobs:
         if: always()
         env:
           GH_TOKEN: ${{ github.token }}
+          JOB_STATUS: ${{ job.status }}
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          GITHUB_SHA: ${{ github.sha }}
         run: |
+          set -Eeuo pipefail
           STATE="success"
-          if [ "${{ job.status }}" != "success" ]; then STATE="failure"; fi
-          SHA="${{ github.event.pull_request.head.sha || github.sha }}"
+          if [ "$JOB_STATUS" != "success" ]; then STATE="failure"; fi
+          SHA="${PR_HEAD_SHA:-$GITHUB_SHA}"
           gh api "repos/${{ github.repository }}/statuses/$SHA" \
             -f state="$STATE" \
             -f context="CI Global" \

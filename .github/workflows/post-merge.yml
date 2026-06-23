@@ -13,13 +13,13 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write          # sticky-commit-comment + release-please commits
-  issues: write            # sticky-issue (anti-flake regression tracking)
-  pull-requests: write     # release-please PR creation (solo si enable_release=true)
-  id-token: write          # OIDC para actions/attest-build-provenance
-  attestations: write      # SLSA L3 attestations
-  checks: write            # reviewdog reporter github-check
-  security-events: write   # zizmor SARIF upload
+  contents: write # sticky-commit-comment + release-please commits
+  issues: write # sticky-issue (anti-flake regression tracking)
+  pull-requests: write # release-please PR creation (solo si enable_release=true)
+  id-token: write # OIDC para actions/attest-build-provenance
+  attestations: write # SLSA L3 attestations
+  checks: write # reviewdog reporter github-check
+  security-events: write # zizmor SARIF upload
 
 concurrency:
   group: post-merge-${{ github.ref }}
@@ -27,12 +27,13 @@ concurrency:
 
 jobs:
   run:
-    uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@main
+    uses: Alexendros/plantillas/.github/workflows/_lib-post-merge.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
     with:
       enable_linters: true
       enable_sbom: true
       enable_attest: true
-      enable_release: false    # plantillas: aún no activamos release-please hasta validar
+      enable_release: false # plantillas: aún no activamos release-please hasta validar
       streak_threshold_open: 2
       streak_threshold_close: 3
-    secrets: inherit
+    secrets:
+      github-token: ${{ secrets.GITHUB_TOKEN }}

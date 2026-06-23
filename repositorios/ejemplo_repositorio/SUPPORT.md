@@ -11,7 +11,7 @@ Antes de abrir un issue revisa estas vías:
 ## 2. Discusiones
 
 Para preguntas y conversaciones de uso utiliza la sección
-[Discussions del repositorio](https://github.com/alexendros/ejemplo-repositorio/discussions)
+[Discussions del repositorio](https://github.com/Alexendros/plantillas)
 si está habilitada.
 
 ## 3. Issues

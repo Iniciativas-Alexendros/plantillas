@@ -48,13 +48,15 @@ jobs:
       sbom_outcome: ${{ steps.sbom.outcome }}
       attest_outcome: ${{ steps.attest.outcome }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
 
       - id: sbom
         name: syft → CycloneDX SBOM
         if: inputs.enable_sbom
         continue-on-error: true
-        uses: anchore/sbom-action@v0
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0
         with:
           format: cyclonedx-json
           output-file: sbom.cdx.json
@@ -81,7 +83,7 @@ jobs:
         if: inputs.enable_attest && (steps.sbom.outcome == 'success' || inputs.subject_path != '')
         continue-on-error: true
         name: Atestar build provenance
-        uses: actions/attest-build-provenance@v2
+        uses: actions/attest-build-provenance@96b4a1ef7235a096b17240c259729fdd70c83d45 # v2
         with:
           subject-path: ${{ inputs.subject_path != '' && inputs.subject_path || 'sbom.cdx.json' }}
 
