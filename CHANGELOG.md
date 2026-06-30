@@ -5,11 +5,29 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
-## [Unreleased] — Hardening del bootstrap de dot-claude
+## [Unreleased] — Cross-platform Config Refactor
 
-### Security
+### Añadido
 
-- **`dot-claude/ejemplo_dot_claude/cloud-env/bootstrap.sh`** — Reemplazadas las instalaciones que ejecutaban código remoto directamente desde la red (`curl | sh`, `curl | tar`) por descargas a archivos temporales y verificación de SHA256. Añadidos helpers `download_and_verify`, `install_binary` e `install_tar_binary` con tabla de checksums pineda. Versiones de mise, starship, atuin, croc, lazydocker, dive, ctop y hadolint fijadas a releases concretos.
+- Módulo `agent-config/`: fuente canónica YAML (`plantilla_agent_config.yaml`) que genera configuración para **Claude Code** (`~/.claude/`), **OpenCode** (`~/AGENTS.md`), **Devin** (`~/.config/devin/`) y **Windsurf/Cascade** (`~/.codeium/windsurf/memories/global_rules.md`).
+- Generador `agent-config/generar_agent_configs.py` y validador `agent-config/validar_agent_config.py` con drift check entre la fuente y el directorio de ejemplo.
+- Workflow `agent-config/.github/workflows/validar-agent-config.yml` y registro en `validar-todos.yml` y `validar_repo.py`.
+
+### Eliminado
+
+- Módulos `autoresearch/`, `cuadernos/`, `knowledge/` y `dot-claude/` (sustituidos por `agent-config/` y el repo de plantillas en sí). Se ha preservado backup en `.backups-YYYYMMDD-HHMMSS/` antes de borrar.
+
+### Changed
+
+- `INDEX.md`: actualizado a 12 módulos canónicos, eliminadas referencias a módulos borrados y añadida sección de `agent-config`.
+- `.github/workflows/validar-todos.yml`: matriz reducida a 12 módulos.
+- `validar_repo.py`: listas de directorios permitidos, módulos canónicos y mapeo de singulares actualizados; eliminada lógica muerta del módulo borrado `dot-claude`.
+- `.pre-commit-config.yaml`: eliminados hooks de módulos borrados (`dot-claude`, `autoresearch`, `cuadernos`, `knowledge`) y añadida validación de `agent-config`.
+- `agent-config/.github/workflows/validar-agent-config.yml`: pines SHA de acciones y permisos mínimos.
+
+### Notas de migración
+
+- El hardening del bootstrap de `dot-claude` (`cloud-env/bootstrap.sh` con verificación SHA256 y versiones pinedas) se conserva en el backup histórico; el módulo ya no forma parte del canon de 12 módulos.
 
 ## [Unreleased] — Módulo canónico de estándares del portfolio
 

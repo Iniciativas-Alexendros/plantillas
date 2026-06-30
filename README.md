@@ -1,10 +1,10 @@
 # Sistema de Plantillas Modulares para Claude Code
 
 > **Ecosistema de plantillas `claude-init`-ready** para construir agentes, skills,
-> comandos, hooks, plugins, MCP servers, repositorios GitHub profesionales, y
-> configuraciones `.claude/` completas — con validación automática y CI/CD.
+> comandos, hooks, plugins, MCP servers, repositorios GitHub profesionales y
+> configuración cross-platform de agentes — con validación automática y CI/CD.
 
-[![Validación](https://img.shields.io/badge/validación-8/8%20✅-green)](./)
+[![Validación](https://img.shields.io/badge/validación-12/12%20✅-green)](./)
 [![Versión](https://img.shields.io/badge/versión-v1.0.0-blue)](./CHANGELOG.md)
 [![Licencia](https://img.shields.io/badge/licencia-MIT-yellow)](./LICENSE)
 
@@ -33,8 +33,12 @@ Cada módulo sigue el mismo patrón:
 | ⚓ **Hooks** | Interceptores pre/post tool, save, error | `claude-init --modulo hooks` |
 | 🔌 **Plugins** | Empaquetado distribuible de componentes | `claude-init --modulo plugins` |
 | 🔗 **MCP Servers** | Servidores MCP con tools y recursos | `claude-init --modulo mcp` |
-| 📦 **dot-claude** | Configuración `.claude/` completa | `cp -r dot-claude/ejemplo_dot_claude ./.claude` |
+| 🖥️ **Miniapps** | SPA single-file tipo Claude.ai artifact | `claude-init --modulo miniapps` |
+| 🌐 **agent-config** | Configuración cross-platform para agentes | `python agent-config/generar_agent_configs.py --home ~ --backup` |
 | 🏛️ **Repositorios** | Repo GitHub profesional al 120% | `claude-init --repositorio` |
+| 🧩 **Módulo** | Meta-template para crear nuevos módulos | `cp -r modulo mi-modulo` |
+| 📁 **Proyecto** | Template `.claude/` ligero para inicializar un proyecto | `claude-init --proyecto` |
+| 📐 **Estándares** | Catálogo de estándares del portfolio | `python estandares/validar_estandares.py estandares --strict` |
 
 > **Índice completo con estructura visual → [`INDEX.md`](./INDEX.md)**
 
@@ -79,8 +83,8 @@ python agentes/validar_agente.py ~/.claude/agents/mi-agente --strict
 ## Validación y CI/CD
 
 - **Motor reusable** en [`validadores/`](./validadores/): `BaseValidator`, checks reutilizables, reporte formateado.
-- **8 validadores** individuales, todos pasan `--strict`.
-- **8 workflows** de GitHub Actions + workflow central [`validar-todos.yml`](./.github/workflows/validar-todos.yml).
+- **12 validadores** individuales, todos pasan `--strict`.
+- **12 workflows** de GitHub Actions + workflow central [`validar-todos.yml`](./.github/workflows/validar-todos.yml).
 - **Pre-commit hooks** en [`.pre-commit-config.yaml`](./.pre-commit-config.yaml): lint YAML/JSON, detectar placeholders, validar módulos.
 
 ---
