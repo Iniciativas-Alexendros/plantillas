@@ -40,3 +40,6 @@ Thumbs.db
 # ─── Claude Code (overrides personales y worktrees) ───────────────────────────
 .claude/settings.local.json
 .claude/worktrees/
+
+# ─── Artefactos de planificación (no sincronizados en GitHub) ───────────────
+/docs/dossier-bloque2.html
