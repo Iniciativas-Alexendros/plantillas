@@ -28,12 +28,20 @@ from validadores import (
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
 
 
-FRONTMATTER_REQUIRED = ["name", "description", "category", "runtime", "version", "last_updated"]
+FRONTMATTER_REQUIRED = [
+    "name",
+    "description",
+    "category",
+    "runtime",
+    "version",
+    "last_updated",
+]
 VALID_CATEGORIES = {"dashboard", "explorer", "tool", "playbook"}
 VALID_RUNTIMES = {"browser", "electron", "static"}
 
@@ -95,9 +103,17 @@ class MiniappValidator(BaseValidator):
 
     def _check_formato(self):
         if not self.archivo.is_file():
-            return [Resultado(Nivel.ERROR, "formato", f"{self.archivo.name} no es un archivo")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self.archivo.name} no es un archivo"
+                )
+            ]
         if self.archivo.suffix != ".md":
-            return [Resultado(Nivel.ERROR, "formato", f"{self.archivo.name} no termina en .md")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self.archivo.name} no termina en .md"
+                )
+            ]
         return []
 
     def _check_frontmatter(self):
@@ -111,8 +127,13 @@ class MiniappValidator(BaseValidator):
             return []
         cat = data["category"]
         if cat not in VALID_CATEGORIES:
-            return [Resultado(Nivel.ERROR, "category",
-                              f"category '{cat}' inválida (válidas: {sorted(VALID_CATEGORIES)})")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "category",
+                    f"category '{cat}' inválida (válidas: {sorted(VALID_CATEGORIES)})",
+                )
+            ]
         return []
 
     def _check_runtime(self):
@@ -121,8 +142,13 @@ class MiniappValidator(BaseValidator):
             return []
         rt = data["runtime"]
         if rt not in VALID_RUNTIMES:
-            return [Resultado(Nivel.ERROR, "runtime",
-                              f"runtime '{rt}' inválido (válidos: {sorted(VALID_RUNTIMES)})")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "runtime",
+                    f"runtime '{rt}' inválido (válidos: {sorted(VALID_RUNTIMES)})",
+                )
+            ]
         return []
 
     def _check_version(self):
@@ -131,7 +157,11 @@ class MiniappValidator(BaseValidator):
             return []
         v = str(data["version"])
         if not SEMVER_RE.match(v):
-            return [Resultado(Nivel.WARNING, "version", f"version '{v}' no es SemVer (X.Y.Z)")]
+            return [
+                Resultado(
+                    Nivel.WARNING, "version", f"version '{v}' no es SemVer (X.Y.Z)"
+                )
+            ]
         return []
 
     def _check_last_updated(self):
@@ -140,8 +170,13 @@ class MiniappValidator(BaseValidator):
             return []
         d = str(data["last_updated"])
         if not ISODATE_RE.match(d):
-            return [Resultado(Nivel.WARNING, "last_updated",
-                              f"last_updated '{d}' no es ISO-8601 (YYYY-MM-DD)")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "last_updated",
+                    f"last_updated '{d}' no es ISO-8601 (YYYY-MM-DD)",
+                )
+            ]
         return []
 
     def _check_name_kebab(self):
@@ -151,9 +186,14 @@ class MiniappValidator(BaseValidator):
         name = data["name"]
         if not isinstance(name, str) or not KEBAB_RE.match(name):
             nivel = Nivel.WARNING if self.es_plantilla else Nivel.ERROR
-            return [Resultado(nivel, "name_kebab",
-                              f"name '{name}' no es kebab-case"
-                              + (" (esperado en plantilla)" if self.es_plantilla else ""))]
+            return [
+                Resultado(
+                    nivel,
+                    "name_kebab",
+                    f"name '{name}' no es kebab-case"
+                    + (" (esperado en plantilla)" if self.es_plantilla else ""),
+                )
+            ]
         return []
 
     def _check_secciones(self):
@@ -161,8 +201,13 @@ class MiniappValidator(BaseValidator):
         resultados = []
         for seccion in REQUIRED_SECTIONS:
             if seccion not in cuerpo:
-                resultados.append(Resultado(Nivel.ERROR, "secciones",
-                                            f"falta sección obligatoria: '{seccion}'"))
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR,
+                        "secciones",
+                        f"falta sección obligatoria: '{seccion}'",
+                    )
+                )
         return resultados
 
     def _check_placeholders(self):
@@ -171,8 +216,13 @@ class MiniappValidator(BaseValidator):
         cuerpo = self._extraer_fuera_codeblock(self._cuerpo())
         for pattern in self.PLACEHOLDER_PATTERNS:
             if pattern.search(cuerpo):
-                return [Resultado(Nivel.WARNING, "placeholders",
-                                  f"contiene placeholders sin rellenar (patrón: {pattern.pattern})")]
+                return [
+                    Resultado(
+                        Nivel.WARNING,
+                        "placeholders",
+                        f"contiene placeholders sin rellenar (patrón: {pattern.pattern})",
+                    )
+                ]
         return []
 
     def _check_html_adjunto(self):
@@ -194,19 +244,33 @@ class MiniappValidator(BaseValidator):
         # JS externo sin SRI = anti-patrón
         if re.search(r"<script[^>]+src=['\"]https?://", html, re.IGNORECASE):
             if "integrity=" not in html:
-                resultados.append(Resultado(Nivel.WARNING, "html_adjunto",
-                                            f"{html_path.name} carga JS externo sin atributo 'integrity'"))
+                resultados.append(
+                    Resultado(
+                        Nivel.WARNING,
+                        "html_adjunto",
+                        f"{html_path.name} carga JS externo sin atributo 'integrity'",
+                    )
+                )
         # Embed de secretos
         if re.search(r"(sk-[A-Za-z0-9]{20,}|gh[pousr]_[A-Za-z0-9_]{36,})", html):
-            resultados.append(Resultado(Nivel.ERROR, "html_adjunto",
-                                        f"{html_path.name} contiene token/secret embebido"))
+            resultados.append(
+                Resultado(
+                    Nivel.ERROR,
+                    "html_adjunto",
+                    f"{html_path.name} contiene token/secret embebido",
+                )
+            )
         return resultados
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Valida una mini-app Claude Code (single-file).")
+    parser = argparse.ArgumentParser(
+        description="Valida una mini-app Claude Code (single-file)."
+    )
     parser.add_argument("ruta", help="Ruta al archivo .md de la mini-app")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores"
+    )
     args = parser.parse_args()
 
     ruta = Path(args.ruta).resolve()

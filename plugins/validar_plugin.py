@@ -53,7 +53,9 @@ class PluginValidator(BaseValidator):
         return resultados
 
     def _check_placeholders(self):
-        return check_placeholders(self, extensiones=(".json", ".md", ".yaml", ".yml", ".txt"))
+        return check_placeholders(
+            self, extensiones=(".json", ".md", ".yaml", ".yml", ".txt")
+        )
 
     def _check_empty_files(self):
         return check_archivos_vacios(self, min_bytes=30)
@@ -65,18 +67,29 @@ class PluginValidator(BaseValidator):
             return resultados
 
         import json
+
         data = json.loads(manifest.read_text(encoding="utf-8"))
 
         campos_requeridos = ["name", "version", "description"]
         for campo in campos_requeridos:
             if campo not in data:
                 resultados.append(
-                    Resultado(Nivel.ERROR, "manifest", f"plugin.json falta campo '{campo}'", "plugin.json")
+                    Resultado(
+                        Nivel.ERROR,
+                        "manifest",
+                        f"plugin.json falta campo '{campo}'",
+                        "plugin.json",
+                    )
                 )
 
         if "components" not in data:
             resultados.append(
-                Resultado(Nivel.WARNING, "manifest", "plugin.json debería tener 'components'", "plugin.json")
+                Resultado(
+                    Nivel.WARNING,
+                    "manifest",
+                    "plugin.json debería tener 'components'",
+                    "plugin.json",
+                )
             )
 
         return resultados
@@ -88,6 +101,7 @@ class PluginValidator(BaseValidator):
             return resultados
 
         import json
+
         data = json.loads(manifest.read_text(encoding="utf-8"))
         if not isinstance(data, dict) or "components" not in data:
             return resultados
@@ -115,8 +129,9 @@ class PluginValidator(BaseValidator):
                     continue
                 resultados.append(
                     Resultado(
-                        Nivel.WARNING, "componentes",
-                        f"plugin.json declara {comp_key} pero no existe directorio {dir_name}/"
+                        Nivel.WARNING,
+                        "componentes",
+                        f"plugin.json declara {comp_key} pero no existe directorio {dir_name}/",
                     )
                 )
                 continue
@@ -127,18 +142,23 @@ class PluginValidator(BaseValidator):
                     if not (comp_dir / item).is_dir():
                         resultados.append(
                             Resultado(
-                                Nivel.WARNING, "componentes",
-                                f"Componente {comp_key}/{item} no existe"
+                                Nivel.WARNING,
+                                "componentes",
+                                f"Componente {comp_key}/{item} no existe",
                             )
                         )
                 else:
                     # agents: .md, hooks: .yaml/.yml
                     ext = ".md" if comp_key == "agents" else ".yaml"
-                    if not (comp_dir / f"{item}{ext}").exists() and not (comp_dir / item).exists():
+                    if (
+                        not (comp_dir / f"{item}{ext}").exists()
+                        and not (comp_dir / item).exists()
+                    ):
                         resultados.append(
                             Resultado(
-                                Nivel.WARNING, "componentes",
-                                f"Componente {comp_key}/{item} no encontrado"
+                                Nivel.WARNING,
+                                "componentes",
+                                f"Componente {comp_key}/{item} no encontrado",
                             )
                         )
 
@@ -148,7 +168,9 @@ class PluginValidator(BaseValidator):
 def main() -> int:
     parser = argparse.ArgumentParser(description="Valida un plugin Claude Code.")
     parser.add_argument("plugin_dir", help="Directorio del plugin a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores"
+    )
     args = parser.parse_args()
 
     plugin_path = Path(args.plugin_dir)

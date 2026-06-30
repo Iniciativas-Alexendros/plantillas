@@ -49,7 +49,9 @@ class ValidadorProyecto(BaseValidator):
 
 def main():
     parser = argparse.ArgumentParser(description="Validador de template de proyecto")
-    parser.add_argument("proyecto", nargs="?", default=".", help="Ruta al directorio proyecto")
+    parser.add_argument(
+        "proyecto", nargs="?", default=".", help="Ruta al directorio proyecto"
+    )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 

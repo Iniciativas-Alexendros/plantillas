@@ -18,16 +18,18 @@ class Nivel(Enum):
 @dataclass
 class Resultado:
     """Un resultado de validación individual."""
+
     nivel: Nivel
-    check: str          # Nombre del check
-    mensaje: str        # Descripción del hallazgo
-    archivo: str = ""   # Archivo relacionado (opcional)
-    linea: int = 0      # Línea relacionada (opcional)
+    check: str  # Nombre del check
+    mensaje: str  # Descripción del hallazgo
+    archivo: str = ""  # Archivo relacionado (opcional)
+    linea: int = 0  # Línea relacionada (opcional)
 
 
 @dataclass
 class Check:
     """Un check individual que se ejecuta sobre un módulo."""
+
     nombre: str
     funcion: Callable[[], List[Resultado]]
 
@@ -68,26 +70,28 @@ class BaseValidator:
     # placeholders, etc.) y dejaba `--strict` inservible al convertir miles de
     # warnings ajenos en errores. La corrección B4 descarta cualquier ruta que
     # contenga uno de estos nombres como componente de su ruta relativa.
-    EXCLUDE_DIRS = frozenset({
-        ".git",
-        "node_modules",
-        ".venv",
-        "venv",
-        "__pycache__",
-        ".mypy_cache",
-        ".pytest_cache",
-        ".ruff_cache",
-        ".next",
-        ".turbo",
-        "dist",
-        "build",
-        "out",
-        "target",
-        "coverage",
-        ".cache",
-        "vendor",
-        "site-packages",
-    })
+    EXCLUDE_DIRS = frozenset(
+        {
+            ".git",
+            "node_modules",
+            ".venv",
+            "venv",
+            "__pycache__",
+            ".mypy_cache",
+            ".pytest_cache",
+            ".ruff_cache",
+            ".next",
+            ".turbo",
+            "dist",
+            "build",
+            "out",
+            "target",
+            "coverage",
+            ".cache",
+            "vendor",
+            "site-packages",
+        }
+    )
 
     # Caso especial: `.claude/worktrees` son DOS segmentos consecutivos; no
     # basta con mirar un único componente, así que se comprueba como subcadena
@@ -130,10 +134,14 @@ class BaseValidator:
 
         return self._reportar()
 
-    def agregar_error(self, check: str, mensaje: str, archivo: str = "", linea: int = 0):
+    def agregar_error(
+        self, check: str, mensaje: str, archivo: str = "", linea: int = 0
+    ):
         self.resultados.append(Resultado(Nivel.ERROR, check, mensaje, archivo, linea))
 
-    def agregar_warning(self, check: str, mensaje: str, archivo: str = "", linea: int = 0):
+    def agregar_warning(
+        self, check: str, mensaje: str, archivo: str = "", linea: int = 0
+    ):
         self.resultados.append(Resultado(Nivel.WARNING, check, mensaje, archivo, linea))
 
     def agregar_ok(self, check: str, mensaje: str, archivo: str = "", linea: int = 0):
@@ -167,9 +175,7 @@ class BaseValidator:
         generados; ver `EXCLUDE_DIRS` / `EXCLUDE_PATH_SUBSTRINGS`.
         """
         return [
-            p
-            for p in self.ruta.rglob(patron)
-            if p.is_file() and not self._excluido(p)
+            p for p in self.ruta.rglob(patron) if p.is_file() and not self._excluido(p)
         ]
 
     def _rel(self, p: Path) -> str:
@@ -179,6 +185,7 @@ class BaseValidator:
     def _reportar(self) -> int:
         """Reporta resultados y devuelve código de salida."""
         from .reporte import reportar_resultados
+
         return reportar_resultados(self.resultados, self.strict)
 
     def _extraer_fuera_codeblock(self, content: str) -> str:

@@ -75,6 +75,7 @@ PLACEHOLDER_RE = re.compile(r"\b[A-Z][A-Z0-9]*(?:-[A-Z][A-Z0-9]*)+\b")
 # VALIDADOR
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class HookValidator(BaseValidator):
     """Validador para hooks single-file (formato canon-runtime)."""
 
@@ -111,19 +112,29 @@ class HookValidator(BaseValidator):
         for line in self._lines():
             stripped = line.strip()
             if stripped.startswith(f"# {key}:"):
-                return stripped[len(f"# {key}:"):].strip()
+                return stripped[len(f"# {key}:") :].strip()
         return ""
 
     # ── Checks ───────────────────────────────────────────────────────────────
 
     def _check_formato(self):
         if not self.archivo.is_file():
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{self.archivo.name} no existe o no es un archivo")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "formato",
+                    f"{self.archivo.name} no existe o no es un archivo",
+                )
+            ]
         name = self.archivo.name
         if not (name.endswith(".sh") or name.endswith(".sh.template")):
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{name} debe terminar en .sh o .sh.template")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "formato",
+                    f"{name} debe terminar en .sh o .sh.template",
+                )
+            ]
         return []
 
     def _check_shebang(self):
@@ -131,13 +142,19 @@ class HookValidator(BaseValidator):
             return []
         lines = self._lines()
         if not lines:
-            return [Resultado(Nivel.ERROR, "shebang",
-                              f"{self.archivo.name} está vacío")]
+            return [
+                Resultado(Nivel.ERROR, "shebang", f"{self.archivo.name} está vacío")
+            ]
         first = lines[0].strip()
         if first not in VALID_SHEBANGS:
-            return [Resultado(Nivel.ERROR, "shebang",
-                              f"Primera línea '{first}' no es un shebang válido "
-                              f"(esperado: {sorted(VALID_SHEBANGS)})")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "shebang",
+                    f"Primera línea '{first}' no es un shebang válido "
+                    f"(esperado: {sorted(VALID_SHEBANGS)})",
+                )
+            ]
         return []
 
     def _check_cabecera(self):
@@ -147,8 +164,13 @@ class HookValidator(BaseValidator):
         resultados = []
         for campo in HEADER_REQUIRED:
             if campo not in content:
-                resultados.append(Resultado(Nivel.ERROR, "cabecera",
-                                            f"Falta campo obligatorio en cabecera: '{campo}'"))
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR,
+                        "cabecera",
+                        f"Falta campo obligatorio en cabecera: '{campo}'",
+                    )
+                )
         return resultados
 
     def _check_matcher_valido(self):
@@ -166,9 +188,14 @@ class HookValidator(BaseValidator):
             if self.es_plantilla and PLACEHOLDER_RE.match(m):
                 continue
             if m and m not in VALID_MATCHERS:
-                resultados.append(Resultado(Nivel.ERROR, "matcher_valido",
-                                            f"Matcher '{m}' no reconocido "
-                                            f"(válidos: {sorted(VALID_MATCHERS)})"))
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR,
+                        "matcher_valido",
+                        f"Matcher '{m}' no reconocido "
+                        f"(válidos: {sorted(VALID_MATCHERS)})",
+                    )
+                )
         return resultados
 
     def _check_name_kebab(self):
@@ -180,9 +207,14 @@ class HookValidator(BaseValidator):
         if not KEBAB_RE.match(name):
             # En plantillas el name es un placeholder → solo warning
             nivel = Nivel.WARNING if self.es_plantilla else Nivel.ERROR
-            return [Resultado(nivel, "name_kebab",
-                              f"name '{name}' no es kebab-case válido"
-                              + (" (esperado en plantilla)" if self.es_plantilla else ""))]
+            return [
+                Resultado(
+                    nivel,
+                    "name_kebab",
+                    f"name '{name}' no es kebab-case válido"
+                    + (" (esperado en plantilla)" if self.es_plantilla else ""),
+                )
+            ]
         return []
 
     def _check_placeholders(self):
@@ -194,8 +226,13 @@ class HookValidator(BaseValidator):
         content = self._content()
         # Buscar patrones TODO explícitos fuera de comentarios de cabecera
         if re.search(r"\bTODO\b.*reemplazar\b", content, re.IGNORECASE):
-            return [Resultado(Nivel.WARNING, "placeholders",
-                              f"{self.archivo.name} contiene TODOs sin rellenar")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "placeholders",
+                    f"{self.archivo.name} contiene TODOs sin rellenar",
+                )
+            ]
         return []
 
     def _check_ejecutable(self):
@@ -203,9 +240,14 @@ class HookValidator(BaseValidator):
         if not self.archivo.is_file():
             return []
         if not os.access(self.archivo, os.X_OK):
-            return [Resultado(Nivel.WARNING, "ejecutable",
-                              f"{self.archivo.name} no tiene bit +x "
-                              f"(ejecutar: chmod +x {self.archivo.name})")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "ejecutable",
+                    f"{self.archivo.name} no tiene bit +x "
+                    f"(ejecutar: chmod +x {self.archivo.name})",
+                )
+            ]
         return []
 
     def _check_salida_json(self):
@@ -217,16 +259,22 @@ class HookValidator(BaseValidator):
             return []
         content = self._content()
         if not SALIDA_JSON_RE.search(content):
-            return [Resultado(Nivel.WARNING, "salida_json",
-                              f"{self.archivo.name} no contiene patrón "
-                              f"printf/echo '{{\"decision\"...}}'; verifica que el hook "
-                              f"emite JSON de decisión a stdout")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "salida_json",
+                    f"{self.archivo.name} no contiene patrón "
+                    f"printf/echo '{{\"decision\"...}}'; verifica que el hook "
+                    f"emite JSON de decisión a stdout",
+                )
+            ]
         return []
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(

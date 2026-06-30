@@ -53,7 +53,9 @@ class MCPValidator(BaseValidator):
         return resultados
 
     def _check_placeholders(self):
-        return check_placeholders(self, extensiones=(".json", ".md", ".py", ".ts", ".js", ".txt"))
+        return check_placeholders(
+            self, extensiones=(".json", ".md", ".py", ".ts", ".js", ".txt")
+        )
 
     def _check_empty_files(self):
         return check_archivos_vacios(self, min_bytes=30)
@@ -65,6 +67,7 @@ class MCPValidator(BaseValidator):
             return resultados
 
         import json
+
         data = json.loads(manifest.read_text(encoding="utf-8"))
 
         # Si es un config de cliente (tiene mcpServers), no requiere manifest
@@ -76,7 +79,12 @@ class MCPValidator(BaseValidator):
         for campo in campos_requeridos:
             if campo not in data:
                 resultados.append(
-                    Resultado(Nivel.ERROR, "manifest", f"mcp.json falta campo '{campo}'", "mcp.json")
+                    Resultado(
+                        Nivel.ERROR,
+                        "manifest",
+                        f"mcp.json falta campo '{campo}'",
+                        "mcp.json",
+                    )
                 )
 
         # Verificar que hay un server script
@@ -84,13 +92,25 @@ class MCPValidator(BaseValidator):
             server_path = self.ruta / data["server"]
             if not server_path.exists():
                 resultados.append(
-                    Resultado(Nivel.WARNING, "manifest", f"Server referenciado no existe: {data['server']}", "mcp.json")
+                    Resultado(
+                        Nivel.WARNING,
+                        "manifest",
+                        f"Server referenciado no existe: {data['server']}",
+                        "mcp.json",
+                    )
                 )
         else:
             # Verificar si existe server.py o server.ts
-            if not (self.ruta / "server.py").exists() and not (self.ruta / "server.ts").exists():
+            if (
+                not (self.ruta / "server.py").exists()
+                and not (self.ruta / "server.ts").exists()
+            ):
                 resultados.append(
-                    Resultado(Nivel.WARNING, "manifest", "No se encontró server.py ni server.ts")
+                    Resultado(
+                        Nivel.WARNING,
+                        "manifest",
+                        "No se encontró server.py ni server.ts",
+                    )
                 )
 
         return resultados
@@ -106,14 +126,27 @@ class MCPValidator(BaseValidator):
             content = server_file.read_text(encoding="utf-8")
             rel = self._rel(server_file)
 
-            if "mcp" not in content.lower() and "modelcontextprotocol" not in content.lower():
+            if (
+                "mcp" not in content.lower()
+                and "modelcontextprotocol" not in content.lower()
+            ):
                 resultados.append(
-                    Resultado(Nivel.WARNING, "servidor", f"{rel} no parece un MCP server (falta referencia a MCP)", rel)
+                    Resultado(
+                        Nivel.WARNING,
+                        "servidor",
+                        f"{rel} no parece un MCP server (falta referencia a MCP)",
+                        rel,
+                    )
                 )
 
             if "tool" not in content.lower():
                 resultados.append(
-                    Resultado(Nivel.WARNING, "servidor", f"{rel} no define tools aparentemente", rel)
+                    Resultado(
+                        Nivel.WARNING,
+                        "servidor",
+                        f"{rel} no define tools aparentemente",
+                        rel,
+                    )
                 )
 
         return resultados
@@ -122,7 +155,9 @@ class MCPValidator(BaseValidator):
 def main() -> int:
     parser = argparse.ArgumentParser(description="Valida un MCP server.")
     parser.add_argument("mcp_dir", help="Directorio del MCP server a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores"
+    )
     args = parser.parse_args()
 
     mcp_path = Path(args.mcp_dir)

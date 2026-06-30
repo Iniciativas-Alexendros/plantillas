@@ -33,7 +33,9 @@ class ValidadorModulo(BaseValidator):
 
 def main():
     parser = argparse.ArgumentParser(description="Validador de template de módulo")
-    parser.add_argument("modulo", nargs="?", default=".", help="Ruta al directorio modulo")
+    parser.add_argument(
+        "modulo", nargs="?", default=".", help="Ruta al directorio modulo"
+    )
     parser.add_argument("--strict", action="store_true")
     args = parser.parse_args()
 

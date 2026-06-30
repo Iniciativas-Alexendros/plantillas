@@ -35,6 +35,7 @@ from validadores import (
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -47,9 +48,21 @@ except ImportError:
 FRONTMATTER_REQUIRED = ["description"]
 
 VALID_TOOLS = {
-    "Read", "Grep", "Glob", "Edit", "Write", "Bash",
-    "Agent", "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList",
-    "WebFetch", "WebSearch", "NotebookEdit", "LSP",
+    "Read",
+    "Grep",
+    "Glob",
+    "Edit",
+    "Write",
+    "Bash",
+    "Agent",
+    "TodoWrite",
+    "TaskCreate",
+    "TaskUpdate",
+    "TaskList",
+    "WebFetch",
+    "WebSearch",
+    "NotebookEdit",
+    "LSP",
 }
 
 REQUIRED_SECTIONS = [
@@ -73,6 +86,7 @@ MAX_BYTES = 15_000
 # VALIDADOR
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class CommandValidator(BaseValidator):
     """Validador para commands single-file (formato canon-runtime v2)."""
 
@@ -82,13 +96,13 @@ class CommandValidator(BaseValidator):
         self.archivo = archivo.resolve()
         self.es_plantilla = self.archivo.name.startswith("plantilla_")
         self.checks = [
-            Check("formato",      self._check_formato),
-            Check("frontmatter",  self._check_frontmatter),
-            Check("allowed_tools",self._check_allowed_tools),
-            Check("secciones",    self._check_secciones),
+            Check("formato", self._check_formato),
+            Check("frontmatter", self._check_frontmatter),
+            Check("allowed_tools", self._check_allowed_tools),
+            Check("secciones", self._check_secciones),
             Check("placeholders", self._check_placeholders),
-            Check("longitud",     self._check_longitud),
-            Check("slug_filename",self._check_slug_filename),
+            Check("longitud", self._check_longitud),
+            Check("slug_filename", self._check_slug_filename),
         ]
 
     # ──────────────────────────────────────────────────────────────────────
@@ -134,11 +148,17 @@ class CommandValidator(BaseValidator):
 
     def _check_formato(self):
         if not self.archivo.is_file():
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{self.archivo.name} no es un archivo")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self.archivo.name} no es un archivo"
+                )
+            ]
         if self.archivo.suffix != ".md":
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{self.archivo.name} no termina en .md")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self.archivo.name} no termina en .md"
+                )
+            ]
         return []
 
     def _check_frontmatter(self):
@@ -154,18 +174,29 @@ class CommandValidator(BaseValidator):
             return []
         tools = data["allowed-tools"]
         if not isinstance(tools, list):
-            return [Resultado(Nivel.ERROR, "allowed_tools",
-                              "campo 'allowed-tools' debe ser una lista")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "allowed_tools",
+                    "campo 'allowed-tools' debe ser una lista",
+                )
+            ]
         resultados = []
         for tool in tools:
             if not isinstance(tool, str):
-                resultados.append(Resultado(Nivel.ERROR, "allowed_tools",
-                                            f"tool inválido: {tool!r}"))
+                resultados.append(
+                    Resultado(Nivel.ERROR, "allowed_tools", f"tool inválido: {tool!r}")
+                )
                 continue
             base = tool.split("(")[0]
             if base not in VALID_TOOLS and not base.startswith("mcp__"):
-                resultados.append(Resultado(Nivel.WARNING, "allowed_tools",
-                                            f"tool '{tool}' no está en la lista canon"))
+                resultados.append(
+                    Resultado(
+                        Nivel.WARNING,
+                        "allowed_tools",
+                        f"tool '{tool}' no está en la lista canon",
+                    )
+                )
         return resultados
 
     def _check_secciones(self):
@@ -174,8 +205,13 @@ class CommandValidator(BaseValidator):
         resultados = []
         for seccion in REQUIRED_SECTIONS:
             if seccion not in cuerpo:
-                resultados.append(Resultado(Nivel.ERROR, "secciones",
-                                            f"falta sección obligatoria: '{seccion}'"))
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR,
+                        "secciones",
+                        f"falta sección obligatoria: '{seccion}'",
+                    )
+                )
         return resultados
 
     def _check_placeholders(self):
@@ -186,9 +222,14 @@ class CommandValidator(BaseValidator):
         cuerpo_limpio = self._extraer_fuera_codeblock(cuerpo)
         for pattern in self.PLACEHOLDER_PATTERNS:
             if pattern.search(cuerpo_limpio):
-                return [Resultado(Nivel.WARNING, "placeholders",
-                                  f"contiene placeholders sin rellenar "
-                                  f"(patrón: {pattern.pattern})")]
+                return [
+                    Resultado(
+                        Nivel.WARNING,
+                        "placeholders",
+                        f"contiene placeholders sin rellenar "
+                        f"(patrón: {pattern.pattern})",
+                    )
+                ]
         return []
 
     def _check_longitud(self):
@@ -198,13 +239,23 @@ class CommandValidator(BaseValidator):
         size = self.archivo.stat().st_size
         resultados = []
         if size < MIN_BYTES:
-            resultados.append(Resultado(Nivel.WARNING, "longitud",
-                                        f"archivo demasiado corto ({size} bytes); "
-                                        f"cuerpo del comando posiblemente incompleto"))
+            resultados.append(
+                Resultado(
+                    Nivel.WARNING,
+                    "longitud",
+                    f"archivo demasiado corto ({size} bytes); "
+                    f"cuerpo del comando posiblemente incompleto",
+                )
+            )
         elif size > MAX_BYTES:
-            resultados.append(Resultado(Nivel.WARNING, "longitud",
-                                        f"archivo demasiado largo ({size} bytes); "
-                                        f"considera dividir en subcomandos"))
+            resultados.append(
+                Resultado(
+                    Nivel.WARNING,
+                    "longitud",
+                    f"archivo demasiado largo ({size} bytes); "
+                    f"considera dividir en subcomandos",
+                )
+            )
         return resultados
 
     def _check_slug_filename(self):
@@ -213,9 +264,14 @@ class CommandValidator(BaseValidator):
         if slug in NOMBRES_ESPECIALES:
             return []
         if not KEBAB_RE.match(slug):
-            return [Resultado(Nivel.ERROR, "slug_filename",
-                              f"nombre de archivo '{slug}' no es kebab-case "
-                              f"(ej: test-cobertura, deploy, code-review)")]
+            return [
+                Resultado(
+                    Nivel.ERROR,
+                    "slug_filename",
+                    f"nombre de archivo '{slug}' no es kebab-case "
+                    f"(ej: test-cobertura, deploy, code-review)",
+                )
+            ]
         return []
 
 
@@ -223,13 +279,15 @@ class CommandValidator(BaseValidator):
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Valida un command Claude Code single-file (canon-runtime v2)."
     )
     parser.add_argument("ruta", help="Ruta al archivo .md del comando (o dir legado)")
-    parser.add_argument("--strict", action="store_true",
-                        help="Tratar warnings como errores (CI/CD)")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores (CI/CD)"
+    )
     args = parser.parse_args()
 
     ruta = Path(args.ruta).resolve()
@@ -244,8 +302,7 @@ def main() -> int:
         if not legacy.is_file():
             print(f"❌ Dir sin COMMAND.md: {ruta}")
             return 1
-        print(f"⚠️  Modo legado: validando {legacy} "
-              f"(migrar a single-file <nombre>.md)")
+        print(f"⚠️  Modo legado: validando {legacy} (migrar a single-file <nombre>.md)")
         archivo = legacy
     else:
         archivo = ruta

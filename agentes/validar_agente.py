@@ -36,6 +36,7 @@ from validadores import (
 
 try:
     import yaml
+
     HAS_YAML = True
 except ImportError:
     HAS_YAML = False
@@ -51,9 +52,21 @@ FRONTMATTER_OPTIONAL = ["effort", "permission_scope", "primary_skill", "skills"]
 VALID_MODELS = {"opus", "sonnet", "haiku", "opusplan"}
 
 VALID_TOOLS = {
-    "Read", "Grep", "Glob", "Edit", "Write", "Bash",
-    "Agent", "TodoWrite", "TaskCreate", "TaskUpdate", "TaskList",
-    "WebFetch", "WebSearch", "NotebookEdit", "LSP",
+    "Read",
+    "Grep",
+    "Glob",
+    "Edit",
+    "Write",
+    "Bash",
+    "Agent",
+    "TodoWrite",
+    "TaskCreate",
+    "TaskUpdate",
+    "TaskList",
+    "WebFetch",
+    "WebSearch",
+    "NotebookEdit",
+    "LSP",
 }
 
 REQUIRED_SECTIONS = [
@@ -72,6 +85,7 @@ KEBAB_RE = re.compile(r"^[a-z0-9][a-z0-9-]*[a-z0-9]$")
 # ═══════════════════════════════════════════════════════════════════════════════
 # VALIDADOR
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class AgentValidator(BaseValidator):
     """Validador para agentes single-file (formato canon-runtime)."""
@@ -131,11 +145,17 @@ class AgentValidator(BaseValidator):
 
     def _check_formato(self):
         if not self.archivo.is_file():
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{self._rel_archivo()} no es un archivo")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self._rel_archivo()} no es un archivo"
+                )
+            ]
         if self.archivo.suffix != ".md":
-            return [Resultado(Nivel.ERROR, "formato",
-                              f"{self._rel_archivo()} no termina en .md")]
+            return [
+                Resultado(
+                    Nivel.ERROR, "formato", f"{self._rel_archivo()} no termina en .md"
+                )
+            ]
         return []
 
     def _check_frontmatter(self):
@@ -149,8 +169,13 @@ class AgentValidator(BaseValidator):
             return []
         model = data["model"]
         if model not in VALID_MODELS:
-            return [Resultado(Nivel.WARNING, "modelo",
-                              f"model '{model}' no reconocido (válidos: {sorted(VALID_MODELS)})")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "modelo",
+                    f"model '{model}' no reconocido (válidos: {sorted(VALID_MODELS)})",
+                )
+            ]
         return []
 
     def _check_tools(self):
@@ -159,18 +184,23 @@ class AgentValidator(BaseValidator):
             return []
         tools = data["tools"]
         if not isinstance(tools, list):
-            return [Resultado(Nivel.ERROR, "tools",
-                              "campo 'tools' debe ser una lista")]
+            return [Resultado(Nivel.ERROR, "tools", "campo 'tools' debe ser una lista")]
         resultados = []
         for tool in tools:
             if not isinstance(tool, str):
-                resultados.append(Resultado(Nivel.ERROR, "tools",
-                                            f"tool inválido: {tool!r}"))
+                resultados.append(
+                    Resultado(Nivel.ERROR, "tools", f"tool inválido: {tool!r}")
+                )
                 continue
             base = tool.split("(")[0]  # acepta Bash(git:*) etc
             if base not in VALID_TOOLS and not base.startswith("mcp__"):
-                resultados.append(Resultado(Nivel.WARNING, "tools",
-                                            f"tool '{tool}' no está en la lista canon"))
+                resultados.append(
+                    Resultado(
+                        Nivel.WARNING,
+                        "tools",
+                        f"tool '{tool}' no está en la lista canon",
+                    )
+                )
         return resultados
 
     def _check_name_kebab(self):
@@ -181,14 +211,28 @@ class AgentValidator(BaseValidator):
         if not isinstance(name, str) or not KEBAB_RE.match(name):
             # Plantillas usan placeholders en MAYÚSCULAS → solo warning
             nivel = Nivel.WARNING if self.es_plantilla else Nivel.ERROR
-            return [Resultado(nivel, "name_kebab",
-                              f"name '{name}' no es kebab-case válido"
-                              + (" (esperado en plantilla)" if self.es_plantilla else ""))]
+            return [
+                Resultado(
+                    nivel,
+                    "name_kebab",
+                    f"name '{name}' no es kebab-case válido"
+                    + (" (esperado en plantilla)" if self.es_plantilla else ""),
+                )
+            ]
         # Verificar que el filename coincide con el name (excepto plantilla/ejemplo)
         expected = f"{name}.md"
-        if self.archivo.name not in (expected, "plantilla_agente.md", "ejemplo_agente.md"):
-            return [Resultado(Nivel.WARNING, "name_kebab",
-                              f"archivo '{self.archivo.name}' no coincide con name '{name}'")]
+        if self.archivo.name not in (
+            expected,
+            "plantilla_agente.md",
+            "ejemplo_agente.md",
+        ):
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "name_kebab",
+                    f"archivo '{self.archivo.name}' no coincide con name '{name}'",
+                )
+            ]
         return []
 
     def _check_secciones(self):
@@ -196,8 +240,13 @@ class AgentValidator(BaseValidator):
         resultados = []
         for seccion in REQUIRED_SECTIONS:
             if seccion not in cuerpo:
-                resultados.append(Resultado(Nivel.ERROR, "secciones",
-                                            f"falta sección obligatoria: '{seccion}'"))
+                resultados.append(
+                    Resultado(
+                        Nivel.ERROR,
+                        "secciones",
+                        f"falta sección obligatoria: '{seccion}'",
+                    )
+                )
         return resultados
 
     def _check_placeholders(self):
@@ -209,19 +258,34 @@ class AgentValidator(BaseValidator):
         resultados = []
         for pattern in self.PLACEHOLDER_PATTERNS:
             if pattern.search(cuerpo_sin_codeblock):
-                resultados.append(Resultado(Nivel.WARNING, "placeholders",
-                                            f"contiene placeholders sin rellenar (patrón: {pattern.pattern})"))
+                resultados.append(
+                    Resultado(
+                        Nivel.WARNING,
+                        "placeholders",
+                        f"contiene placeholders sin rellenar (patrón: {pattern.pattern})",
+                    )
+                )
                 break
         return resultados
 
     def _check_longitud(self):
         size = self.archivo.stat().st_size
         if size < 800:
-            return [Resultado(Nivel.WARNING, "longitud",
-                              f"archivo demasiado corto ({size} bytes); cuerpo del agente posiblemente incompleto")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "longitud",
+                    f"archivo demasiado corto ({size} bytes); cuerpo del agente posiblemente incompleto",
+                )
+            ]
         if size > 30_000:
-            return [Resultado(Nivel.WARNING, "longitud",
-                              f"archivo demasiado largo ({size} bytes); considera dividir en subagentes")]
+            return [
+                Resultado(
+                    Nivel.WARNING,
+                    "longitud",
+                    f"archivo demasiado largo ({size} bytes); considera dividir en subagentes",
+                )
+            ]
         return []
 
 
@@ -229,13 +293,15 @@ class AgentValidator(BaseValidator):
 # MAIN
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def main() -> int:
     parser = argparse.ArgumentParser(
         description="Valida un agente Claude Code single-file (canon-runtime)."
     )
     parser.add_argument("ruta", help="Ruta al archivo .md del agente (o dir legado)")
-    parser.add_argument("--strict", action="store_true",
-                        help="Tratar warnings como errores (CI/CD)")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores (CI/CD)"
+    )
     args = parser.parse_args()
 
     ruta = Path(args.ruta).resolve()
