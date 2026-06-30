@@ -51,15 +51,12 @@ ARCHIVOS_CORE = [
 ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md"]
 
 DIRECTORIOS_PERMITIDOS = {
+    "agent-config",
     "agentes",
     "artefactos",
-    "autoresearch",
     "commands",
-    "cuadernos",
-    "dot-claude",
     "estandares",
     "hooks",
-    "knowledge",
     "mceod-overlays",
     "mcp",
     "miniapps",
@@ -73,38 +70,32 @@ DIRECTORIOS_PERMITIDOS = {
 }
 
 MODULOS_CANONICOS = [
+    "agent-config",
     "agentes",
     "skills",
     "commands",
     "hooks",
     "mcp",
     "plugins",
-    "dot-claude",
     "repositorios",
     "modulo",
     "proyecto",
     "miniapps",
-    "autoresearch",
-    "cuadernos",
-    "knowledge",
 ]
 
 # Módulos que no siguen el patrón plantilla_*/ejemplo_* porque su raíz ES la plantilla
 MODULOS_ESPECIALES = {"modulo", "proyecto"}
 
 NOMBRE_SINGULAR = {
+    "agent-config": "agent_config",
     "agentes": "agente",
     "skills": "skill",
     "commands": "command",
     "hooks": "hook",
     "mcp": "mcp",
     "plugins": "plugin",
-    "dot-claude": "dot_claude",
     "repositorios": "repositorio",
     "miniapps": "miniapps",
-    "autoresearch": "autoresearch",
-    "cuadernos": "cuadernos",
-    "knowledge": "knowledge",
 }
 
 ARCHIVOS_PROHIBIDOS = [
@@ -121,10 +112,10 @@ ARCHIVOS_PROHIBIDOS = [
 ]
 
 PATRONES_SECRETO = [
-    re.compile(r"gh[pousr]_[A-Za-z0-9_]{36,}"),           # GitHub tokens
-    re.compile(r"sk-[a-zA-Z0-9]{20,}"),                   # OpenAI / Stripe sk
-    re.compile(r"AKIA[0-9A-Z]{16}"),                      # AWS Access Key
-    re.compile(r"[0-9a-f]{32}-[0-9a-f]{32}"),             # SendGrid
+    re.compile(r"gh[pousr]_[A-Za-z0-9_]{36,}"),  # GitHub tokens
+    re.compile(r"sk-[a-zA-Z0-9]{20,}"),  # OpenAI / Stripe sk
+    re.compile(r"AKIA[0-9A-Z]{16}"),  # AWS Access Key
+    re.compile(r"[0-9a-f]{32}-[0-9a-f]{32}"),  # SendGrid
     re.compile(r"private[_-]?key\s*[:=]\s*['\"]?[\w/+]{20,}"),
 ]
 
@@ -147,6 +138,7 @@ GITIGNORE_MINIMO = [
 # ──────────────────────────────────────────────────────────────────────────
 # ValidadorGlobal
 # ──────────────────────────────────────────────────────────────────────────
+
 
 class ValidadorGlobal(BaseValidator):
     def __init__(self, ruta_repo: Path, strict: bool = False):
@@ -258,11 +250,10 @@ class ValidadorGlobal(BaseValidator):
                 # Plantilla: aceptar dir legado o single-file `plantilla_<base>.*` (canon-runtime).
                 # Extensiones canónicas: .md (la mayoría) o .sh.template (hooks).
                 base_plantilla = f"plantilla_{singular}"
-                if mod == "dot-claude":
-                    base_plantilla = "plantilla_dot_claude"
                 plantilla_dir = mod_path / base_plantilla
                 plantilla_files = [
-                    p for p in mod_path.glob(f"{base_plantilla}.*")
+                    p
+                    for p in mod_path.glob(f"{base_plantilla}.*")
                     if p.is_file() and not p.name.endswith(".bak")
                 ]
                 if not plantilla_dir.is_dir() and not plantilla_files:
@@ -277,11 +268,10 @@ class ValidadorGlobal(BaseValidator):
 
                 # Ejemplo: aceptar dir legado o single-file `ejemplo_<base>.*`.
                 base_ejemplo = f"ejemplo_{singular}"
-                if mod == "dot-claude":
-                    base_ejemplo = "ejemplo_dot_claude"
                 ejemplo_dir = mod_path / base_ejemplo
                 ejemplo_files = [
-                    p for p in mod_path.glob(f"{base_ejemplo}.*")
+                    p
+                    for p in mod_path.glob(f"{base_ejemplo}.*")
                     if p.is_file() and not p.name.endswith(".bak")
                 ]
                 if not ejemplo_dir.is_dir() and not ejemplo_files:
@@ -318,9 +308,7 @@ class ValidadorGlobal(BaseValidator):
 
             # Validador
             script = mod_path / f"validar_{singular}.py"
-            if mod == "dot-claude":
-                script = mod_path / "validar_dot_claude.py"
-            elif mod == "agentes":
+            if mod == "agentes":
                 script = mod_path / "validar_agente.py"
             elif mod == "skills":
                 script = mod_path / "validar_skill.py"
@@ -391,6 +379,7 @@ class ValidadorGlobal(BaseValidator):
 # ──────────────────────────────────────────────────────────────────────────
 # CLI
 # ──────────────────────────────────────────────────────────────────────────
+
 
 def main():
     parser = argparse.ArgumentParser(
