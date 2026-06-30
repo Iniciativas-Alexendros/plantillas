@@ -46,6 +46,8 @@ ARCHIVOS_CORE = [
     "claude-init",
     "update.sh",
     ".pre-commit-config.yaml",
+    "pyproject.toml",
+    "modules.yaml",
 ]
 
 ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md"]
@@ -55,6 +57,7 @@ DIRECTORIOS_PERMITIDOS = {
     "agentes",
     "artefactos",
     "commands",
+    "docs",
     "estandares",
     "hooks",
     "mcp",
@@ -64,6 +67,7 @@ DIRECTORIOS_PERMITIDOS = {
     "proyecto",
     "repositorios",
     "skills",
+    "src",
     "tests",
     "validadores",
 }
@@ -71,6 +75,7 @@ DIRECTORIOS_PERMITIDOS = {
 MODULOS_CANONICOS = [
     "agent-config",
     "agentes",
+    "artefactos",
     "skills",
     "commands",
     "hooks",
@@ -80,6 +85,7 @@ MODULOS_CANONICOS = [
     "modulo",
     "proyecto",
     "miniapps",
+    "estandares",
 ]
 
 # Módulos que no siguen el patrón plantilla_*/ejemplo_* porque su raíz ES la plantilla
