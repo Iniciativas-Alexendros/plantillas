@@ -8,7 +8,7 @@
 # Salida:
 #   - Sin --report: tabla compacta a stdout.
 #   - Con --report: archivo Markdown en
-#     ~/.claude/cuadernos/meta__AlexendrosCodeCore_*/artefactos/canon-cumplimiento-YYYY-MM-DD.md.
+#     ~/.claude/artefactos/auditorias/canon-cumplimiento-YYYY-MM-DD.md.
 
 set -euo pipefail
 
@@ -173,10 +173,9 @@ PY
   } | tee "$out"
 
   if [[ $REPORT -eq 1 ]]; then
-    cuaderno_dir=$(ls -d "$HOME/.claude/cuadernos/meta__AlexendrosCodeCore"* 2>/dev/null | head -1)
-    [[ -z "$cuaderno_dir" ]] && cuaderno_dir="$HOME/.claude/cuadernos/claude__CoreAlexendrosCodex"
-    mkdir -p "$cuaderno_dir/artefactos"
-    out_md="$cuaderno_dir/artefactos/canon-cumplimiento-$(date +%F).md"
+    reporte_dir="$HOME/.claude/artefactos/auditorias"
+    mkdir -p "$reporte_dir"
+    out_md="$reporte_dir/canon-cumplimiento-$(date +%F).md"
     {
       printf '# Cumplimiento canon de repos · %s\n\n' "$(date +%F)"
       printf '```\n'

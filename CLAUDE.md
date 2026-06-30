@@ -2,9 +2,9 @@
 
 <proyecto>
 Sistema de Plantillas Modulares para Claude Code: ecosistema `claude-init`-ready
-para inicializar, validar y mantener componentes de Claude Code (agentes, skills,
-commands, hooks, plugins, mcp, dot-claude, repositorios + módulos canon nuevos:
-miniapps, autoresearch, cuadernos, knowledge). Patrón estricto por módulo:
+para inicializar, validar y mantener componentes de Claude Code (12 módulos
+canónicos: agentes, skills, commands, hooks, plugins, mcp, agent-config,
+repositorios, miniapps, módulo, proyecto y estándares). Patrón estricto por módulo:
 `plantilla_<x>` (playbook) + `ejemplo_<x>` (referencia funcional) +
 `validar_<x>.py` (validador con `--strict`) + workflow CI propio.
 Autor: Alejandro · Iniciativas Alexendros. Licencia MIT.
@@ -24,11 +24,9 @@ Comandos REALES (verificados en README/PROMPT_INICIO/claude-init):
 </stack>
 
 <estado>
-Activo. 42 commits; último 2026-06-19 (rama main). README declara v1.0.0;
-CHANGELOG tiene varias entradas `[Unreleased]` (trabajo reciente: calibración CI
-docs-only, plantilla L1 fullstack, fix validadores). ROADMAP: Fases 1-3
-completadas; Fase 4 (operación/mantenimiento) pendiente. Madurez alta:
-14 validadores, ~16 workflows CI, tests, pre-commit, branch protection documentada.
+Activo. README declara v1.0.0; CHANGELOG documenta la refactorización
+Cross-platform Config. 12 módulos canónicos con validador, workflow CI propio y
+smoke tests. Branch protection + pre-commit + ruff/yamllint/shellcheck activos.
 </estado>
 
 <arquitectura>
@@ -38,9 +36,9 @@ completadas; Fase 4 (operación/mantenimiento) pendiente. Madurez alta:
   `requirements.txt`).
 - `validadores/`: motor reusable (`base.py` con BaseValidator [protegido, F401
   suprimido en ruff], `checks.py`, `reporte.py`).
-- Un directorio por módulo (agentes, skills, commands, hooks, plugins, mcp,
-  dot-claude, miniapps, autoresearch, cuadernos, knowledge, modulo, proyecto,
-  repositorios, mceod-overlays) cada uno con su `validar_<x>.py`.
+- Un directorio por módulo canónico (agentes, skills, commands, hooks, plugins,
+  mcp, agent-config, miniapps, modulo, proyecto, repositorios, estandares)
+  con su `validar_<x>.py` y workflow CI.
 - `repositorios/`: sub-perfiles (comun, docs-only, infra, mcp-server,
   library-design-system, dotfiles-config) + scripts de canon/auditoría.
 - `.github/workflows/`: CI por módulo + globales (ci-global, pr-guardian,
@@ -66,11 +64,9 @@ completadas; Fase 4 (operación/mantenimiento) pendiente. Madurez alta:
   `pre-commit run --all-files`); Conventional Commits; archivos core de raíz,
   estructura de módulos y `.gitignore` protegidos por CI; main con branch
   protection (todo por PR + review + checks verdes).
-- Inferido (sin ejecutar): el sistema es funcional — evidencia: 14 validadores,
+- Inferido (sin ejecutar): el sistema es funcional — evidencia: 12 validadores,
   smoke tests que copian/validan cada plantilla, CI verde en historial, badge
-  "validación 8/8". No se ejecutó nada para confirmar.
+  "validación 12/12". No se ejecutó nada para confirmar.
 - Ubicación esperada en uso real: `~/.claude/plantillas` (symlink); remoto
   `github.com/Alexendros/plantillas`.
-- `mceod-overlays/` fue eliminado y reintroducido en commits recientes; revisar
-  su estado actual antes de tocarlo.
 </notas>

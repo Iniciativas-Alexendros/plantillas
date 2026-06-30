@@ -50,8 +50,7 @@ class SkillValidator(BaseValidator):
         if not skill_md.exists():
             return []
         return check_yaml_frontmatter(
-            self, skill_md,
-            campos_requeridos=["name", "description"]
+            self, skill_md, campos_requeridos=["name", "description"]
         )
 
     def _check_placeholders(self):
@@ -70,11 +69,21 @@ class SkillValidator(BaseValidator):
 
         if "## Cuándo usar" not in content and "## Cuándo Usar" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "contenido", "SKILL.md debería tener sección '## Cuándo usar'", "SKILL.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "contenido",
+                    "SKILL.md debería tener sección '## Cuándo usar'",
+                    "SKILL.md",
+                )
             )
         if "## Reglas" not in content and "## Anti-patrones" not in content:
             resultados.append(
-                Resultado(Nivel.WARNING, "contenido", "SKILL.md debería tener 'Reglas' o 'Anti-patrones'", "SKILL.md")
+                Resultado(
+                    Nivel.WARNING,
+                    "contenido",
+                    "SKILL.md debería tener 'Reglas' o 'Anti-patrones'",
+                    "SKILL.md",
+                )
             )
 
         return resultados
@@ -83,7 +92,9 @@ class SkillValidator(BaseValidator):
 def main() -> int:
     parser = argparse.ArgumentParser(description="Valida una skill Claude Code.")
     parser.add_argument("skill_dir", help="Directorio de la skill a validar")
-    parser.add_argument("--strict", action="store_true", help="Tratar warnings como errores")
+    parser.add_argument(
+        "--strict", action="store_true", help="Tratar warnings como errores"
+    )
     args = parser.parse_args()
 
     skill_path = Path(args.skill_dir)

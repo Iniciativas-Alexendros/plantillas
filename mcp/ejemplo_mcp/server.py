@@ -37,10 +37,10 @@ async def list_tools() -> list[Tool]:
                         "type": "string",
                         "description": "Formato de fecha (iso, human, unix)",
                         "enum": ["iso", "human", "unix"],
-                        "default": "iso"
+                        "default": "iso",
                     }
-                }
-            }
+                },
+            },
         ),
         Tool(
             name="get_weather",
@@ -51,18 +51,18 @@ async def list_tools() -> list[Tool]:
                     "city": {
                         "type": "string",
                         "description": "Nombre de la ciudad",
-                        "default": "Madrid"
+                        "default": "Madrid",
                     },
                     "units": {
                         "type": "string",
                         "description": "Unidades de temperatura (celsius, fahrenheit)",
                         "enum": ["celsius", "fahrenheit"],
-                        "default": "celsius"
-                    }
+                        "default": "celsius",
+                    },
                 },
-                "required": ["city"]
-            }
-        )
+                "required": ["city"],
+            },
+        ),
     ]
 
 
@@ -89,6 +89,7 @@ async def call_tool(name: str, arguments: dict) -> list[TextContent]:
 
         # Simulación determinista basada en hash del nombre
         import hashlib
+
         h = int(hashlib.md5(city.lower().encode()).hexdigest(), 16)
         temp_c = 5 + (h % 30)  # 5°C a 35°C
         conditions = ["Soleado", "Nublado", "Lluvia ligera", "Parcialmente nublado"]

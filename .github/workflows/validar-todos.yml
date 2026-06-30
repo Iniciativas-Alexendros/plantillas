@@ -8,11 +8,10 @@
 #   - Push a main/master
 #   - Manualmente (workflow_dispatch)
 #
-# Módulos validados (14 canónicos):
-#   - Single-file canon: agentes, commands, miniapps, autoresearch, cuadernos,
-#                        knowledge
-#   - Dir canon: dot-claude, repositorios, modulo, proyecto, skills, mcp,
-#                plugins
+# Módulos validados (12 canónicos):
+#   - Single-file canon: agentes, commands, miniapps
+#   - Dir canon: agent-config, repositorios, modulo, proyecto, skills, mcp,
+#               plugins
 #   - Sh-template canon: hooks
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -61,14 +60,11 @@ jobs:
             "agentes|agentes/validar_agente.py|agentes/ejemplo_agente.md|agentes/plantilla_agente.md"
             "commands|commands/validar_command.py|commands/ejemplo_command.md|commands/plantilla_command.md"
             "miniapps|miniapps/validar_miniapps.py|miniapps/ejemplo_miniapps.md|miniapps/plantilla_miniapps.md"
-            "autoresearch|autoresearch/validar_autoresearch.py|autoresearch/ejemplo_autoresearch.md|autoresearch/plantilla_autoresearch.md"
-            "cuadernos|cuadernos/validar_cuadernos.py|cuadernos/ejemplo_cuadernos.md|cuadernos/plantilla_cuadernos.md"
-            "knowledge|knowledge/validar_knowledge.py|knowledge/ejemplo_knowledge.md|knowledge/plantilla_knowledge.md"
             "hooks|hooks/validar_hook.py|hooks/ejemplo_hook.sh.template|hooks/plantilla_hook.sh.template"
+            "agent-config|agent-config/validar_agent_config.py|agent-config|"
             "skills|skills/validar_skill.py|skills/ejemplo_skill|skills/plantilla_skill"
             "mcp|mcp/validar_mcp.py|mcp/ejemplo_mcp|mcp/plantilla_mcp"
             "plugins|plugins/validar_plugin.py|plugins/ejemplo_plugin|plugins/plantilla_plugin"
-            "dot-claude|dot-claude/validar_dot_claude.py|dot-claude/ejemplo_dot_claude|dot-claude/plantilla_dot_claude"
             "repositorios|repositorios/validar_repositorio.py|repositorios/ejemplo_repositorio|repositorios/plantilla_repositorio"
             "modulo|modulo/validar_modulo.py|modulo|"
             "proyecto|proyecto/validar_proyecto.py|proyecto|"
@@ -123,4 +119,4 @@ jobs:
           gh api "repos/${{ github.repository }}/statuses/$SHA" \
             -f state="$STATE" \
             -f context="Validar Sistema de Plantillas" \
-            -f description="14 módulos canónicos"
+            -f description="12 módulos canónicos"

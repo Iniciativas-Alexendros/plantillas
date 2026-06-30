@@ -32,8 +32,11 @@ Thumbs.db
 /artefactos/operador/
 
 # ─── Backups locales ─────────────────────────────────────────────────────────
+*.backup
 *.backup.*
 *.bak
+.backups-*/
 
-# ─── Claude Code (overrides personales) ──────────────────────────────────────
+# ─── Claude Code (overrides personales y worktrees) ───────────────────────────
 .claude/settings.local.json
+.claude/worktrees/

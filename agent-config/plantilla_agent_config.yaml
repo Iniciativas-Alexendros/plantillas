@@ -1,0 +1,199 @@
+---
+# Fuente canónica de configuración cross-platform para agentes.
+# Modifica SOLO este archivo; los artefactos de cada plataforma se regeneran
+# con `generar_agent_configs.py` y se validan con `validar_agent_config.py`.
+#
+# Targets soportados:
+#   - Claude Code: ~/.claude/CLAUDE.md + ~/.claude/settings.json + ~/.claude/.mcp.json
+#   - OpenCode:   ~/AGENTS.md
+#   - Devin:      ~/.config/devin/AGENTS.md + ~/.config/devin/config.json
+#   - Windsurf:   ~/.codeium/windsurf/memories/global_rules.md
+
+version: "1.0.0"
+
+metadata:
+  name: alexendros-global
+  description: >
+    Configuración global cross-platform para agentes de Claude Code, OpenCode,
+    Devin y Windsurf/Cascade. Deriva de OpenCode/AGENTS.md como referencia más reciente.
+
+operator:
+  name: Alexendros
+  location: Valencia, ES
+  language: español de España
+  notes:
+    - Infra propia. Rigor técnico, no hand-holding.
+    - Tecnicismos en su forma original.
+
+style:
+  first_line: sustancia
+  no_preamble: true
+  no_closing_courtesy: true
+  commands_in_code: true
+  lists_and_tables: true
+  brevity_by_density: true
+  critical_on_top: true
+  bold_for_actionable: true
+
+flow:
+  plan_threshold: 3
+  destructive_requires_backup: true
+  destructive_requires_confirmation: true
+  close_what_you_start: true
+  report_failures: true
+  verify_before_done: true
+  correct_false_premises: true
+  secrets_via: pass-cli
+
+models:
+  claude:
+    default: opus[1m]
+  opencode:
+    default: opencode/mimo-v2.5-free
+    alternatives:
+      - opencode/deepseek-v4-flash-free
+      - opencode/nemotron-3-ultra-free
+    paid_requires_explicit_request: true
+
+tooling:
+  mcp_preference:
+    primary: codebase-memory-mcp
+    fallback: grep/read
+  context7: true
+  github: true
+  playwright: true
+  filesystem_scope: /home/alexendros
+
+mcp_servers:
+  - name: codebase-memory-mcp
+    command: /home/alexendros/.local/bin/codebase-memory-mcp
+    scope: global
+
+skills:
+  - name: criticar
+    description: auditoría destructiva de código o sitios web
+    usage: /criticar OBJETIVO
+  - name: protonpass
+    description: acceso a secretos vía pass-cli
+    usage: nunca pedir credenciales al usuario
+  - name: spec-driven
+    description: desarrollo guiado por especificación
+    usage: /spec FEATURE
+  - name: web-audit
+    description: auditoría web completa (tech stack, rendimiento, SEO, accesibilidad)
+    usage: /webaudit URL
+  - name: seo-checker
+    description: auditoría SEO avanzada
+    usage: /seo URL
+  - name: api-mocker
+    description: generación de mocks API desde schema o manual
+    usage: /mock [OPCIONES]
+
+agents:
+  - name: explore
+    description: exploración rápida de codebases (solo lectura)
+  - name: debug
+    description: depuración y análisis de errores
+  - name: review
+    description: revisión de código (solo lectura)
+  - name: docs
+    description: documentación y READMEs
+  - name: visual-qa
+    description: QA visual con Playwright
+  - name: worktree
+    description: gestión de git worktrees paralelos
+  - name: legacy-modernizer
+    description: migración de código legacy
+  - name: tech-analyzer
+    description: análisis de tech stack de sitios web
+  - name: perf-optimizer
+    description: auditoría y optimización de rendimiento web
+
+commands:
+  - name: /criticar
+    description: lanza la skill de auditoría crítica
+  - name: /revisar
+    description: revisión profunda del código modificado
+  - name: /deps
+    description: revisión de dependencias (seguridad, obsoletas, sin usar)
+  - name: /fmt
+    description: formateo automático del proyecto
+  - name: /spec
+    description: desarrollo guiado por especificación
+  - name: /webaudit
+    description: auditoría web completa
+  - name: /seo
+    description: auditoría SEO avanzada
+  - name: /mock
+    description: generación de mocks API
+
+security:
+  env_files: deny
+  git_push: ask
+  gh_pr_merge: ask
+  rm: ask
+  tokens_and_api_keys: env_or_pass_cli
+  expose_secret_severity: critical
+  no_hardcoded_secrets: true
+
+code_style:
+  no_comments_unless_requested: true
+  no_new_dependencies_without_justification: true
+  respect_existing_structure: true
+  follow_file_style: true
+  formatters:
+    - prettier
+    - shfmt
+    - rustfmt
+    - ruff
+
+hierarchy:
+  - name: deterministic
+    value: settings.json, hooks, ficheros reales, salida de comandos
+  - name: project_rules
+    value: ./AGENTS.md / .windsurf/rules/ / .devin/AGENTS.md
+  - name: global_rules
+    value: ~/.claude/CLAUDE.md / ~/.config/devin/AGENTS.md / ~/.codeium/windsurf/memories/global_rules.md
+  - name: memory
+    value: auto-generated
+  - name: assumptions
+    value: lo último, nunca por encima de lo verificable
+
+facts_after_2026_01: verify
+
+target_overrides:
+  claude:
+    settings:
+      defaultMode: acceptEdits
+      language: Español
+      theme: auto
+      editorMode: normal
+      remoteControlAtStartup: true
+      inputNeededNotifEnabled: true
+      agentPushNotifEnabled: true
+    hooks:
+      session_start: ~/.claude/hooks/session-start-context.sh
+      session_reminder: ~/.claude/hooks/cbm-session-reminder
+      code_discovery: ~/.claude/hooks/cbm-code-discovery-gate
+      post_edit: ~/.claude/hooks/post-edit.sh
+    plugins:
+      - typescript-lsp@claude-plugins-official
+      - pyright-lsp@claude-plugins-official
+      - rust-analyzer-lsp@claude-plugins-official
+      - feature-dev@claude-plugins-official
+      - frontend-design@claude-plugins-official
+      - code-modernization@claude-plugins-official
+      - mcp-server-dev@claude-plugins-official
+      - pr-review-toolkit@claude-plugins-official
+      - lumen@claude-plugins-official
+      - claude-md-management@claude-plugins-official
+
+  windsurf:
+    # global_rules.md tiene límite de ~6.000 caracteres.
+    max_chars: 6000
+
+  devin:
+    read_config_from:
+      cursor: true
+      windsurf: true
+      claude: true

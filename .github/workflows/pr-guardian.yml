@@ -112,7 +112,7 @@ jobs:
           # CHANGELOG.md: protegido SOLO si no hay cambios en módulos
           # (si hay cambios en módulos, el step 4 ya exige que se actualice)
           MODIFIES_MODULES=false
-          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
+          if echo "$CHANGED" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|agent-config|repositorios|validadores|modulo|proyecto|miniapps|estandares|\.github)/'; then
             MODIFIES_MODULES=true
           fi
 
@@ -146,7 +146,7 @@ jobs:
           CHANGES=$(git diff --name-only "$(git merge-base "origin/$PR_BASE_REF" "$PR_HEAD_SHA")" \
             "$PR_HEAD_SHA")
 
-          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|dot-claude|repositorios|validadores|modulo|proyecto|miniapps|autoresearch|cuadernos|knowledge|\.github)/'; then
+          if echo "$CHANGES" | grep -qE '^(agentes|skills|commands|hooks|mcp|plugins|agent-config|repositorios|validadores|modulo|proyecto|miniapps|estandares|\.github)/'; then
             if echo "$CHANGES" | grep -qx "CHANGELOG.md"; then
               echo "✅ CHANGELOG.md actualizado"
             else
@@ -165,10 +165,17 @@ jobs:
           echo "::group::Verificación de placeholders"
           EXIT=0
           CHECKS=(
+            "agentes|agentes/validar_agente.py|agentes/ejemplo_agente.md"
+            "commands|commands/validar_command.py|commands/ejemplo_command.md"
+            "hooks|hooks/validar_hook.py|hooks/ejemplo_hook.sh.template"
+            "miniapps|miniapps/validar_miniapps.py|miniapps/ejemplo_miniapps.md"
+            "skills|skills/validar_skill.py|skills/ejemplo_skill"
             "mcp|mcp/validar_mcp.py|mcp/ejemplo_mcp"
             "plugins|plugins/validar_plugin.py|plugins/ejemplo_plugin"
-            "skills|skills/validar_skill.py|skills/ejemplo_skill"
-            "dot-claude|dot-claude/validar_dot_claude.py|dot-claude/ejemplo_dot_claude"
+            "agent-config|agent-config/validar_agent_config.py|agent-config"
+            "modulo|modulo/validar_modulo.py|modulo"
+            "proyecto|proyecto/validar_proyecto.py|proyecto"
+            "estandares|estandares/validar_estandares.py|estandares"
           )
           for entry in "${CHECKS[@]}"; do
             IFS='|' read -r MOD SCRIPT EJEMPLO <<< "$entry"
