@@ -61,4 +61,3 @@
 
 - Hechos posteriores a enero 2026: verificar con WebSearch/WebFetch antes de afirmar.
 - Cuando las fuentes se contradigan, ganan `settings.json` + verificable, y se reporta la discrepancia.
-

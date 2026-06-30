@@ -61,4 +61,3 @@ Hecho posterior a enero 2026 del que dude: verificar (WebFetch/WebSearch) con fu
 Ruta canónica de auto-memoria: `~/.claude/projects/-home-alexendros/memory/` (índice MEMORY.md), la nativa del harness: no la reubiques.
 Dos sistemas ortogonales, sin duplicar entre sí ni con este CLAUDE.md: `/memory` (hechos duraderos) y `remember` (`~/.remember/`, estado de sesión).
 </memoria>
-

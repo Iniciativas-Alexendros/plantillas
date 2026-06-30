@@ -88,4 +88,3 @@
 2. No introducir dependencias nuevas sin justificación.
 3. No comments salvo petición explícita.
 4. Seguir el code style del archivo que se edita.
-

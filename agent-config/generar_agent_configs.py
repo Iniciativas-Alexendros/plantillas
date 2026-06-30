@@ -148,7 +148,6 @@ def render_claude_md(cfg: Dict[str, Any]) -> str:
             "Ruta canónica de auto-memoria: `~/.claude/projects/-home-alexendros/memory/` (índice MEMORY.md), la nativa del harness: no la reubiques.",
             "Dos sistemas ortogonales, sin duplicar entre sí ni con este CLAUDE.md: `/memory` (hechos duraderos) y `remember` (`~/.remember/`, estado de sesión).",
             "</memoria>",
-            "",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -472,7 +471,6 @@ def render_agents_md(cfg: Dict[str, Any]) -> str:
             "2. No introducir dependencias nuevas sin justificación.",
             "3. No comments salvo petición explícita.",
             "4. Seguir el code style del archivo que se edita.",
-            "",
         ]
     )
     return "\n".join(lines) + "\n"
@@ -620,7 +618,6 @@ def render_windsurf_global_rules_md(cfg: Dict[str, Any]) -> str:
             "",
             "- Hechos posteriores a enero 2026: verificar con WebSearch/WebFetch antes de afirmar.",
             "- Cuando las fuentes se contradigan, ganan `settings.json` + verificable, y se reporta la discrepancia.",
-            "",
         ]
     )
     return "\n".join(lines) + "\n"
