@@ -5,6 +5,23 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
+## [Unreleased] — Bloque 2: Paquete Python y CLI unificada
+
+### Añadido
+
+- Paquete Python `plantillas` (`pyproject.toml`, `src/plantillas/`).
+- CLI `plantillas` con comandos `validate`, `config`, `version`, `sync` y `new` (Typer).
+- Catálogo central `modules.yaml` con los 12 módulos canónicos.
+- Registry de validadores (`plantillas.registry`) compatible con scripts legacy.
+- Tests `tests/test_catalog.py` y `tests/test_cli.py`.
+- Documentación del Bloque 2: ADRs 0001-0003, `docs/cli.md`, `docs/modules-yaml.md`, `docs/validators.md`.
+
+### Changed
+
+- `validar_repo.py`: permite `src/`, `docs/`, `pyproject.toml` y `modules.yaml` en raíz; actualiza módulos canónicos a 12.
+- `README.md` y `agent-config/README.md`: añaden notas sobre el Bloque 2.
+- `.gitignore`: ignora `.venv/` y `docs/dossier-bloque2.html`.
+
 ## [Unreleased] — Cross-platform Config Refactor
 
 ### Añadido

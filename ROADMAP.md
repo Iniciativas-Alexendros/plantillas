@@ -287,6 +287,32 @@ test(mcp): añade tests de integración
 
 ---
 
-> **Próximo paso inmediato**: Fase 4 — Producción: monitoreo (badges CI,
-> dashboard de calidad), mantenimiento continuo (revisión de links, actualización
-> por cambios en Claude Code), y roadmap v2 (web UI, marketplace, multi-idioma).
+## Bloque 2: Paquete Python, CLI y catálogo central
+
+> **Objetivo**: Convertir el repositorio en un paquete Python instalable con una CLI unificada, un catálogo central `modules.yaml` y un registry de validadores.
+> **Estado**: 🔄 En progreso.
+
+### Fases del Bloque 2
+
+| #    | Fase                     | Descripción                                                         | Estado |
+| ---- | ------------------------ | ------------------------------------------------------------------- | ------ |
+| B2.1 | Esqueleto del paquete    | `pyproject.toml`, `src/plantillas/`, `modules.yaml`, tests básicos  | ✅     |
+| B2.2 | CLI operativa            | `plantillas validate`, `config`, `version` funcionales              | ✅     |
+| B2.3 | Documentación            | ADRs, `docs/cli.md`, `docs/modules-yaml.md`, `docs/validators.md`   | ✅     |
+| B2.4 | Estabilización           | CI del paquete, limpieza de cambios no relacionados, merge a `main` | 🔄     |
+| B2.5 | `sync` de agent-config   | Modelo Pydantic + Jinja2 para regenerar configuración               | ⏳     |
+| B2.6 | `new` de módulos         | Copia de `modulo/` a nuevo módulo con scaffold                      | ⏳     |
+| B2.7 | Migración de validadores | Mover validadores legacy a `plantillas.validators.<id>`             | ⏳     |
+
+### Criterios de aceptación del Bloque 2
+
+- [x] `pip install -e .` instala el paquete y expone el comando `plantillas`.
+- [x] `plantillas validate` pasa para todos los módulos canónicos.
+- [x] `pytest` pasa al 100 %.
+- [x] `modules.yaml` es la fuente de verdad de los módulos.
+- [ ] CI del paquete ejecuta `ruff`, `pytest` y `plantillas validate` en GitHub Actions.
+- [ ] PR del Bloque 2 mergeado a `main`.
+
+---
+
+> **Próximo paso inmediato**: Completar la estabilización del Bloque 2 (CI, limpieza, merge a `main`), luego implementar `plantillas sync agent-config` y `plantillas new`.

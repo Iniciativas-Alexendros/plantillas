@@ -61,7 +61,7 @@ def sync(
         raise typer.Exit(code=1)
 
     typer.echo(f"🔄 Sincronizando {module}...")
-    # Placeholder: delegación a script específico del módulo.
+    typer.echo("ℹ️  Comando en desarrollo. Usa el script legacy del módulo mientras tanto.")
     raise typer.Exit(code=0)
 
 
@@ -73,6 +73,7 @@ def new(
     """Crea un nuevo módulo a partir de la plantilla base."""
 
     typer.echo(f"🆕 Creando módulo {type}/{name}...")
+    typer.echo("ℹ️  Comando en desarrollo. Copia manualmente `modulo/` como scaffold mientras tanto.")
     raise typer.Exit(code=0)
 
 

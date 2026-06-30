@@ -21,3 +21,15 @@ def test_validate_unknown_module():
     result = runner.invoke(app, ["validate", "no-existe"])
     assert result.exit_code == 1
     assert "Módulo desconocido" in result.output
+
+
+def test_validate_agent_config():
+    result = runner.invoke(app, ["validate", "agent-config"])
+    assert result.exit_code == 0
+    assert "agent-config: OK" in result.output
+
+
+def test_validate_all():
+    result = runner.invoke(app, ["validate"])
+    assert result.exit_code == 0
+    assert "agent-config" in result.output

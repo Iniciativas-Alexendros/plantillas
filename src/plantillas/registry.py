@@ -62,6 +62,10 @@ class ValidatorRegistry:
             )
 
 
+def _module_name(module_id: str) -> str:
+    return module_id.replace("-", "_")
+
+
 def discover_validators(registry: ValidatorRegistry, catalog: Catalog) -> list[str]:
     """Descubre validadores registrados en el paquete o delega al script."""
 
@@ -69,7 +73,7 @@ def discover_validators(registry: ValidatorRegistry, catalog: Catalog) -> list[s
         if module.type != "module":
             continue
         try:
-            mod = importlib.import_module(f"plantillas.validators.{module.id}")
+            mod = importlib.import_module(f"plantillas.validators.{_module_name(module.id)}")
             fn = getattr(mod, "validate", None)
             if callable(fn):
                 registry.register(module.id, fn)

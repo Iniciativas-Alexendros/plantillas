@@ -4,12 +4,12 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
 
 ## Estructura
 
-| Archivo | Propósito |
-|---|---|
-| `plantilla_agent_config.yaml` | Fuente canónica de verdad. Edita solo este archivo. |
-| `generar_agent_configs.py` | Genera los artefactos de cada plataforma. |
-| `validar_agent_config.py` | Valida la fuente, el generador y detecta drift en el ejemplo. |
-| `ejemplo_agent_config/` | Salidas generadas para las 4 plataformas. |
+| Archivo                       | Propósito                                                     |
+| ----------------------------- | ------------------------------------------------------------- |
+| `plantilla_agent_config.yaml` | Fuente canónica de verdad. Edita solo este archivo.           |
+| `generar_agent_configs.py`    | Genera los artefactos de cada plataforma.                     |
+| `validar_agent_config.py`     | Valida la fuente, el generador y detecta drift en el ejemplo. |
+| `ejemplo_agent_config/`       | Salidas generadas para las 4 plataformas.                     |
 
 ## Flujo de trabajo
 
@@ -33,6 +33,16 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
 - **OpenCode**: `~/AGENTS.md`
 - **Devin**: `~/.config/devin/AGENTS.md`, `~/.config/devin/config.json`
 - **Windsurf/Cascade**: `~/.codeium/windsurf/memories/global_rules.md`
+
+## Bloque 2: Pydantic + Jinja2
+
+El generador actual es procedural. En el Bloque 2 se está introduciendo un modelo `Pydantic` para la fuente canónica y plantillas `Jinja2` para renderizar los artefactos de cada plataforma. El comando objetivo será:
+
+```bash
+plantillas sync agent-config
+```
+
+Mientras tanto, el script `generar_agent_configs.py` sigue siendo la implementación de referencia.
 
 ## Notas
 

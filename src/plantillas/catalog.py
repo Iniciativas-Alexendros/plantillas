@@ -3,6 +3,8 @@
 from pathlib import Path
 from typing import Any
 
+import os
+
 import yaml
 from pydantic import BaseModel, Field, field_validator
 
@@ -46,11 +48,23 @@ class Catalog(BaseModel):
         return [m.id for m in self.modules if m.type == "module"]
 
 
+def _default_catalog_path() -> Path:
+    candidates = [
+        Path(os.environ["PLANTILLAS_CATALOG"]) if os.environ.get("PLANTILLAS_CATALOG") else None,
+        Path.cwd() / "modules.yaml",
+        Path(__file__).resolve().parents[2] / "modules.yaml",
+    ]
+    for candidate in candidates:
+        if candidate is not None and candidate.exists():
+            return candidate
+    return Path(__file__).resolve().parents[2] / "modules.yaml"
+
+
 def load_catalog(path: Path | None = None) -> Catalog:
-    """Carga modules.yaml desde la raíz del repo o la ruta indicada."""
+    """Carga modules.yaml desde la ruta indicada, cwd o la raíz del repo."""
 
     if path is None:
-        path = Path(__file__).resolve().parents[2] / "modules.yaml"
+        path = _default_catalog_path()
 
     if not path.exists():
         raise FileNotFoundError(f"modules.yaml not found at {path}")
