@@ -41,6 +41,6 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 
-# ─── Dossier y entorno de desarrollo ───────────────────────────────────────────
+# ─── Dossier, entorno de desarrollo y artefactos de planificación ───────────
 /.venv/
 /docs/dossier-bloque2.html

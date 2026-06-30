@@ -11,6 +11,7 @@ añadir módulos, validadores, y mejoras al sistema.
 2. Abre un issue describiendo el problema o la propuesta.
 3. Si es una decisión arquitectónica, documenta la ADR en `docs/adr/`.
 4. Instala los pre-commit hooks: `pip install pre-commit && pre-commit install`
+5. (Bloque 2) Instala el paquete en modo editable: `uv pip install -e .` o `pip install -e .`
 
 ## Convenciones de commits y PRs
 
@@ -59,6 +60,7 @@ Todo módulo sigue este patrón estricto:
 - Plantilla: `plantilla_<modulo>`.
 - Ejemplo: `ejemplo_<modulo>`.
 - Validador: `validar_<modulo>.py`.
+- Entrada en `modules.yaml` (Bloque 2): `name`, `validator`, `example`, `template`, `type`.
 
 ---
 
@@ -92,12 +94,10 @@ En `ejemplo_<modulo>/`:
 En `validar_<modulo>.py`:
 
 ```python
-import sys
-from pathlib import Path
-sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from validadores import BaseValidator, Check, Resultado, Nivel, check_estructura, ...
+from plantillas.validators import BaseValidator, Check, registry, check_estructura
 
-class ModuloValidator(BaseValidator):
+@registry.register("mi-modulo")
+class MiModuloValidator(BaseValidator):
     def __init__(self, ruta, strict=False):
         super().__init__(ruta, strict)
         self.checks = [
@@ -107,12 +107,18 @@ class ModuloValidator(BaseValidator):
     # ... métodos de check
 ```
 
+> **Compatibilidad durante la transición:** los validadores actuales aún usan
+> `sys.path.insert` para importar `validadores/` de la raíz. En el Bloque 2 se
+> migran a imports absolutos del paquete instalado y se registran con el
+> decorador `@registry.register("<modulo>")`.
+
 Reglas del validador:
 
 - Usa `BaseValidator` y los checks del motor reusable.
 - Mínimo 3 checks: estructura, contenido, placeholders.
 - Debe devolver código de salida 0 (OK) o 1 (fallo).
 - Soporta `--strict` (warnings = errores).
+- (Bloque 2) Regístralo en `src/plantillas/validators/registry.py` y añade el módulo a `modules.yaml`.
 
 ### 5. Crea el workflow CI/CD
 
@@ -125,8 +131,10 @@ En `.github/workflows/validar-<modulo>.yml`:
 ### 6. Actualiza el sistema
 
 - Añade el módulo a `INDEX.md` (tabla y estructura visual).
+- Añade el módulo a `modules.yaml` (Bloque 2): fuente de verdad para CI, pre-commit y tests.
 - Añade a `ROADMAP.md` si es parte de una fase activa.
 - Ejecuta `python validar_<modulo>.py ejemplo_<modulo>/ --strict`.
+- (Bloque 2) Ejecuta `plantillas validate <modulo> --strict`.
 - Ejecuta el workflow central: actúa como smoke test.
 
 ---
@@ -139,7 +147,7 @@ En `.github/workflows/validar-<modulo>.yml`:
 - Nombres en español (el sistema es bilingüe español/inglés en output).
 - Clases: `PascalCase`.
 - Funciones/variables: `snake_case`.
-- Imports absolutos con `sys.path.insert` para el motor reusable.
+- Imports absolutos del paquete `plantillas` (Bloque 2); `sys.path.insert` queda como legacy.
 
 ### Markdown
 
@@ -177,10 +185,11 @@ Antes de enviar un PR:
 # Validar tu módulo
 python <modulo>/validar_<modulo>.py <modulo>/ejemplo_<modulo>/ --strict
 
-# Validar todos los módulos
-for mod in agentes skills commands hooks mcp plugins miniapps agent-config repositorios modulo proyecto estandares; do
-  python "$mod/validar_*.py" "$mod/ejemplo_$mod/" --strict
-done
+# Validar todos los módulos (actual)
+python validar_repo.py --strict
+
+# Validar todos los módulos (Bloque 2)
+plantillas validate --all --strict
 
 # Smoke test: copiar plantilla y validar
 cp -r plantilla_<modulo> /tmp/test-modulo

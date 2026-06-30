@@ -56,6 +56,7 @@ DIRECTORIOS_PERMITIDOS = {
     "agent-config",
     "agentes",
     "artefactos",
+    "docs",
     "commands",
     "docs",
     "estandares",

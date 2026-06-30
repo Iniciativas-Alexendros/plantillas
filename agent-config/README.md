@@ -4,14 +4,18 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
 
 ## Estructura
 
-| Archivo                       | Propósito                                                     |
-| ----------------------------- | ------------------------------------------------------------- |
-| `plantilla_agent_config.yaml` | Fuente canónica de verdad. Edita solo este archivo.           |
-| `generar_agent_configs.py`    | Genera los artefactos de cada plataforma.                     |
-| `validar_agent_config.py`     | Valida la fuente, el generador y detecta drift en el ejemplo. |
-| `ejemplo_agent_config/`       | Salidas generadas para las 4 plataformas.                     |
+| Archivo                                  | Propósito                                                              |
+| ---------------------------------------- | ---------------------------------------------------------------------- |
+| `plantilla_agent_config.yaml`            | Fuente canónica de verdad. Edita solo este archivo.                    |
+| `generar_agent_configs.py`               | Genera los artefactos de cada plataforma (actual).                     |
+| `validar_agent_config.py`                | Valida la fuente, el generador y detecta drift en el ejemplo (actual). |
+| `ejemplo_agent_config/`                  | Salidas generadas para las 4 plataformas.                              |
+| `src/plantillas/agent_config/schema.py`  | Esquema Pydantic `AgentConfig` (Bloque 2, planificado).                |
+| `src/plantillas/agent_config/templates/` | Templates Jinja2 por target (Bloque 2, planificado).                   |
 
 ## Flujo de trabajo
+
+### Actual
 
 1. Modifica `plantilla_agent_config.yaml`.
 2. Regenera el ejemplo:
@@ -27,6 +31,18 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
    python generar_agent_configs.py --backup
    ```
 
+### Bloque 2 (en desarrollo)
+
+1. Modifica `plantilla_agent_config.yaml`.
+2. Sincroniza (planificado):
+   ```bash
+   plantillas sync agent-config --home ~ --backup
+   ```
+3. Valida:
+   ```bash
+   plantillas validate agent-config
+   ```
+
 ## Targets
 
 - **Claude Code**: `~/.claude/CLAUDE.md`, `~/.claude/settings.json`, `~/.claude/.mcp.json`
@@ -34,18 +50,35 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
 - **Devin**: `~/.config/devin/AGENTS.md`, `~/.config/devin/config.json`
 - **Windsurf/Cascade**: `~/.codeium/windsurf/memories/global_rules.md`
 
-## Bloque 2: Pydantic + Jinja2
+## Esquema Pydantic (Bloque 2)
 
-El generador actual es procedural. En el Bloque 2 se está introduciendo un modelo `Pydantic` para la fuente canónica y plantillas `Jinja2` para renderizar los artefactos de cada plataforma. El comando objetivo será:
+El YAML se carga en la clase `AgentConfig` de Pydantic v2, que valida:
 
-```bash
-plantillas sync agent-config
-```
+- `metadata`: versión, idioma, descripción.
+- `operator`: nombre, contacto, idioma, zona horaria.
+- `style`: tono, extensión, idioma de respuesta.
+- `models`: preferencias por defecto.
+- `tooling`: tools permitidas, MCP servers, skills.
+- `security`: reglas de secretos, permisos, `.env`.
+- `hierarchy`: determinismo, reglas globales, memoria.
+- `targets`: overrides específicos por plataforma.
 
-Mientras tanto, el script `generar_agent_configs.py` sigue siendo la implementación de referencia.
+## Templates Jinja2 (Bloque 2)
+
+Cada target tiene un template `.j2` en `src/plantillas/agent_config/templates/`:
+
+- `claude.md.j2` → `~/.claude/CLAUDE.md`
+- `claude_settings.json.j2` → `~/.claude/settings.json`
+- `claude_mcp.json.j2` → `~/.claude/mcp.json`
+- `opencode.md.j2` → `~/AGENTS.md`
+- `devin.md.j2` → `~/.config/devin/AGENTS.md`
+- `windsurf.md.j2` → `~/.codeium/windsurf/memories/global_rules.md`
+
+Añadir un nuevo target es crear un nuevo template y registrarlo en el generador.
 
 ## Notas
 
 - `global_rules.md` tiene límite de ~6.000 caracteres en Windsurf; el generador avisa si se excede.
 - No incluyas secretos en la fuente canónica; usa variables de entorno o `pass-cli`.
 - El drift check falla si `ejemplo_agent_config/` no coincide con la generación actual.
+- En el Bloque 2, el drift check se hace con tests de snapshot sin escribir en `$HOME`.

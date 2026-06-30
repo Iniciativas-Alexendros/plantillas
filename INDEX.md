@@ -1,4 +1,4 @@
-# ÍNDICE MAESTRO · Sistema de Plantillas Modulares para Claude Code
+# ÍNDICE MAESTRO · Sistema de Plantillas Modulares para Agentes de Código
 
 > **Punto de entrada universal** para el ecosistema de plantillas.
 > Selecciona el módulo que necesitas y accede directamente.
@@ -7,10 +7,17 @@
 > `autoresearch/`, `cuadernos/`, `knowledge/` y `dot-claude/`; se añade
 > `agent-config/` como fuente canónica cross-platform para Claude Code,
 > OpenCode, Devin y Windsurf/Cascade. Detalle en `CHANGELOG.md`.
+>
+> 🧱 **Bloque 2 en curso**: reestructura del repo como paquete Python con CLI
+> `plantillas` y catálogo `modules.yaml`. Ver [`ROADMAP.md`](./ROADMAP.md) y el
+> dossier visual `docs/dossier-bloque2.html` (no sincronizado en GitHub).
 
 ---
 
 ## Módulos canónicos (12)
+
+> Lista actualizada a los 12 módulos canónicos. En el Bloque 2 todos están
+> registrados en `modules.yaml` y se validan con `plantillas validate --all`.
 
 ### Single-file `.md` con frontmatter runtime
 

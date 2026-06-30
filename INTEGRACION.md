@@ -71,10 +71,10 @@ El agente orquestador delega a especialistas declarados en su sección `## Subag
 ```markdown
 ## Subagents
 
-| Subagente | Cuándo invocar | Devuelve |
-|---|---|---|
-| `Explore` | Codebase no familiar, >3 archivos | Markdown con paths + extractos |
-| `code-reviewer` | Post-ejecución obligatoria | Hallazgos por severidad |
+| Subagente       | Cuándo invocar                    | Devuelve                       |
+| --------------- | --------------------------------- | ------------------------------ |
+| `Explore`       | Codebase no familiar, >3 archivos | Markdown con paths + extractos |
+| `code-reviewer` | Post-ejecución obligatoria        | Hallazgos por severidad        |
 ```
 
 **Regla**: el orquestador nunca hace el trabajo técnico; delega y sintetiza.
@@ -124,6 +124,7 @@ allowed-tools: [Bash, Read, Grep]
 ---
 
 ## Instrucciones
+
 1. Detectar runner (Jest/Vitest/pytest) por ficheros del proyecto.
 2. Ejecutar con cobertura activada.
 3. Activar skill `app-calidad` si la cobertura baja del umbral.
@@ -175,54 +176,66 @@ La skill `COM_finanzas` puede referenciar `~/.claude/miniapps/kpi-mensual/` cuan
 
 Todo módulo instalado individualmente (`skills/`, `commands/`, `hooks/`, etc.) debe respetar la jerarquía declarada en `agent-config`: primero el deterministico, luego reglas globales, luego memory auto-generada.
 
+> En el Bloque 2, la sincronización de `agent-config` se realiza con
+> `plantillas sync agent-config [--home PATH] [--dry-run]` y los 6 artefactos se
+> generan desde templates Jinja2 validados por el esquema Pydantic `AgentConfig`.
+
 ---
 
 ## Decision tree: ¿Qué módulo necesito?
 
-| Si quiero... | Uso | Ejemplo |
-|---|---|---|
-| Conocimiento persistente que se active automáticamente | **Skill** | `app-testing` se activa al mencionar "tests" |
-| Acción que el usuario invoque explícitamente | **Command** | `/test-cobertura` |
-| Controlar/auditar comportamiento del agente | **Hook** | PreToolUse que bloquea tokens |
-| Exponer datos/tools externas a Claude | **MCP Server** | API de meteorología propia |
-| Empaquetar todo para distribuir | **Plugin** | `backend-toolkit` |
-| Orquestar especialistas | **Agente** | `backend-dev` delega a `database-expert` |
-| Configuración global cross-platform | **agent-config** | `plantilla_agent_config.yaml` |
-| Crear una SPA reutilizable | **Miniapp** | Dashboard KPIs single-file |
+| Si quiero...                                           | Uso              | Ejemplo                                      |
+| ------------------------------------------------------ | ---------------- | -------------------------------------------- |
+| Conocimiento persistente que se active automáticamente | **Skill**        | `app-testing` se activa al mencionar "tests" |
+| Acción que el usuario invoque explícitamente           | **Command**      | `/test-cobertura`                            |
+| Controlar/auditar comportamiento del agente            | **Hook**         | PreToolUse que bloquea tokens                |
+| Exponer datos/tools externas a Claude                  | **MCP Server**   | API de meteorología propia                   |
+| Empaquetar todo para distribuir                        | **Plugin**       | `backend-toolkit`                            |
+| Orquestar especialistas                                | **Agente**       | `backend-dev` delega a `database-expert`     |
+| Configuración global cross-platform                    | **agent-config** | `plantilla_agent_config.yaml`                |
+| Crear una SPA reutilizable                             | **Miniapp**      | Dashboard KPIs single-file                   |
 
 ---
 
 ## Anti-patrones de integración
 
 ### ❌ Skill que hace de Command
+
 Una skill que solo se activa manualmente con `/nombre` está mal diseñada.
 **Fix**: Si es acción puntual del operador, conviértela en command; si es conocimiento, reescribe el `description` para que dispare automáticamente.
 
 ### ❌ Agente sin delegación
+
 Un agente que intenta hacer todo sin subagentes.
 **Fix**: Delegar tareas técnicas a subagentes especializados (sección `## Subagents`).
 
 ### ❌ Hook demasiado restrictivo
+
 Un hook que bloquea todo sin clasificación.
 **Fix**: Usar niveles `gray/green/amber/red` con acciones diferenciadas; emitir `{decision: "allow"}` con contexto en lugar de `deny` por defecto.
 
 ### ❌ MCP sin schema de input
+
 Una tool MCP que acepta cualquier input sin validación.
 **Fix**: Definir `inputSchema` con tipos, enums y campos requeridos.
 
 ### ❌ Plugin con dependencias circulares
+
 Plugin A depende de B, y B de A.
 **Fix**: Extraer dependencia común a un tercer plugin base.
 
 ### ❌ Miniapp con JS externo sin SRI
+
 Dashboard que carga react/tailwind desde CDN sin `integrity=`.
 **Fix**: Inline todo el JS/CSS, o si CDN es imprescindible, añadir hash SRI.
 
 ### ❌ `settings.json` con claves obsoletas
+
 `hooks: {enabled: true, sources: [...]}` o `skills: {autoDiscover: true}` ya no son schema runtime.
 **Fix**: Migrar a `hooks: {PreToolUse: [...], PostToolUse: [...]}` y borrar `skills.autoDiscover/preload`.
 
 ### ❌ Reglas duplicadas entre agent-config y CLAUDE.md local
+
 El generador ya emite la capa global. No duplicarlas en `CLAUDE.md` de cada proyecto.
 **Fix**: Usar `agent-config` para verdades globales; reservar `CLAUDE.md` del proyecto para contexto específico de ese repo.
 
@@ -282,3 +295,5 @@ mi-proyecto/
 - [Claude Code: Settings](https://code.claude.com/docs/en/settings.md)
 - [MCP Spec](https://modelcontextprotocol.io/specification/)
 - CHANGELOG entrada `[Unreleased] — Cross-platform Config Refactor` — este repo
+- [`docs/cli.md`](./docs/cli.md) — comandos del Bloque 2 (Bloque 2)
+- `docs/dossier-bloque2.html` — dossier visual interactivo del Bloque 2 (no sincronizado en GitHub)
