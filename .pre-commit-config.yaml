@@ -77,14 +77,11 @@ repos:
             python hooks/validar_hook.py hooks/ejemplo_hook.sh.template --strict
             python mcp/validar_mcp.py mcp/ejemplo_mcp/ --strict
             python plugins/validar_plugin.py plugins/ejemplo_plugin/ --strict
-            python dot-claude/validar_dot_claude.py dot-claude/ejemplo_dot_claude/ --strict
             python repositorios/validar_repositorio.py repositorios/ejemplo_repositorio/ --strict --visibility public
             python modulo/validar_modulo.py modulo/ --strict
             python proyecto/validar_proyecto.py proyecto/ --strict
             python miniapps/validar_miniapps.py miniapps/ejemplo_miniapps.md --strict
-            python autoresearch/validar_autoresearch.py autoresearch/ejemplo_autoresearch.md --strict
-            python cuadernos/validar_cuadernos.py cuadernos/ejemplo_cuadernos.md --strict
-            python knowledge/validar_knowledge.py knowledge/ejemplo_knowledge.md --strict
+            python agent-config/validar_agent_config.py agent-config --strict
           '
         language: system
         pass_filenames: false
