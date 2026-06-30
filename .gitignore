@@ -40,3 +40,7 @@ Thumbs.db
 # ─── Claude Code (overrides personales y worktrees) ───────────────────────────
 .claude/settings.local.json
 .claude/worktrees/
+
+# ─── Dossier y entorno de desarrollo ───────────────────────────────────────────
+/.venv/
+/docs/dossier-bloque2.html
