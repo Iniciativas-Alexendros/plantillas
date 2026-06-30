@@ -55,7 +55,7 @@ Todo módulo sigue este patrón estricto:
 
 ### Reglas de naming
 
-- Directorio del módulo: `kebab-case` (ej: `dot-claude`).
+- Directorio del módulo: `kebab-case` (ej: `agent-config`).
 - Plantilla: `plantilla_<modulo>`.
 - Ejemplo: `ejemplo_<modulo>`.
 - Validador: `validar_<modulo>.py`.
@@ -73,6 +73,7 @@ mkdir -p <modulo>/plantilla_<modulo> <modulo>/ejemplo_<modulo> <modulo>/.github/
 ### 2. Crea el playbook instructivo
 
 En `plantilla_<modulo>/[ARCHIVO].md`:
+
 - Explica qué es este componente de Claude Code.
 - Describe la estructura de archivos.
 - Incluye placeholders `[ASÍ]` para personalizar.
@@ -81,6 +82,7 @@ En `plantilla_<modulo>/[ARCHIVO].md`:
 ### 3. Crea el ejemplo funcional
 
 En `ejemplo_<modulo>/`:
+
 - Elimina todos los placeholders del playbook.
 - Rellena con contenido real y funcional.
 - Debe pasar el validador con `--strict`.
@@ -106,6 +108,7 @@ class ModuloValidator(BaseValidator):
 ```
 
 Reglas del validador:
+
 - Usa `BaseValidator` y los checks del motor reusable.
 - Mínimo 3 checks: estructura, contenido, placeholders.
 - Debe devolver código de salida 0 (OK) o 1 (fallo).
@@ -114,6 +117,7 @@ Reglas del validador:
 ### 5. Crea el workflow CI/CD
 
 En `.github/workflows/validar-<modulo>.yml`:
+
 - Copia cualquier workflow existente y adapta paths.
 - Debe descubrir ejemplos automáticamente.
 - Ejecuta el validador con `--strict`.
@@ -174,7 +178,7 @@ Antes de enviar un PR:
 python <modulo>/validar_<modulo>.py <modulo>/ejemplo_<modulo>/ --strict
 
 # Validar todos los módulos
-for mod in agentes skills commands hooks mcp plugins dot-claude repositorios; do
+for mod in agentes skills commands hooks mcp plugins miniapps agent-config repositorios modulo proyecto estandares; do
   python "$mod/validar_*.py" "$mod/ejemplo_$mod/" --strict
 done
 

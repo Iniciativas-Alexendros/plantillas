@@ -21,9 +21,14 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
 - `INDEX.md`: actualizado a 12 módulos canónicos, eliminadas referencias a módulos borrados y añadida sección de `agent-config`.
 - `.github/workflows/validar-todos.yml`: matriz reducida a 12 módulos.
-- `validar_repo.py`: listas de directorios permitidos, módulos canónicos y mapeo de singulares actualizados; eliminada lógica muerta del módulo borrado `dot-claude`.
+- `validar_repo.py`: listas de directorios permitidos, módulos canónicos y mapeo de singulares actualizados; eliminada lógica muerta del módulo borrado `dot-claude` y del directorio descatalogado `mceod-overlays/`.
 - `.pre-commit-config.yaml`: eliminados hooks de módulos borrados (`dot-claude`, `autoresearch`, `cuadernos`, `knowledge`) y añadida validación de `agent-config`.
 - `agent-config/.github/workflows/validar-agent-config.yml`: pines SHA de acciones y permisos mínimos.
+- `.github/scripts/module-map.sh`, `.github/workflows/pr-guardian.yml`, `.github/workflows/ci-global.yml`: sincronizados a los 12 módulos canónicos actuales y eliminados filtros/mapeos legacy.
+- `CLAUDE.md`, `PROMPT_INICIO.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `INTEGRACION.md`: limpiadas todas las referencias a módulos descartados (`dot-claude`, `autoresearch`, `cuadernos`, `knowledge`, `mceod-overlays`) y actualizados conteos/nombres a 12 módulos.
+- `agent-config/generar_agent_configs.py`: reescrito el descriptor de `memory` para evitar referencia al módulo `knowledge`.
+- `artefactos/README.md` y `repositorios/auditoria-canon-repo.sh`: eliminadas referencias a `cuadernos/`.
+- `.gitignore`: añadido patrón `*.backup` para backups del generador de `agent-config`.
 
 ### Notas de migración
 

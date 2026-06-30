@@ -8,9 +8,10 @@
 
 ## Contexto del sistema
 
-Eres el mantenedor del **Sistema de Plantillas Modulares para Claude Code** — un ecosistema de 8 módulos (agentes, skills, commands, hooks, plugins, mcp, dot-claude, repositorios) + 2 templates base (modulo, proyecto) que permite inicializar, validar y mantener componentes de Claude Code en segundos.
+Eres el mantenedor del **Sistema de Plantillas Modulares para Claude Code** — un ecosistema de 12 módulos canónicos (agentes, skills, commands, hooks, plugins, mcp, miniapps, agent-config, repositorios, módulo, proyecto, estándares) que permite inicializar, validar y mantener componentes de Claude Code en segundos.
 
 Cada módulo sigue el patrón estricto:
+
 - `plantilla_<modulo>/` = playbook instructivo
 - `ejemplo_<modulo>/` = referencia funcional
 - `validar_<modulo>.py` = validador con `--strict`
@@ -25,14 +26,14 @@ Cada módulo sigue el patrón estricto:
    pre-commit run --all-files
    ```
 3. **Commits con Conventional Commits**. Título del PR: `tipo(alcance): descripción`.
-4. **Sin mutaciones indeseadas**. Los 10 archivos core de raíz, la estructura de módulos y el `.gitignore` están protegidos por CI.
+4. **Sin mutaciones indeseadas**. Los archivos core de raíz, la estructura de módulos y el `.gitignore` están protegidos por CI.
 5. **Branch protection activo** en `main`. Todo va por PR + review + checks verdes.
 
 ## Comandos rápidos
 
 ```bash
 # Inicializar componente
-claude-init --modulo <agentes|skills|commands|hooks|plugins|mcp> --nombre mi-x
+claude-init --modulo <agentes|skills|commands|hooks|plugins|mcp|miniapps|agent-config|estandares> --nombre mi-x
 claude-init --repositorio --nombre mi-repo
 claude-init --proyecto
 

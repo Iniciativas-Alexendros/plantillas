@@ -115,7 +115,6 @@ jobs:
             --ignore '.git/**' \
             --ignore 'artefactos/**' \
             --ignore '**/node_modules/**' \
-            --ignore 'dot-claude/**' \
             '**/*.md' || true
           echo "::endgroup::"
 

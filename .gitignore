@@ -32,6 +32,7 @@ Thumbs.db
 /artefactos/operador/
 
 # ─── Backups locales ─────────────────────────────────────────────────────────
+*.backup
 *.backup.*
 *.bak
 .backups-*/

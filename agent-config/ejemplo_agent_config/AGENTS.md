@@ -37,7 +37,7 @@
 - **context7**: documentación de librerías y frameworks. Usar SIEMPRE que se pregunte por una API, framework o librería.
 - **github**: operaciones GitHub (issues, PRs, repos). Token configurado en env.
 - **playwright**: testing web, navegación y scraping de sitios en producción.
-- **memory**: knowledge graph para persistir hechos entre sesiones.
+- **memory**: memory graph para persistir hechos entre sesiones.
 - **filesystem**: acceso a archivos del sistema.
 
 ### Skills

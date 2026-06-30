@@ -1,11 +1,11 @@
 # Integración Cruzada entre Módulos
 
 > **Propósito**: Guía de cómo combinar agentes, skills, commands, hooks, MCP,
-> plugins, miniapps, autoresearch, cuadernos y knowledge para construir
-> configuraciones `.claude/` completas y coherentes.
+> plugins, miniapps y `agent-config` para construir configuraciones `.claude/`
+> completas y coherentes.
 >
-> Actualizado tras la reforma "canon-runtime alignment" 2026-05-23 (14 módulos
-> canon, single-file `.md`/`.sh.template` o dir multi-archivo según el caso).
+> Actualizado tras la refactorización **Cross-platform Config** 2026-06-30
+> (12 módulos canónicos).
 
 ---
 
@@ -13,10 +13,10 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐
-│                       .claude/ (dot-claude)                            │
+│                       agent-config (reglas globales)                     │
 │                                                                        │
 │  ┌──────────────┐  ┌──────────────┐  ┌──────────────────────────────┐  │
-│  │  agents/.md  │  │  skills/     │  │  commands/.md                │  │
+│  │  agents/     │  │  skills/     │  │  commands/                   │  │
 │  │ (orquesta)   │←─┤ (conocim.)   │  │  (acciones manuales)         │  │
 │  └──────┬───────┘  └──────┬───────┘  └──────────────────────────────┘  │
 │         │                 │                                            │
@@ -29,10 +29,10 @@
 │                                                                        │
 │  ── Artefactos consumidos por agentes y skills ──────────────────────  │
 │                                                                        │
-│  ┌────────────┐  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  │
-│  │ miniapps/  │  │ autoresearch │  │  cuadernos/  │  │  knowledge/  │  │
-│  │ (SPA)      │  │ (research)   │  │ (notas op)   │  │ (KB referen) │  │
-│  └────────────┘  └──────────────┘  └──────────────┘  └──────────────┘  │
+│  ┌────────────┐                                                        │
+│  │ miniapps/  │                                                        │
+│  │ (SPA)      │                                                        │
+│  └────────────┘                                                        │
 │                                                                        │
 │  ┌──────────────────────────────────────────────────────────────────┐  │
 │  │              plugins/ (empaquetado)                              │  │
@@ -61,7 +61,8 @@ primary_skill: dev-arquitectura
 ---
 ```
 
-Las skills se referencian por slug kebab (`dev-arquitectura`, `app-testing`). Claude las carga cuando la descripción del agente o de la skill matchea el trigger del operador.
+Las skills se referencian por slug kebab (`dev-arquitectura`, `app-testing`).
+Claude las carga cuando la descripción del agente o de la skill matchea el trigger del operador.
 
 ### 2. Agente + Subagentes
 
@@ -78,7 +79,7 @@ El agente orquestador delega a especialistas declarados en su sección `## Subag
 
 **Regla**: el orquestador nunca hace el trabajo técnico; delega y sintetiza.
 
-### 3. Hooks (canon nuevo `.sh.template`) + Skills
+### 3. Hooks (canon `.sh.template`) + Skills
 
 Un hook single-file declara su matcher en cabecera y devuelve JSON al runtime:
 
@@ -91,9 +92,8 @@ set -euo pipefail
 # description: Bloquea ejecución de Bash si el comando contiene tokens.
 # version: 0.1.0
 
-# Lee context JSON desde stdin, escribe decisión en stdout.
 input=$(cat)
-cmd=$(echo "$input" | jq -r '.tool_input.command // ""')
+cmd=$(echo "$input" | jq -r '.tool_input.command // "')
 if grep -qE 'gh[pousr]_[A-Za-z0-9_]{36,}|sk-[A-Za-z0-9]{20,}|AKIA[0-9A-Z]{16}' <<< "$cmd"; then
   echo '{"decision":"deny","reason":"Token detectado en comando bash"}'
   exit 0
@@ -144,9 +144,9 @@ Un MCP server expone tools que el agente consume vía `mcp.json` separado:
 }
 ```
 
-> ⚠️ Cambio 2026-05-23: `mcp.json` vive en archivo separado, NO dentro de `settings.json`. La clave `mcp.servers` en settings.json es obsoleta (canon viejo).
+> ⚠️ `mcp.json` vive en archivo separado, NO dentro de `settings.json`.
 
-### 6. Miniapps (canon nuevo) consumidas por skills
+### 6. Miniapps (canon) consumidas por skills
 
 Una skill que entrega visualización genera una mini-app reutilizable:
 
@@ -164,80 +164,16 @@ last_updated: 2026-05-23
 
 La skill `COM_finanzas` puede referenciar `~/.claude/miniapps/kpi-mensual/` cuando el operador pide un resumen mensual.
 
-### 7. Autoresearch como fuente de skills/agentes
+### 7. agent-config como capa de control global
 
-Un cuaderno `autoresearch` actúa como **fuente verificada** que skills/agentes citan:
+`agent-config/plantilla_agent_config.yaml` es la fuente canónica de reglas del operador, estilo, flujo, seguridad y herramientas. El generador emite:
 
-```yaml
----
-name: prompt-caching-vs-memory
-description: >
-  Diferencia entre prompt caching y memory en Claude API y cuándo elegir.
-topic: claude-api-optimizacion
-status: published
-confidence: 0.85
-sources:
-  - "https://docs.anthropic.com/.../prompt-caching"
----
-```
+- `~/.claude/CLAUDE.md` para Claude Code.
+- `~/AGENTS.md` para OpenCode.
+- `~/.config/devin/AGENTS.md` + `~/.config/devin/config.json` para Devin.
+- `~/.codeium/windsurf/memories/global_rules.md` para Windsurf/Cascade.
 
-Cuando una skill `INFRA_api-claude` necesita justificar una decisión, referencia este artefacto en lugar de razonar desde cero.
-
-### 8. Cuadernos como decisiones del operador
-
-Un `cuadernos` con `kind: decision` documenta decisiones de arquitectura que skills/agentes deben respetar:
-
-```yaml
----
-name: colapsar-plantillas-single-file
-description: Decisión sobre formato canónico de plantillas en este repo.
-kind: decision
-tags: [arquitectura, plantillas]
-status: active
-last_updated: 2026-05-23
----
-```
-
-Skills como `DEV_arquitectura` consultan estos cuadernos antes de proponer un cambio que pueda contradecirlos.
-
-### 9. Knowledge como base de consulta
-
-Un `knowledge` con `authority: official` actúa como FAQ autoritativa que skills citan literalmente:
-
-```yaml
----
-name: tools-vs-allowed-tools
-description: >
-  Diferencia entre `tools` (frontmatter agente) y `allowed-tools` (frontmatter command).
-domain: claude-code-internals
-authority: official
-status: published
-references:
-  - "https://docs.claude.com/.../sub-agents"
----
-```
-
-Skills como `claude-code-guide` pueden citar este artefacto sin reabrir el debate.
-
-### 10. Plugin = todo junto
-
-Un plugin empaqueta la integración completa de varios módulos:
-
-```json
-{
-  "name": "backend-toolkit",
-  "components": {
-    "agents": ["backend-dev"],
-    "skills": ["app-testing", "app-seguridad"],
-    "hooks": ["pre-bash-secret-guard"],
-    "mcpServers": ["utils"],
-    "miniapps": ["kpi-mensual"],
-    "knowledge": ["tools-vs-allowed-tools"]
-  }
-}
-```
-
-Instalar el plugin equivale a instalar toda la cadena de una vez.
+Todo módulo instalado individualmente (`skills/`, `commands/`, `hooks/`, etc.) debe respetar la jerarquía declarada en `agent-config`: primero el deterministico, luego reglas globales, luego memory auto-generada.
 
 ---
 
@@ -251,11 +187,8 @@ Instalar el plugin equivale a instalar toda la cadena de una vez.
 | Exponer datos/tools externas a Claude | **MCP Server** | API de meteorología propia |
 | Empaquetar todo para distribuir | **Plugin** | `backend-toolkit` |
 | Orquestar especialistas | **Agente** | `backend-dev` delega a `database-expert` |
-| Configurar proyecto/entorno completo | **dot-claude** | `~/.claude/` global |
+| Configuración global cross-platform | **agent-config** | `plantilla_agent_config.yaml` |
 | Crear una SPA reutilizable | **Miniapp** | Dashboard KPIs single-file |
-| Investigar y documentar una pregunta técnica | **Autoresearch** | "prompt caching vs memory" |
-| Tomar nota propia (idea/decisión/log/playbook) | **Cuaderno** | Decisión arquitectura |
-| Publicar conocimiento referenciable (FAQ/runbook) | **Knowledge** | "tools vs allowed-tools" |
 
 ---
 
@@ -285,30 +218,22 @@ Plugin A depende de B, y B de A.
 Dashboard que carga react/tailwind desde CDN sin `integrity=`.
 **Fix**: Inline todo el JS/CSS, o si CDN es imprescindible, añadir hash SRI.
 
-### ❌ Autoresearch publicado con confidence < 0.6
-Cuaderno marcado `status: published` con `confidence: 0.3`.
-**Fix**: Si la confianza es baja, status `draft` o `review`; no contaminar la base como autoritativa.
-
-### ❌ Cuaderno con `kind: decision` sin sección "Alternativas consideradas"
-Una decisión sin trade-offs documentados pierde su utilidad futura.
-**Fix**: Añadir las opciones rechazadas y por qué.
-
-### ❌ Knowledge con `authority: official` sin references reales
-Un artículo declarado oficial sin URLs verificables.
-**Fix**: Mínimo 1 reference real con URL (Anthropic docs, RFC, etc.).
-
 ### ❌ `settings.json` con claves obsoletas
 `hooks: {enabled: true, sources: [...]}` o `skills: {autoDiscover: true}` ya no son schema runtime.
 **Fix**: Migrar a `hooks: {PreToolUse: [...], PostToolUse: [...]}` y borrar `skills.autoDiscover/preload`.
 
+### ❌ Reglas duplicadas entre agent-config y CLAUDE.md local
+El generador ya emite la capa global. No duplicarlas en `CLAUDE.md` de cada proyecto.
+**Fix**: Usar `agent-config` para verdades globales; reservar `CLAUDE.md` del proyecto para contexto específico de ese repo.
+
 ---
 
-## Ejemplo completo: Proyecto backend con todos los módulos canon
+## Ejemplo completo: Proyecto backend con módulos canónicos
 
 ```
 mi-proyecto/
 ├── .claude/
-│   ├── CLAUDE.md                       ← Reglas globales (árbol plano)
+│   ├── CLAUDE.md                       ← Contexto del proyecto (específico)
 │   ├── settings.json                   ← Schema runtime: permissions + hooks + env
 │   ├── mcp.json                        ← MCP servers (archivo separado)
 │   │
@@ -332,18 +257,6 @@ mi-proyecto/
 │   │       ├── kpi-mensual.md          ← Descriptor canon
 │   │       └── kpi-mensual.html        ← SPA opcional
 │   │
-│   ├── autoresearch/
-│   │   └── prompt-caching-vs-memory/
-│   │       └── prompt-caching-vs-memory.md
-│   │
-│   ├── cuadernos/
-│   │   └── decision-stack-monorepo/
-│   │       └── decision-stack-monorepo.md
-│   │
-│   ├── knowledge/
-│   │   └── tools-vs-allowed-tools/
-│   │       └── tools-vs-allowed-tools.md
-│   │
 │   └── plugins/
 │       └── backend-toolkit/plugin.json ← Empaqueta lo anterior
 │
@@ -354,10 +267,9 @@ mi-proyecto/
 
 1. **Operador escribe código** → Guarda archivo → hook `post-format.sh` formatea.
 2. **Operador invoca `/test-cobertura`** → Command lanza tests → Si la cobertura cae, skill `app-testing` se activa para sugerir tests adicionales.
-3. **Operador pregunta "¿qué diferencia hay entre tools y allowed-tools?"** → Skill `claude-code-guide` cita literal el artículo `knowledge/tools-vs-allowed-tools/`.
+3. **Operador pregunta "¿qué diferencia hay entre tools y allowed-tools?"** → Skill `claude-code-guide` responde desde su `description`/reglas; no reabre el debate.
 4. **Cierre mensual** → Operador abre `miniapps/kpi-mensual/kpi-mensual.html` para revisar KPIs antes de registrar en `EVENTOS.md`.
-5. **Decisión sobre nueva dependencia** → Skill `DEV_arquitectura` consulta `cuadernos/decision-stack-monorepo/` antes de proponer cambio.
-6. **Hook bloquea push con token** → `pre-bash-secret-guard.sh` detecta `gh_token_...` en comando `git push` y emite `{decision: "deny", reason: ...}`.
+5. **Hook bloquea push con token** → `pre-bash-secret-guard.sh` detecta `gh_token_...` en comando `git push` y emite `{decision: "deny", reason: ...}`.
 
 ---
 
@@ -369,4 +281,4 @@ mi-proyecto/
 - [Claude Code: Hooks](https://code.claude.com/docs/en/hooks.md)
 - [Claude Code: Settings](https://code.claude.com/docs/en/settings.md)
 - [MCP Spec](https://modelcontextprotocol.io/specification/)
-- CHANGELOG entrada `[Unreleased]` (canon-runtime alignment) — este repo
+- CHANGELOG entrada `[Unreleased] — Cross-platform Config Refactor` — este repo

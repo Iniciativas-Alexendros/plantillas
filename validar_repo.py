@@ -57,7 +57,6 @@ DIRECTORIOS_PERMITIDOS = {
     "commands",
     "estandares",
     "hooks",
-    "mceod-overlays",
     "mcp",
     "miniapps",
     "modulo",

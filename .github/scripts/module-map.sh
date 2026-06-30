@@ -15,11 +15,11 @@ set -euo pipefail
 
 # Lista canónica de módulos (usados por workflows que hacen source de este script)
 # shellcheck disable=SC2034
-MODULOS_CANONICOS=(agentes skills commands hooks mcp plugins dot-claude repositorios modulo proyecto miniapps autoresearch cuadernos knowledge)
+MODULOS_CANONICOS=(agentes skills commands hooks mcp plugins agent-config repositorios modulo proyecto miniapps estandares)
 
 # Módulos cuya raíz ES la plantilla (sin plantilla_*/ejemplo_*)
 # shellcheck disable=SC2034
-MODULOS_ESPECIALES=(modulo proyecto)
+MODULOS_ESPECIALES=(modulo proyecto agent-config estandares)
 
 module_singular() {
   case "$1" in
@@ -29,14 +29,12 @@ module_singular() {
     hooks)        echo "hook" ;;
     mcp)          echo "mcp" ;;
     plugins)      echo "plugin" ;;
-    dot-claude)   echo "dot_claude" ;;
+    agent-config) echo "agent_config" ;;
     repositorios) echo "repositorio" ;;
     modulo)       echo "modulo" ;;
     proyecto)     echo "proyecto" ;;
     miniapps)     echo "miniapps" ;;
-    autoresearch) echo "autoresearch" ;;
-    cuadernos)    echo "cuadernos" ;;
-    knowledge)    echo "knowledge" ;;
+    estandares)   echo "estandares" ;;
     *)            echo "$1" ;;
   esac
 }
