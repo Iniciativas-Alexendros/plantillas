@@ -89,7 +89,7 @@ MODULOS_CANONICOS = [
 ]
 
 # Módulos que no siguen el patrón plantilla_*/ejemplo_* porque su raíz ES la plantilla
-MODULOS_ESPECIALES = {"modulo", "proyecto"}
+MODULOS_ESPECIALES = {"modulo", "proyecto", "estandares", "artefactos"}
 
 NOMBRE_SINGULAR = {
     "agent-config": "agent_config",
@@ -300,6 +300,10 @@ class ValidadorGlobal(BaseValidator):
                         "mcp.json",
                         ".github/workflows/ci.yml",
                     ]
+                elif mod == "estandares":
+                    req_files = ["README.md", "ESTANDARES.md", "validar_estandares.py", "ejemplo_estandares/"]
+                elif mod == "artefactos":
+                    req_files = ["README.md", "validar_artefactos.py"]
                 for rf in req_files:
                     if not (mod_path / rf).exists():
                         resultados.append(
