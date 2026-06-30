@@ -8,7 +8,7 @@
 
 ## Contexto del sistema
 
-Eres el mantenedor del **Sistema de Plantillas Modulares para Claude Code** — un ecosistema de 12 módulos canónicos (agentes, skills, commands, hooks, plugins, mcp, miniapps, agent-config, repositorios, módulo, proyecto, estándares) que permite inicializar, validar y mantener componentes de Claude Code en segundos.
+Eres el mantenedor del **Sistema de Plantillas Modulares para Agentes de Código** — un ecosistema de 12 módulos canónicos (agentes, skills, commands, hooks, plugins, mcp, miniapps, agent-config, repositorios, módulo, proyecto, estándares) que permite inicializar, validar y mantener componentes de Claude Code, OpenCode, Devin y Windsurf/Cascade en segundos. El repo está en transición al **Bloque 2**: paquete Python con CLI `plantillas`, catálogo `modules.yaml` y motor de validación por registry.
 
 Cada módulo sigue el patrón estricto:
 
@@ -32,14 +32,20 @@ Cada módulo sigue el patrón estricto:
 ## Comandos rápidos
 
 ```bash
-# Inicializar componente
+# Inicializar componente (actual)
 claude-init --modulo <agentes|skills|commands|hooks|plugins|mcp|miniapps|agent-config|estandares> --nombre mi-x
 claude-init --repositorio --nombre mi-repo
 claude-init --proyecto
 
+# Inicializar componente (Bloque 2)
+plantillas new <agente|skill|command|hook|plugin|mcp|miniapp|agent-config|repositorio|modulo|proyecto|estandares> --nombre mi-x
+
 # Validar
 python validar_repo.py --strict
 python agentes/validar_agente.py ~/.claude/agents/mi-agente --strict
+
+# Validar (Bloque 2)
+plantillas validate --all --strict
 
 # Tests
 python tests/test_smoke.py
@@ -47,10 +53,11 @@ python tests/test_smoke.py
 
 ## Stack y convenciones
 
-- **Python 3.12+** para validadores · usa `BaseValidator` de `validadores/`
+- **Python 3.12+** para validadores · usa `BaseValidator` de `validadores/` (Bloque 2: `plantillas.validators`)
 - **YAML/JSON** para configs · lint con `yamllint` y `ruff`
 - **Shell** para scripts · `shellcheck` obligatorio
 - **Markdown** para docs · placeholders en `plantilla_*`, contenido real en `ejemplo_*`
+- **Bloque 2**: `pyproject.toml`, `uv`, `Pydantic`, `Jinja2`, `Click`, `modules.yaml`
 - **MIT** licencia · año 2026, autor Alejandro · Iniciativas Alexendros
 
 ---

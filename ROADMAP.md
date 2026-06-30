@@ -1,7 +1,7 @@
 # ROADMAP · Sistema de Plantillas Modulares para Claude Code
 
-> **Estado**: Fase 3 COMPLETADA (con items pendientes de automatización)
-> **Última actualización**: 2026-05-23
+> **Estado**: Fase 3 COMPLETADA (con items pendientes de automatización) · **Bloque 2 en planificación**
+> **Última actualización**: 2026-06-30
 > **Propietario**: alexendros
 > **Licencia**: MIT
 
@@ -13,7 +13,9 @@ Este documento define el plan de desarrollo del sistema de plantillas modulares.
 Cada fase es **reproducible**, con criterios de aceptación claros y dependencias
 explícitas. El objetivo final es un ecosistema de plantillas `claude init`-ready
 que permita a cualquier usuario (o LLM) inicializar, validar y desplegar
-componentes de Claude Code en segundos.
+componentes de Claude Code en segundos. El **Bloque 2** añade una capa de
+arquitectura: paquete Python, CLI unificado, catálogo central y motor de
+validación extensible.
 
 ---
 
@@ -26,6 +28,7 @@ componentes de Claude Code en segundos.
 | ⏳      | Pendiente     |
 | 🚫      | Bloqueado     |
 | 📦      | En producción |
+| 🧱      | Bloque 2      |
 
 ---
 
@@ -171,6 +174,40 @@ componentes de Claude Code en segundos.
 
 ---
 
+## BLOQUE 2: Reestructura como paquete Python
+
+> **Objetivo**: Convertir el sistema de scripts sueltos en un paquete Python
+> mantenible, testeable y escalable, con un CLI unificado y un catálogo central
+> de módulos.
+> **Dependencias**: Fase 3 completada. **Duración estimada**: 6-8 sesiones.
+> **Estado**: 🧱 En planificación / inicio.
+
+### Fases del Bloque 2
+
+| #    | Tarea                                                       | Prioridad | Estado | Notas                                                                                                  |
+| ---- | ----------------------------------------------------------- | --------- | ------ | ------------------------------------------------------------------------------------------------------ |
+| B2.0 | Esqueleto del paquete (`pyproject.toml`, `src/plantillas/`) | Alta      | ⏳     | Entry point `plantillas`, estructura `src/`, `modules.yaml` inicial.                                   |
+| B2.1 | Motor de validación por registry                            | Alta      | ⏳     | Migrar `validadores/` a `src/plantillas/validators/`, decorador `@register`, formatos `json`/`github`. |
+| B2.2 | Catálogo único (`modules.yaml`)                             | Alta      | ⏳     | CI, pre-commit y tests leen la misma lista; eliminar `sys.path.insert`.                                |
+| B2.3 | `agent-config` Pydantic + Jinja2                            | Alta      | ⏳     | Esquema `AgentConfig`, templates por target, tests de snapshot, `plantillas sync agent-config`.        |
+| B2.4 | CI unificada                                                | Media     | ⏳     | Workflow central con `plantillas validate --all`, cache de `uv`, pre-commit limpio.                    |
+| B2.5 | Generador de módulos (`plantillas new`)                     | Media     | ⏳     | Template base en `src/plantillas/templates/new_module/`.                                               |
+| B2.6 | Documentación y gobernanza                                  | Media     | ⏳     | ADRs, README/CONTRIBUTING/ROADMAP actualizados, dossier HTML en `docs/dossier-bloque2.html`.           |
+
+### Criterios de aceptación Bloque 2
+
+- [ ] `pytest` pasa con cobertura > 80 % en módulos clave.
+- [ ] `plantillas validate --all --strict` pasa en local y CI.
+- [ ] `modules.yaml` es la única lista de módulos; CI, pre-commit y tests la leen.
+- [ ] `agent-config` genera idéntica salida a `ejemplo_agent_config/` (drift = 0).
+- [ ] `validar_repo.py` y `validar_<modulo>.py` funcionan como wrappers.
+- [ ] `pyproject.toml` define correctamente entry points y dependencias.
+- [ ] ADRs y documentación actualizados.
+
+> **Dossier visual interactivo del Bloque 2**: `docs/dossier-bloque2.html` (no sincronizado en GitHub).
+
+---
+
 ## FASE 4: Producción · Escalado y Mantenimiento
 
 > **Objetivo**: El sistema es mantenido activamente con monitoreo.
@@ -209,14 +246,18 @@ componentes de Claude Code en segundos.
 
 ### Stack tecnológico
 
-| Capa                 | Tecnología                  |
-| -------------------- | --------------------------- |
-| Lenguaje validadores | Python 3.12+                |
-| CI/CD                | GitHub Actions              |
-| Formato configs      | YAML, JSON                  |
-| Documentación        | Markdown                    |
-| Testing              | pytest                      |
-| Linting              | prettier, yamlfmt, jsonlint |
+| Capa                 | Tecnología                                    |
+| -------------------- | --------------------------------------------- |
+| Lenguaje validadores | Python 3.12+                                  |
+| CI/CD                | GitHub Actions                                |
+| Formato configs      | YAML, JSON                                    |
+| Documentación        | Markdown                                      |
+| Testing              | pytest + snapshots                            |
+| Linting              | ruff, yamllint, shellcheck, markdownlint-cli2 |
+| Empaquetado          | `pyproject.toml` + `uv` (Bloque 2)            |
+| CLI                  | `click` (Bloque 2)                            |
+| Esquemas             | `pydantic` v2 (Bloque 2)                      |
+| Templates            | `jinja2` (Bloque 2)                           |
 
 ### Entornos
 
@@ -276,17 +317,19 @@ test(mcp): añade tests de integración
 
 ## Métricas de éxito
 
-| Métrica                | Meta Fase 2 | Meta Fase 3 | Medición                  |
-| ---------------------- | ----------- | ----------- | ------------------------- |
-| Módulos con validador  | 8/8         | 8/8         | `ls */validar_*.py`       |
-| Módulos con CI/CD      | 8/8         | 8/8         | `ls */.github/workflows/` |
-| Ejemplos por módulo    | 1           | ≥2          | Conteo manual             |
-| Tiempo `claude init`   | —           | <30s        | `time ./install.sh`       |
-| Tests passing          | —           | 100%        | `pytest --tb=short`       |
-| Documentación completa | 80%         | 100%        | Auditoría por checklist   |
+| Métrica                | Meta Fase 2 | Meta Fase 3 | Medición                             |
+| ---------------------- | ----------- | ----------- | ------------------------------------ |
+| Módulos con validador  | 12/12       | 12/12       | `ls */validar_*.py` + `modules.yaml` |
+| Módulos con CI/CD      | 12/12       | 12/12       | `ls */.github/workflows/`            |
+| Ejemplos por módulo    | ≥2          | ≥2          | Conteo manual                        |
+| Tiempo `claude init`   | <30s        | <30s        | `time ./install.sh`                  |
+| Tests passing          | 100%        | 100%        | `pytest --tb=short`                  |
+| Documentación completa | 100%        | 100%        | Auditoría por checklist              |
+| CLI usable             | —           | ✅          | `plantillas validate --all`          |
 
 ---
 
-> **Próximo paso inmediato**: Fase 4 — Producción: monitoreo (badges CI,
-> dashboard de calidad), mantenimiento continuo (revisión de links, actualización
-> por cambios en Claude Code), y roadmap v2 (web UI, marketplace, multi-idioma).
+> **Próximo paso inmediato**: Bloque 2 — Reestructura como paquete Python
+> (`pyproject.toml`, CLI `plantillas`, registry de validadores, `modules.yaml`).
+> Fase 4 queda como mantenimiento continuo en paralelo: monitoreo, revisión de
+> links y roadmap v2. Ver el dossier interactivo `docs/dossier-bloque2.html`.
