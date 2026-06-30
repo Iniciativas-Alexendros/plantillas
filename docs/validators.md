@@ -1,96 +1,70 @@
-# Motor de validación — Bloque 2
+# Motor de validación del Bloque 2
 
-> Estado: propuesto / en implementación. El motor actual en `validadores/` se
-> migrará a `src/plantillas/validators/`.
+El sistema de validación se basa en un registro (`ValidatorRegistry`) que puede ejecutar validadores embebidos en Python o delegar en los scripts legacy de cada módulo.
 
 ## Arquitectura
 
 ```
-src/plantillas/validators/
-├── __init__.py
-├── base.py          # BaseValidator, Check, Resultado, Nivel
-├── registry.py      # Registry con @register
-├── checks.py        # Checks reutilizables
-├── report.py        # Formateo de salida
-└── modules/
-    ├── agentes.py
-    ├── skills.py
-    ├── commands.py
-    ├── hooks.py
-    ├── mcp.py
-    ├── plugins.py
-    ├── miniapps.py
-    ├── agent_config.py
-    ├── repositorios.py
-    ├── modulo.py
-    ├── proyecto.py
-    └── estandares.py
+modules.yaml
+    ↓
+plantillas.catalog.load_catalog()
+    ↓
+plantillas.registry.ValidatorRegistry
+    ├─ plantillas.validators.<id> (validadores embebidos)
+    └─ <módulo>/validar_*.py (scripts legacy)
 ```
 
-## Cómo crear un validador
+## Cómo añadir un validador embebido
+
+Crear `src/plantillas/validators/<id>.py` con una función `validate`:
 
 ```python
 from pathlib import Path
-from plantillas.validators import BaseValidator, Check, registry, check_estructura
+from plantillas.catalog import Module
+from plantillas.registry import ValidationResult, ValidatorFn
 
-@registry.register("mi-modulo")
-class MiModuloValidator(BaseValidator):
-    def __init__(self, ruta: Path, strict: bool = False):
-        super().__init__(ruta, strict)
-        self.checks = [
-            Check("estructura", self._check_estructura),
-            Check("contenido", self._check_contenido),
-            Check("placeholders", self._check_placeholders),
-        ]
 
-    def _check_estructura(self):
-        return check_estructura(self, {"required": ["README.md", "EJEMPLO.md"]})
-
-    def _check_contenido(self):
-        # ... lógica específica
-        return []
-
-    def _check_placeholders(self):
-        # ... lógica específica
-        return []
+def validate(module: Module, root: Path) -> ValidationResult:
+    target = root / module.path
+    if not (target / "README.md").exists():
+        return ValidationResult(module.id, False, "Falta README.md")
+    return ValidationResult(module.id, True, "OK")
 ```
 
-## Registry
+El registry descubre automáticamente los módulos importables.
 
-```python
-from plantillas.validators import registry
+## Cómo mantener un validador legacy
 
-# Listar validadores registrados
-print(registry.list_modules())
+Si el módulo tiene `validator: <módulo>/validar_*.py` en `modules.yaml`, el registry ejecuta:
 
-# Resolver validador
-validator_cls = registry.get("agentes")
+```bash
+python <script> <path> --strict
 ```
 
-## Checks reutilizables
+Si el script no existe, el registry reporta `No validator configured` y no falla.
 
-Disponibles en `plantillas.validators.checks`:
+## Salida
 
-- `check_estructura`
-- `check_archivos_vacios`
-- `check_placeholders`
-- `check_archivos_prohibidos`
-- `check_tamanio_maximo`
-- `check_merge_conflicts`
-- `check_secrets`
-- `check_gitignore_minimo`
-- `check_yaml_frontmatter`
-- `check_json_parseable`
+Los validadores devuelven `ValidationResult`:
 
-## Salida de resultados
+- `ok`: bool.
+- `message`: descripción del resultado.
 
-`BaseValidator.run()` devuelve una lista de `Resultado`. El reporteador soporta:
+## Formato de salida CLI
 
-- `text`: salida humana para terminal.
-- `json`: objeto JSON para CI.
-- `github`: anotaciones de GitHub Actions.
+```text
+✅ agentes: OK
+⚠️ artefactos: No validator configured
+❌ commands: Validation failed: ...
+```
 
-## Wrappers de compatibilidad
+## Tests
 
-Durante la transición, los scripts `validar_<modulo>.py` actuales se mantienen
-como wrappers delgados que invocan `plantillas validate <modulo>`.
+```bash
+pytest tests/test_registry.py -v   # pendiente de crear
+pytest tests/test_cli.py -v
+```
+
+## Migración planeada
+
+A largo plazo, los validadores legacy se migrarán a `plantillas.validators.<id>` para facilitar tests y reutilizar checks entre módulos.

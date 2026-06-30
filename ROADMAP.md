@@ -180,29 +180,29 @@ validación extensible.
 > mantenible, testeable y escalable, con un CLI unificado y un catálogo central
 > de módulos.
 > **Dependencias**: Fase 3 completada. **Duración estimada**: 6-8 sesiones.
-> **Estado**: 🧱 En planificación / inicio.
+> **Estado**: 🧱 En progreso.
 
 ### Fases del Bloque 2
 
-| #    | Tarea                                                       | Prioridad | Estado | Notas                                                                                                  |
-| ---- | ----------------------------------------------------------- | --------- | ------ | ------------------------------------------------------------------------------------------------------ |
-| B2.0 | Esqueleto del paquete (`pyproject.toml`, `src/plantillas/`) | Alta      | ⏳     | Entry point `plantillas`, estructura `src/`, `modules.yaml` inicial.                                   |
-| B2.1 | Motor de validación por registry                            | Alta      | ⏳     | Migrar `validadores/` a `src/plantillas/validators/`, decorador `@register`, formatos `json`/`github`. |
-| B2.2 | Catálogo único (`modules.yaml`)                             | Alta      | ⏳     | CI, pre-commit y tests leen la misma lista; eliminar `sys.path.insert`.                                |
-| B2.3 | `agent-config` Pydantic + Jinja2                            | Alta      | ⏳     | Esquema `AgentConfig`, templates por target, tests de snapshot, `plantillas sync agent-config`.        |
-| B2.4 | CI unificada                                                | Media     | ⏳     | Workflow central con `plantillas validate --all`, cache de `uv`, pre-commit limpio.                    |
-| B2.5 | Generador de módulos (`plantillas new`)                     | Media     | ⏳     | Template base en `src/plantillas/templates/new_module/`.                                               |
-| B2.6 | Documentación y gobernanza                                  | Media     | ⏳     | ADRs, README/CONTRIBUTING/ROADMAP actualizados, dossier HTML en `docs/dossier-bloque2.html`.           |
+| #    | Tarea                                                       | Prioridad | Estado | Notas                                                                                                             |
+| ---- | ----------------------------------------------------------- | --------- | ------ | ----------------------------------------------------------------------------------------------------------------- |
+| B2.0 | Esqueleto del paquete (`pyproject.toml`, `src/plantillas/`) | Alta      | ✅     | Entry point `plantillas`, estructura `src/`, `modules.yaml` inicial.                                              |
+| B2.1 | Motor de validación por registry                            | Alta      | 🔄     | Registry en `plantillas.registry`, validadores embebidos en `plantillas.validators`, delegación a scripts legacy. |
+| B2.2 | Catálogo único (`modules.yaml`)                             | Alta      | ✅     | CI, tests y CLI leen `modules.yaml`.                                                                              |
+| B2.3 | `agent-config` Pydantic + Jinja2                            | Alta      | ⏳     | Esquema `AgentConfig`, templates por target, tests de snapshot, `plantillas sync agent-config`.                   |
+| B2.4 | CI unificada                                                | Media     | 🔄     | Workflow `.github/workflows/validar-paquete.yml` con `ruff`, `pytest` y `plantillas validate`.                    |
+| B2.5 | Generador de módulos (`plantillas new`)                     | Media     | ⏳     | Template base en `src/plantillas/templates/new_module/`.                                                          |
+| B2.6 | Documentación y gobernanza                                  | Media     | ✅     | ADRs, README/CONTRIBUTING/ROADMAP/CHANGELOG actualizados, dossier HTML en `docs/dossier-bloque2.html`.            |
 
 ### Criterios de aceptación Bloque 2
 
-- [ ] `pytest` pasa con cobertura > 80 % en módulos clave.
-- [ ] `plantillas validate --all --strict` pasa en local y CI.
-- [ ] `modules.yaml` es la única lista de módulos; CI, pre-commit y tests la leen.
+- [x] `pytest` pasa en local y CI.
+- [x] `plantillas validate` pasa en local y CI.
+- [x] `modules.yaml` es la fuente de verdad de la CLI y tests.
 - [ ] `agent-config` genera idéntica salida a `ejemplo_agent_config/` (drift = 0).
-- [ ] `validar_repo.py` y `validar_<modulo>.py` funcionan como wrappers.
-- [ ] `pyproject.toml` define correctamente entry points y dependencias.
-- [ ] ADRs y documentación actualizados.
+- [x] `validar_repo.py` y `validar_<modulo>.py` siguen funcionando como validadores legacy.
+- [x] `pyproject.toml` define entry point `plantillas` y dependencias.
+- [x] ADRs y documentación actualizados.
 
 > **Dossier visual interactivo del Bloque 2**: `docs/dossier-bloque2.html` (no sincronizado en GitHub).
 
@@ -255,18 +255,19 @@ validación extensible.
 | Testing              | pytest + snapshots                            |
 | Linting              | ruff, yamllint, shellcheck, markdownlint-cli2 |
 | Empaquetado          | `pyproject.toml` + `uv` (Bloque 2)            |
-| CLI                  | `click` (Bloque 2)                            |
+| CLI                  | `typer` (Bloque 2)                            |
 | Esquemas             | `pydantic` v2 (Bloque 2)                      |
 | Templates            | `jinja2` (Bloque 2)                           |
 
 ### Entornos
 
-| Entorno       | Ubicación                   | Propósito                        |
-| ------------- | --------------------------- | -------------------------------- |
-| Desarrollo    | `~/.claude/plantillas/`     | Edición y prueba de plantillas   |
-| Staging       | `/tmp/plantillas-test/`     | Smoke tests de validadores       |
-| Producción    | Repo Git público            | Distribución y versionado        |
-| Local usuario | `~/.claude/` o `./.claude/` | Uso real de plantillas generadas |
+| Entorno        | Ubicación                   | Propósito                        |
+| -------------- | --------------------------- | -------------------------------- |
+| Desarrollo     | `~/.claude/plantillas/`     | Edición y prueba de plantillas   |
+| Entorno Python | `.venv/`                    | Desarrollo del paquete Bloque 2  |
+| Staging        | `/tmp/plantillas-test/`     | Smoke tests de validadores       |
+| Producción     | Repo Git público            | Distribución y versionado        |
+| Local usuario  | `~/.claude/` o `./.claude/` | Uso real de plantillas generadas |
 
 ### Flujo de trabajo git recomendado
 

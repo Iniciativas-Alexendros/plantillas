@@ -1,54 +1,30 @@
-# ADR 0003 — Catálogo central de módulos en `modules.yaml`
+# ADR 0003: Catálogo central de módulos en `modules.yaml`
 
 ## Estado
 
-Propuesto (Bloque 2).
+Aceptado — en implementación (Bloque 2).
 
 ## Contexto
 
-La lista de módulos canónicos está duplicada en al menos cuatro lugares:
-
-- `.github/workflows/validar-todos.yml` (matriz de CI).
-- `tests/test_smoke.py` (`MODULOS`).
-- `.pre-commit-config.yaml` (hook `validate-modules`).
-- `validar_repo.py` (`MODULOS_CANONICOS`, `DIRECTORIOS_PERMITIDOS`).
-
-Cualquier cambio (añadir/renombrar/eliminar un módulo) requiere editar todos
-esos archivos, lo que genera riesgo de desincronización.
+La información sobre los módulos canónicos estaba dispersa entre `validar_repo.py` (listas hardcodeadas), `INDEX.md`, `README.md` y los propios directorios de cada módulo. Esto provocaba inconsistencias cuando se añadía o modificaba un módulo.
 
 ## Decisión
 
-Crear un `modules.yaml` en la raíz del repo como **única fuente de verdad**. Cada
-entrada describe:
+Crear un catálogo central en `modules.yaml` con la definición de cada módulo: `id`, `name`, `description`, `type`, `path`, `validator`, `example`, `template`, `tags` e `init_command`.
 
-- `name`: nombre del módulo (kebab-case).
-- `type`: `single-file`, `directory`, `special`.
-- `validator`: path al script/entry point del validador.
-- `example`: path al ejemplo o plantilla.
-- `template`: path a la plantilla (opcional).
-- `singular`: forma singular para el CLI.
-- `description`: descripción corta.
-
-CI, pre-commit, tests y el CLI leerán este archivo. Se añadirá un test de sync
-que compare `modules.yaml` con `INDEX.md` y `README.md`.
+- El catálogo se lee con Pydantic (`src/plantillas/catalog.py`).
+- `validar_repo.py` y la CLI lo consumen como fuente de verdad.
+- Los tests verifican que todos los módulos canónicos estén presentes y que los scripts a los que apuntan existan.
 
 ## Consecuencias
 
-### Positivas
-
-- Un solo lugar para añadir/renombrar/eliminar módulos.
-- CI, tests y pre-commit siempre consistentes.
-- El CLI puede generar ayuda dinámica (`plantillas config list`).
-- Posibilita validar que todos los módulos listados existen físicamente.
-
-### Negativas
-
-- Añade una dependencia crítica: si `modules.yaml` es inválido, todo el sistema falla.
-- Requiere parser y test de sync.
-- Los workflows actuales deben migrar a leer el YAML.
+- Una sola fuente de verdad para los módulos.
+- Reducción de listas duplicadas en validadores y documentación.
+- Facilidad para añadir metadatos futuros (versiones, dependencias, estado experimental).
+- Los consumidores legacy deben migrar gradualmente a leer `modules.yaml`.
 
 ## Alternativas consideradas
 
-- **JSON**: menos legible para humanos. Rechazado.
-- **Python puro (`modules.py`)**: requiere importar código para leer configuración. Rechazado.
-- **Mantener duplicación**: no escala. Rechazado.
+- **JSON**: YAML es más legible para editores humanos y es el formato habitual de la configuración de agentes.
+- **TOML**: menos adecuado para listas de objetos anidados.
+- **Inventario en Python**: añadiría dependencia de código para cualquier consumidor no Python.

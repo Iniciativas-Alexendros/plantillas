@@ -125,11 +125,11 @@ plantillas new agente --nombre mi-agente
 - **12 workflows** de GitHub Actions + workflow central [`validar-todos.yml`](./.github/workflows/validar-todos.yml).
 - **Pre-commit hooks** en [`.pre-commit-config.yaml`](./.pre-commit-config.yaml): lint YAML/JSON, detectar placeholders, validar módulos.
 
-### Futuro (Bloque 2)
+### Bloque 2 (en progreso)
 
-- El workflow central se reemplaza por un job que ejecuta `plantillas validate --all --strict`.
-- El catálogo de módulos se centraliza en `modules.yaml` y lo leen CI, pre-commit y tests.
-- Los validadores se registran en `src/plantillas/validators/registry.py` y heredan de `BaseValidator`.
+- Workflow `.github/workflows/validar-paquete.yml` ejecuta `ruff`, `pytest` y `plantillas validate`.
+- El catálogo de módulos se centraliza en `modules.yaml` y lo leen CI, tests y la CLI.
+- Los validadores se registran en `plantillas.registry` y pueden delegar en scripts legacy.
 
 ---
 
@@ -165,9 +165,9 @@ plantillas new agente --nombre mi-agente
 - **Python 3.12+** + **uv** — Empaquetado y entorno
 - **Pydantic v2** — Esquema de `agent-config`
 - **Jinja2** — Templates de generación cross-platform
-- **Click** — CLI unificado `plantillas`
+- **Typer** — CLI unificado `plantillas`
 - **pytest + snapshots** — Tests unitarios y regresión
-- **GitHub Actions** — CI centralizado con `plantillas validate --all`
+- **GitHub Actions** — CI centralizado con `plantillas validate`
 
 ## Transición al Bloque 2
 

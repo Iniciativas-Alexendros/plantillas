@@ -41,5 +41,6 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 
-# ─── Artefactos de planificación (no sincronizados en GitHub) ───────────────
+# ─── Dossier, entorno de desarrollo y artefactos de planificación ───────────
+/.venv/
 /docs/dossier-bloque2.html

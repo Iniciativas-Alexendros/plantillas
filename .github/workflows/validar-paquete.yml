@@ -1,0 +1,55 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Validación del paquete Python plantillas (Bloque 2)
+#
+# Propósito: instalar el paquete en modo editable y ejecutar lint, tests y CLI.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Validar Paquete plantillas
+
+on:
+  pull_request:
+    paths:
+      - "pyproject.toml"
+      - "src/**"
+      - "tests/**"
+      - "modules.yaml"
+      - "requirements.txt"
+      - ".github/workflows/validar-paquete.yml"
+  push:
+    branches: [main, master]
+    paths:
+      - "pyproject.toml"
+      - "src/**"
+      - "tests/**"
+      - "modules.yaml"
+      - "requirements.txt"
+      - ".github/workflows/validar-paquete.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  paquete:
+    name: Lint, tests y CLI
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar paquete editable
+        run: pip install -e ".[dev]"
+
+      - name: Lint con ruff
+        run: ruff check src/plantillas tests
+
+      - name: Tests con pytest
+        run: pytest tests -v
+
+      - name: Validar catálogo y módulos
+        run: plantillas validate

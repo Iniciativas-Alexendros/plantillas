@@ -1,75 +1,67 @@
-# CLI `plantillas` — Bloque 2
+# CLI `plantillas`
 
-> Estado: propuesto / en implementación. Los comandos aún no están disponibles
-> en `main`; se activarán a medida que avancen las fases del Bloque 2.
+La CLI unificada del Bloque 2 orquesta validación, sincronización y creación de módulos.
 
 ## Instalación
 
 ```bash
-uv pip install -e .
-# o
 pip install -e .
+# o, en entorno virtual:
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[dev]
 ```
+
+El punto de entrada es `plantillas`.
 
 ## Comandos
 
-### `plantillas validate`
+### `plantillas validate [MODULE]`
 
-Ejecuta validadores sobre módulos.
-
-```bash
-# Validar todos los módulos canónicos
-plantillas validate --all --strict
-
-# Validar un módulo concreto
-plantillas validate agentes --strict
-
-# Salida JSON para CI
-plantillas validate --all --format json
-
-# Salida compatible con GitHub Actions (annotations)
-plantillas validate --all --format github
-```
-
-### `plantillas sync`
-
-Sincroniza la configuración cross-platform desde `plantilla_agent_config.yaml`.
+Valida un módulo o todos los módulos canónicos registrados en `modules.yaml`.
 
 ```bash
-# Generar artefactos en $HOME con backup
-plantillas sync agent-config --home ~ --backup
-
-# Dry-run: muestra diff sin escribir
-plantillas sync agent-config --dry-run
-
-# Generar solo el directorio de ejemplo
-plantillas sync agent-config --target ejemplo_agent_config/
-```
-
-### `plantillas new`
-
-Genera la estructura de un nuevo módulo a partir de un template base.
-
-```bash
-plantillas new agente --nombre mi-agente
-plantillas new skill --nombre mi-skill
-plantillas new hook --nombre mi-hook
-plantillas new repositorio --nombre mi-repo
-plantillas new modulo --nombre mi-modulo
+plantillas validate
+plantillas validate agentes
+plantillas validate --no-strict
 ```
 
 ### `plantillas config`
 
-Consulta el catálogo de módulos.
+Muestra la versión del catálogo y la lista de módulos canónicos.
 
 ```bash
-plantillas config list
-plantillas config get agentes
-plantillas config check  # valida que modules.yaml sea consistente
+plantillas config
 ```
+
+### `plantillas version`
+
+Muestra la versión del paquete.
+
+```bash
+plantillas version
+```
+
+### `plantillas sync <MODULE>` *(en desarrollo)*
+
+Sincroniza un módulo desde su fuente canónica. El caso de uso principal es `plantillas sync agent-config`, que regenerará los artefactos de configuración cross-platform.
+
+### `plantillas new <NAME> --type <TYPE>` *(en desarrollo)*
+
+Crea un nuevo módulo a partir de la plantilla base.
 
 ## Códigos de salida
 
-- `0`: todo OK.
-- `1`: errores de validación o fallo de sync.
-- `2`: error de uso / argumentos inválidos.
+| Código | Significado |
+|--------|-------------|
+| 0 | Éxito |
+| 1 | Error de validación o módulo desconocido |
+| 2 | Error interno no controlado |
+
+## Tests
+
+La CLI se testea con `typer.testing.CliRunner`:
+
+```bash
+pytest tests/test_cli.py -v
+```

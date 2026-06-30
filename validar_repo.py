@@ -46,6 +46,8 @@ ARCHIVOS_CORE = [
     "claude-init",
     "update.sh",
     ".pre-commit-config.yaml",
+    "pyproject.toml",
+    "modules.yaml",
 ]
 
 ARCHIVOS_RAIZ_REQUERIDOS = ARCHIVOS_CORE + [".gitignore", "README.md"]
@@ -56,6 +58,7 @@ DIRECTORIOS_PERMITIDOS = {
     "artefactos",
     "docs",
     "commands",
+    "docs",
     "estandares",
     "hooks",
     "mcp",
@@ -65,6 +68,7 @@ DIRECTORIOS_PERMITIDOS = {
     "proyecto",
     "repositorios",
     "skills",
+    "src",
     "tests",
     "validadores",
 }
@@ -72,6 +76,7 @@ DIRECTORIOS_PERMITIDOS = {
 MODULOS_CANONICOS = [
     "agent-config",
     "agentes",
+    "artefactos",
     "skills",
     "commands",
     "hooks",
@@ -81,10 +86,11 @@ MODULOS_CANONICOS = [
     "modulo",
     "proyecto",
     "miniapps",
+    "estandares",
 ]
 
 # Módulos que no siguen el patrón plantilla_*/ejemplo_* porque su raíz ES la plantilla
-MODULOS_ESPECIALES = {"modulo", "proyecto"}
+MODULOS_ESPECIALES = {"modulo", "proyecto", "estandares", "artefactos"}
 
 NOMBRE_SINGULAR = {
     "agent-config": "agent_config",
@@ -295,6 +301,10 @@ class ValidadorGlobal(BaseValidator):
                         "mcp.json",
                         ".github/workflows/ci.yml",
                     ]
+                elif mod == "estandares":
+                    req_files = ["README.md", "ESTANDARES.md", "validar_estandares.py", "ejemplo_estandares/"]
+                elif mod == "artefactos":
+                    req_files = ["README.md", "validar_artefactos.py"]
                 for rf in req_files:
                     if not (mod_path / rf).exists():
                         resultados.append(

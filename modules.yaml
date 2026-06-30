@@ -1,0 +1,138 @@
+version: "2.0.0-dev"
+modules:
+  - id: agent-config
+    name: Configuración cross-platform para agentes
+    description: Fuente canónica YAML que genera configuración para Claude Code, OpenCode, Devin y Windsurf/Cascade.
+    type: module
+    path: agent-config
+    validator: agent-config/validar_agent_config.py
+    example: agent-config
+    template: agent-config/plantilla_agent_config.yaml
+    tags: [config, agents, cross-platform]
+    init_command: "plantillas sync agent-config"
+
+  - id: agentes
+    name: Agentes conversacionales
+    description: Plantillas y ejemplos de agentes con roles, herramientas y flujos de trabajo.
+    type: module
+    path: agentes
+    validator: agentes/validar_agente.py
+    example: agentes/ejemplo_agente.md
+    template: agentes/plantilla_agente.md
+    tags: [agent, claude, llm]
+
+  - id: artefactos
+    name: Artefactos de prompts
+    description: Plantillas reutilizables de prompts, system prompts y estructuras de salida.
+    type: module
+    path: artefactos
+    example: artefactos/ejemplo_artefacto.md
+    template: artefactos/plantilla_artefacto.md
+    tags: [prompt, artifact, template]
+
+  - id: commands
+    name: Comandos de agente
+    description: Definición de comandos slash o de voz para agentes, con ejemplos funcionales.
+    type: module
+    path: commands
+    validator: commands/validar_command.py
+    example: commands/ejemplo_command.md
+    template: commands/plantilla_command.md
+    tags: [command, slash, agent]
+
+  - id: estandares
+    name: Estándares del portfolio
+    description: Catálogo canónico de estándares de repositorios, frontmatter y CI.
+    type: module
+    path: estandares
+    validator: estandares/validar_estandares.py
+    example: estandares
+    template: estandares/plantilla_estandares.md
+    tags: [standards, canon, portfolio]
+
+  - id: hooks
+    name: Hooks del sistema de agentes
+    description: Eventos y hooks para extender el comportamiento de agentes.
+    type: module
+    path: hooks
+    validator: hooks/validar_hook.py
+    example: hooks/ejemplo_hook.sh.template
+    template: hooks/plantilla_hook.sh.template
+    tags: [hook, event, extension]
+
+  - id: mcp
+    name: MCP Servers
+    description: Plantillas para Model Context Protocol servers y herramientas.
+    type: module
+    path: mcp
+    validator: mcp/validar_mcp.py
+    example: mcp/ejemplo_mcp
+    template: mcp/plantilla_mcp.md
+    tags: [mcp, server, context]
+
+  - id: miniapps
+    name: Miniaplicaciones single-file
+    description: SPA single-file tipo Claude.ai artifact (dashboard, explorer, tool, playbook).
+    type: module
+    path: miniapps
+    validator: miniapps/validar_miniapps.py
+    example: miniapps/ejemplo_miniapps.md
+    template: miniapps/plantilla_miniapps.md
+    tags: [spa, miniapp, ui]
+
+  - id: modulo
+    name: Plantilla base de módulo
+    description: Esqueleto para crear nuevos módulos del sistema.
+    type: module
+    path: modulo
+    validator: modulo/validar_modulo.py
+    example: modulo
+    template: modulo/plantilla_modulo.md
+    tags: [template, skeleton, module]
+
+  - id: plugins
+    name: Plugins de agentes
+    description: Extensiones desacoplables para agentes con contratos claros.
+    type: module
+    path: plugins
+    validator: plugins/validar_plugin.py
+    example: plugins/ejemplo_plugin
+    template: plugins/plantilla_plugin.md
+    tags: [plugin, extension, agent]
+
+  - id: proyecto
+    name: Estructura de proyectos
+    description: Plantilla para bootstrapping de proyectos con el sistema de plantillas.
+    type: module
+    path: proyecto
+    validator: proyecto/validar_proyecto.py
+    example: proyecto
+    template: proyecto/plantilla_proyecto.md
+    tags: [project, bootstrap, scaffold]
+
+  - id: repositorios
+    name: Repositórios y community health
+    description: Playbooks, plantillas y auditoría de repositorios.
+    type: module
+    path: repositorios
+    validator: repositorios/validar_repositorio.py
+    example: repositorios/ejemplo_repositorio
+    template: repositorios/plantilla_repositorio.md
+    tags: [repository, health, audit]
+
+  - id: skills
+    name: Skills reutilizables
+    description: Habilidades atómicas que los agentes pueden invocar.
+    type: module
+    path: skills
+    validator: skills/validar_skill.py
+    example: skills/ejemplo_skill
+    template: skills/plantilla_skill.md
+    tags: [skill, atomic, reusable]
+
+  - id: docs
+    name: Documentación del Bloque 2
+    description: ADRs, guías del CLI y catálogo del paquete Python.
+    type: docs
+    path: docs
+    tags: [documentation, adr, block2]

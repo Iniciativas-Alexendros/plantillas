@@ -1,46 +1,35 @@
-# ADR 0002 — Usar Pydantic y Jinja2 para agent-config
+# ADR 0002: Esquema Pydantic y plantillas Jinja2 para agent-config
 
 ## Estado
 
-Propuesto (Bloque 2).
+Aceptado — en implementación (Bloque 2).
 
 ## Contexto
 
-`agent-config` genera 6 artefactos cross-platform a partir de
-`plantilla_agent_config.yaml`. Actualmente los renderers están implementados en
-Python puro (`generar_agent_configs.py`), mezclando lógica de negocio con
-formato de salida. Esto hace que:
+El módulo `agent-config` genera configuración cross-platform para Claude Code, OpenCode, Devin y Windsurf/Cascade a partir de una fuente YAML canónica. El generador actual (`generar_agent_configs.py`) es un script procedural que transforma directamente la fuente en cada artefacto. Esto dificulta:
 
-- Sea difícil validar que el YAML fuente cumple un esquema.
-- Sea difícil testar la salida sin escribir en `$HOME`.
-- Añadir un nuevo target requiera tocar código Python.
-- El drift check sea más complejo de mantener.
+- Validar la estructura de la fuente antes de generar.
+- Reutilizar fragmentos entre plataformas.
+- Testear la lógica de generación de forma aislada.
+- Extender el formato sin romper consumidores.
 
 ## Decisión
 
-- Modelar el YAML fuente con **Pydantic v2** (`AgentConfig`).
-- Usar **Jinja2** para los templates de cada target (Claude, OpenCode, Devin, Windsurf).
-- Generar los artefactos en un directorio de ejemplo (`ejemplo_agent_config/`) y
-  comparar con snapshot tests.
-- Exponer la sincronización como `plantillas sync agent-config`.
+Introducir un modelo de datos explícito con **Pydantic** para la fuente canónica y **Jinja2** como motor de plantillas para generar los artefactos de cada plataforma.
+
+- El modelo Pydantic vive en `src/plantillas/agent_config/schema.py`.
+- Las plantillas Jinja2 viven en `src/plantillas/agent_config/templates/`.
+- El comando `plantillas sync agent-config` valida el esquema, renderiza y aplica los cambios con backup opcional.
 
 ## Consecuencias
 
-### Positivas
-
-- Validación estricta del YAML fuente al cargar.
-- Tests deterministas sin mutar `$HOME`.
-- Añadir un nuevo target = añadir un template `.j2`.
-- Separación clara entre datos (`AgentConfig`) y presentación (Jinja2).
-
-### Negativas
-
-- Añade dependencias (`pydantic`, `jinja2`).
-- Requiere migrar los renderers actuales a templates.
-- El template debe mantenerse alineado con los cambios de schema.
+- Validación temprana y mensajes de error claros.
+- Separación entre datos (YAML) y presentación (Jinja2).
+- Tests unitarios del modelo y del renderizado sin tocar el sistema de archivos.
+- El generador procedural actual sigue siendo la implementación de referencia hasta que `sync` esté completo.
 
 ## Alternativas consideradas
 
-- **Renderers Python puro**: actualmente en uso, pero difícil de testar. Rechazado para el Bloque 2.
-- **Dataclasses + manual**: menos seguro que Pydantic. Rechazado.
-- **JSON Schema**: útil para validación, pero no da modelos tipados. Rechazado.
+- **Mantener el generador procedural**: rechazado por dificultad de testeo y acoplamiento.
+- **Dataclasses en lugar de Pydantic**: Pydantic aporta validación, serialización y errores descriptivos sin código adicional.
+- **Mustache en lugar de Jinja2**: Jinja2 es el estándar en el ecosistema Python y permite filtros personalizados.

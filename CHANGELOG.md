@@ -5,11 +5,11 @@ Todos los cambios destacables de este proyecto se documentan en este archivo.
 El formato sigue [Keep a Changelog 1.1.0](https://keepachangelog.com/es-ES/1.1.0/),
 y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 
-## [Unreleased] — Consolidación de armonización y preparación para Bloque 2
+## [Unreleased] — Consolidación de armonización y Bloque 2 en progreso
 
 > Esta sección agrupa todos los cambios no publicados desde v1.0.0, incluyendo la
 > refactorización Cross-platform Config, el módulo de estándares, los ajustes de
-> CI/CD y la preparación para el Bloque 2 (paquete Python con CLI `plantillas`).
+> CI/CD y la implementación inicial del Bloque 2 (paquete Python con CLI `plantillas`).
 
 ### Añadido
 
@@ -20,6 +20,9 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - **`tests/test_validadores.py`** — 12 tests nuevos para los checks reutilizables (`TestCheckArchivosProhibidos`, `TestCheckTamanioMaximo`, `TestCheckMergeConflicts`, `TestCheckSecrets`, `TestCheckGitignoreMinimo`).
 - **`.github/workflows/README-post-merge.md`** — sección "Matriz de permisos" con tabla `permiso × feature` para que adoptantes puedan recortar a least-privilege estricto según los `enable_*` activos.
 - Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.
+- Paquete Python `plantillas` (`pyproject.toml`, `src/plantillas/`, `modules.yaml`) con CLI unificada (`typer`), registry de validadores y tests (`pytest`).
+- Workflow `.github/workflows/validar-paquete.yml` para lint, tests y `plantillas validate` en CI.
+- Validador embebido de ejemplo en `src/plantillas/validators/agent_config.py`.
 - Composite action `setup-validadores` para setup DRY de Python + pyyaml.
 - Script `module-map.sh` para mapeo módulo→validador→ejemplo→plantilla.
 - Workflow `release.yml` para releases automáticas por tag semver.
@@ -47,7 +50,8 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - `CLAUDE.md`, `PROMPT_INICIO.md`, `CONTRIBUTING.md`, `ROADMAP.md`, `INTEGRACION.md`: limpiadas todas las referencias a módulos descartados (`dot-claude`, `autoresearch`, `cuadernos`, `knowledge`, `mceod-overlays`) y actualizados conteos/nombres a 12 módulos.
 - `agent-config/generar_agent_configs.py`: reescrito el descriptor de `memory` para evitar referencia al módulo `knowledge`.
 - `artefactos/README.md` y `repositorios/auditoria-canon-repo.sh`: eliminadas referencias a `cuadernos/`.
-- `.gitignore`: añadido patrón `*.backup` para backups del generador de `agent-config`.
+- `.gitignore`: añadidos patrones `*.backup`, `.venv/` y `docs/dossier-bloque2.html`.
+- `validar_repo.py`: permite `src/`, `docs/`, `pyproject.toml`, `modules.yaml` y 12 módulos canónicos; marca `artefactos` y `estandares` como módulos especiales mientras migran a estructura canónica completa.
 
 ### Fixed
 

@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "plantillas"
+version = "2.0.0-dev"
+description = "Sistema de plantillas modulares con CLI, catálogo YAML y registry de validadores."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = [
+    "pyyaml>=6.0.2",
+    "typer>=0.15.0",
+    "pydantic>=2.0",
+    "jinja2>=3.1",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.11.0",
+]
+
+[project.scripts]
+plantillas = "plantillas.cli:app"
+
+[project.urls]
+Homepage = "https://github.com/Alexendros/plantillas"
+Repository = "https://github.com/Alexendros/plantillas"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/plantillas"]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src",
+    "/modules.yaml",
+    "/README.md",
+    "/LICENSE",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,51 +1,38 @@
-# ADR 0001 — Reestructurar el repo como paquete Python con CLI unificado
+# ADR 0001: Reestructura del repositorio como paquete Python (Bloque 2)
 
 ## Estado
 
-Propuesto (Bloque 2).
+Aceptado — en implementación (Bloque 2).
 
 ## Contexto
 
-El repo de plantillas creció como una colección de scripts sueltos en la raíz:
-cada módulo tiene su `validar_<modulo>.py`, las listas de módulos están
-duplicadas en `.github/workflows/validar-todos.yml`, `tests/test_smoke.py`,
-`.pre-commit-config.yaml` y `validar_repo.py`, y los validadores importan el
-motor reusable mediante `sys.path.insert`. Esto dificulta:
+El sistema de plantillas empezó como una colección de directorios con scripts de validación independientes. Cada módulo tenía su propio validador, workflow de CI y mecanismo de copia manual. A medida que creció a 12 módulos canónicos, surgieron problemas de mantenimiento:
 
-- Añadir nuevos módulos (hay que tocar 4+ archivos).
-- Testar los validadores (dependen de la raíz del repo).
-- Reutilizar el motor en otros repos (no es un paquete instalable).
-- Centralizar la configuración (CI, pre-commit y tests pueden desincronizarse).
+- Duplicación de lógica entre validadores.
+- Dificultad para descubrir qué módulos existen y qué validan.
+- Instalación dependiente de clonar el repositorio completo.
+- Falta de una interfaz unificada para validar, sincronizar y crear módulos.
 
 ## Decisión
 
-Convertir el repo en un paquete Python estándar con:
+Convertir el repositorio en un paquete Python moderno (`src/plantillas/`) con:
 
-- `pyproject.toml` como manifest.
-- `src/plantillas/` como raíz del paquete.
-- CLI `plantillas` implementado con `click`.
-- Motor de validación en `src/plantillas/validators/`.
-- Catálogo de módulos en `modules.yaml` (única fuente de verdad).
-- Wrappers de compatibilidad para los scripts actuales.
+- `pyproject.toml` usando `hatchling` como build backend.
+- CLI unificada `plantillas` construida con `typer`.
+- Catálogo central `modules.yaml` como única fuente de verdad de los módulos.
+- Registry de validadores que puede delegar en scripts legacy o ejecutar validadores embebidos en `plantillas.validators`.
+- Dependencias: `pyyaml`, `pydantic`, `jinja2`, `typer`, `pytest` y `ruff`.
 
 ## Consecuencias
 
-### Positivas
-
-- Instalación reproducible: `uv pip install -e .`.
-- Tests unitarios sin depender de la raíz del repo.
-- Nuevos módulos se registran en `modules.yaml` y en el registry de validadores.
-- CI, pre-commit y tests leen el mismo catálogo.
-- Salida de validación uniforme (`json`, `github`, `text`).
-
-### Negativas
-
-- Requiere reescribir imports y añadir `pyproject.toml`.
-- Los scripts actuales deben mantenerse como wrappers temporalmente.
-- Mayor complejidad inicial para contribuidores ocasionales.
+- Se reduce la duplicación: el CLI y el catálogo orquestan a los validadores.
+- La instalación se simplifica a `pip install -e .`.
+- Los validadores legacy siguen funcionando durante la transición.
+- Se añade complejidad inicial: entorno virtual, dependencias y packaging.
+- El repositorio deja de ser solo una carpeta de plantillas; pasa a ser también un proyecto Python.
 
 ## Alternativas consideradas
 
-- **Mantener scripts sueltos**: simple pero no escala. Rechazado.
-- **Usar `setuptools` con `setup.py`**: `pyproject.toml` es el estándar actual. Rechazado.
-- **Separar el framework en otro repo**: añade overhead de sincronización. Rechazado; el framework vive en el mismo repo.
+- **Mantener scripts independientes**: rechazado por escalabilidad y duplicación.
+- **Poetry en lugar de hatchling**: rechazado para mantener el build system ligero y estándar (PEP 621/518).
+- **Click en lugar de typer**: typer aporta tipado, anotaciones y testing integrado con menos código.

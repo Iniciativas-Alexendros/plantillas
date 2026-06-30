@@ -10,8 +10,8 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
 | `generar_agent_configs.py`               | Genera los artefactos de cada plataforma (actual).                     |
 | `validar_agent_config.py`                | Valida la fuente, el generador y detecta drift en el ejemplo (actual). |
 | `ejemplo_agent_config/`                  | Salidas generadas para las 4 plataformas.                              |
-| `src/plantillas/agent_config/schema.py`  | Esquema Pydantic `AgentConfig` (Bloque 2).                             |
-| `src/plantillas/agent_config/templates/` | Templates Jinja2 por target (Bloque 2).                                |
+| `src/plantillas/agent_config/schema.py`  | Esquema Pydantic `AgentConfig` (Bloque 2, planificado).                |
+| `src/plantillas/agent_config/templates/` | Templates Jinja2 por target (Bloque 2, planificado).                   |
 
 ## Flujo de trabajo
 
@@ -31,16 +31,16 @@ Módulo canónico que centraliza en una fuente YAML la configuración global par
    python generar_agent_configs.py --backup
    ```
 
-### Bloque 2
+### Bloque 2 (en desarrollo)
 
 1. Modifica `plantilla_agent_config.yaml`.
-2. Sincroniza:
+2. Sincroniza (planificado):
    ```bash
    plantillas sync agent-config --home ~ --backup
    ```
 3. Valida:
    ```bash
-   plantillas validate agent-config --strict
+   plantillas validate agent-config
    ```
 
 ## Targets
