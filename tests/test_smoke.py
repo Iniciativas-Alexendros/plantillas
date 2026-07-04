@@ -3,6 +3,10 @@ Smoke tests · Validan que cada módulo puede copiar su plantilla y validarla.
 
 Ejecutar:
     pytest tests/test_smoke.py -v
+
+El test descubre los módulos con `validator:` declarado en `modules.yaml`.
+Añadir un módulo al catálogo + script `validar_<x>.py` lo incorpora
+automáticamente.
 """
 
 import shutil
@@ -10,25 +14,27 @@ import subprocess
 import sys
 from pathlib import Path
 
+from plantillas.catalog import load_catalog
+
 PLANTILLAS = Path(__file__).resolve().parents[1]
 
-# (modulo, script, base_ejemplo) — base_ejemplo se resuelve dinámicamente:
-# si existe `<mod>/<base>` (dir canon legado) lo usa; si no, busca
-# `<mod>/<base>.<ext>` para los módulos single-file post canon-runtime
-# (`.md` o `.sh.template`). Se añade `agent-config` como módulo cross-platform.
-MODULOS = [
-    ("agentes", "validar_agente.py", "ejemplo_agente"),
-    ("skills", "validar_skill.py", "ejemplo_skill"),
-    ("commands", "validar_command.py", "ejemplo_command"),
-    ("hooks", "validar_hook.py", "ejemplo_hook"),
-    ("mcp", "validar_mcp.py", "ejemplo_mcp"),
-    ("plugins", "validar_plugin.py", "ejemplo_plugin"),
-    ("agent-config", "validar_agent_config.py", "ejemplo_agent_config"),
-    ("repositorios", "validar_repositorio.py", "ejemplo_repositorio"),
-    ("modulo", "validar_modulo.py", "modulo"),
-    ("proyecto", "validar_proyecto.py", "proyecto"),
-    ("miniapps", "validar_miniapps.py", "ejemplo_miniapps"),
-]
+
+def _modulos_con_validador() -> list[tuple[str, str, str]]:
+    """Lee `modules.yaml` y devuelve [(modulo, script, base_ejemplo)]."""
+    catalog = load_catalog()
+    out: list[tuple[str, str, str]] = []
+    for module in catalog.canonical_ids():
+        entry = catalog.by_id(module)
+        if entry is None or not entry.validator:
+            continue
+        out.append((module, Path(entry.validator).name, _base_ejemplo(entry.example)))
+    return out
+
+
+def _base_ejemplo(example: str | None) -> str:
+    if not example:
+        return ""
+    return Path(example).name
 
 
 def _resolve_ejemplo(modulo: str, base: str) -> Path:
@@ -40,7 +46,7 @@ def _resolve_ejemplo(modulo: str, base: str) -> Path:
     extensión.
     """
     mod_dir = PLANTILLAS / modulo
-    if modulo in {"modulo", "proyecto", "agent-config"}:
+    if modulo in {"modulo", "proyecto", "agent-config", "estandares", "artefactos"}:
         return mod_dir
     legacy = mod_dir / base
     if legacy.is_dir():
@@ -58,7 +64,7 @@ def _resolve_ejemplo(modulo: str, base: str) -> Path:
 class TestSmoke:
     def test_todos_los_ejemplos_pasan_strict(self, tmp_path):
         """Cada ejemplo debe pasar su validador en modo strict."""
-        for modulo, script, ejemplo in MODULOS:
+        for modulo, script, ejemplo in _modulos_con_validador():
             script_path = PLANTILLAS / modulo / script
             ejemplo_path = _resolve_ejemplo(modulo, ejemplo)
 

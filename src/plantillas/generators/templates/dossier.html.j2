@@ -1,0 +1,342 @@
+<!doctype html>
+<!--
+  @name: dossier-bloque2
+  @category: playbook
+  @runtime: browser
+  @version: 2.0.0
+  @last_updated: 2026-06-30
+  @description: SPA single-file que proyecta modules.yaml, INDEX, ROADMAP, CHANGELOG
+    y ADRs del paquete `plantillas`. Regenerable por `python -m plantillas generate dossier`.
+-->
+<html lang="es" data-theme="sepia">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dossier · Bloque 2 — {{ data.catalog_version }}</title>
+  <style>
+    :root {
+      --bg: #f4ecd8; --panel: #faf3e0; --text: #2b2418; --muted: #6e6354;
+      --border: #d4c7a5; --accent: #4a3c20; --accent-soft: #ebe0c2;
+      --primary: #8a5a1c; --primary-soft: #f1e3c5;
+      --ok: #4a7c2a; --ok-soft: #d8ebc4; --warn: #b5862b; --warn-soft: #f5e6c1;
+      --danger: #a13d2f; --danger-soft: #f1cfc8; --radius: 0.6rem;
+      --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.06); --mono: ui-monospace, "JetBrains Mono", monospace;
+    }
+    html[data-theme="nocturno"] {
+      --bg: #14110d; --panel: #1c1812; --text: #e9dfc8; --muted: #8c8170;
+      --border: #2e2820; --accent: #e9dfc8; --accent-soft: #2a2418;
+      --primary: #d49a4a; --primary-soft: #3a2c18;
+      --ok: #7fb869; --ok-soft: #1f2a18; --warn: #e0b461; --warn-soft: #2e2516;
+      --danger: #d97a6c; --danger-soft: #2e1815;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.55;
+      font-size: 15px;
+    }
+    code, pre, .mono { font-family: var(--mono); }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 240px; border-right: 1px solid var(--border); background: var(--panel);
+      position: fixed; inset: 0 auto 0 0; padding: 1.25rem;
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .brand h1 { font-size: 1rem; margin: 0; }
+    .brand p { font-size: 0.75rem; color: var(--muted); margin: 0.25rem 0 0; }
+    .nav { flex: 1; overflow-y: auto; }
+    .nav button {
+      display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem;
+      background: transparent; border: 0; border-radius: 0.4rem; cursor: pointer;
+      color: var(--muted); font-size: 0.9rem; font-weight: 500;
+    }
+    .nav button:hover, .nav button.active { background: var(--accent-soft); color: var(--text); }
+    .main { flex: 1; margin-left: 240px; padding: 2rem; max-width: 1200px; }
+    header.top {
+      display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    header.top h1 { font-size: 1.4rem; margin: 0; }
+    .theme-wrap { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--muted); }
+    .theme-wrap input[type=range] { width: 140px; }
+    section.tab { display: none; }
+    section.tab.active { display: block; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+    .card h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .muted { color: var(--muted); }
+    .grid { display: grid; gap: 1rem; }
+    .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 500; }
+    .badge.module { background: var(--primary-soft); color: var(--primary); }
+    .badge.tag { background: var(--accent-soft); color: var(--text); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { background: var(--accent-soft); }
+    input[type=text], textarea, select {
+      width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
+      border-radius: 0.4rem; background: var(--bg); color: var(--text);
+      font: inherit;
+    }
+    .stat { display: flex; gap: 0.5rem; align-items: baseline; }
+    .stat .v { font-size: 1.6rem; font-weight: 600; }
+    .stat .l { font-size: 0.8rem; color: var(--muted); }
+    pre { background: var(--accent-soft); padding: 0.75rem 1rem; border-radius: var(--radius); overflow-x: auto; font-size: 0.82rem; }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>📚 Dossier</h1>
+      <p>Bloque 2 · {{ data.catalog_version }}</p>
+    </div>
+    <nav class="nav" role="tablist" id="tabs">
+      <button role="tab" data-tab="config" class="active" aria-selected="true">⚙️ Configurador</button>
+      <button role="tab" data-tab="catalog" aria-selected="false">🗂️ Catálogo</button>
+      <button role="tab" data-tab="map" aria-selected="false">🗺️ Mapa</button>
+      <button role="tab" data-tab="dossier" aria-selected="false">📑 Dossier</button>
+      <button role="tab" data-tab="index" aria-selected="false">🗒️ Índice</button>
+    </nav>
+    <div class="muted" style="font-size: 0.72rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+      <div class="stat"><span class="v">{{ data.stats.modules_count }}</span><span class="l">módulos</span></div>
+      <div class="stat"><span class="v">{{ data.stats.index_count }}</span><span class="l">docs</span></div>
+      <div class="stat"><span class="v">{{ data.stats.phases_count }}</span><span class="l">fases</span></div>
+      <div class="stat"><span class="v">{{ data.stats.decisions_count }}</span><span class="l">ADRs</span></div>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <h1 id="title">⚙️ Configurador</h1>
+      <div class="theme-wrap">
+        <span>sepia</span>
+        <input type="range" id="theme-slider" min="0" max="100" value="0" aria-label="Tema sepia ↔ nocturno">
+        <span>nocturno</span>
+      </div>
+    </header>
+
+    <!-- TAB: Configurador -->
+    <section class="tab active" id="tab-config" role="tabpanel">
+      <div class="card">
+        <h3>Filtros del catálogo</h3>
+        <p class="muted">Selecciona qué módulos quieres incluir en un scaffold `plantillas new` o un `cp -r` ad-hoc.</p>
+        <label><input type="checkbox" id="cfg-all" checked> Seleccionar todos</label>
+        <div id="cfg-list" class="grid cols-2" style="margin-top: 1rem;"></div>
+      </div>
+      <div class="card">
+        <h3>Comando generado</h3>
+        <pre id="cfg-cmd" class="mono"></pre>
+        <p class="muted">Copia y adapta. El CLI real <code>plantillas new &lt;name&gt;</code> está en desarrollo.</p>
+      </div>
+    </section>
+
+    <!-- TAB: Catálogo -->
+    <section class="tab" id="tab-catalog" role="tabpanel">
+      <div class="card">
+        <h3>Búsqueda</h3>
+        <input type="text" id="catalog-search" placeholder="Buscar por id, name, tag o descripción…">
+      </div>
+      <div class="card">
+        <table id="catalog-table">
+          <thead>
+            <tr><th>id</th><th>nombre</th><th>tipo</th><th>path</th><th>tags</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB: Mapa -->
+    <section class="tab" id="tab-map" role="tabpanel">
+      <div class="card">
+        <h3>Relaciones entre módulos</h3>
+        <p class="muted">Vista estática (regenerada en build-time). Los módulos comparten dependencias vía <code>validadores/</code> raíz, <code>modules.yaml</code> y <code>INTEGRACION.md</code>.</p>
+        <pre class="mono" id="map-content"></pre>
+      </div>
+    </section>
+
+    <!-- TAB: Dossier -->
+    <section class="tab" id="tab-dossier" role="tabpanel">
+      <div class="card">
+        <h3>Arquitectura</h3>
+        <p>El paquete <code>plantillas</code> (<code>{{ data.catalog_version }}</code>) tiene <strong>{{ data.stats.modules_count }} módulos canónicos</strong> en <code>modules.yaml</code>, <strong>{{ data.stats.phases_count }} fases</strong> en el ROADMAP y <strong>{{ data.stats.decisions_count }} ADRs</strong> en <code>docs/adr/</code>.</p>
+        <p>El CLI expone <code>validate</code>, <code>sync</code>, <code>config</code>, <code>version</code> y <code>generate dossier</code>. El validador embebido <code>agent_config</code> corre en el registry; el resto delegan en scripts legacy <code>validar_&lt;x&gt;.py</code> vía subprocess con timeout 30s.</p>
+      </div>
+      <div class="card">
+        <h3>Roadmap (fases)</h3>
+        <ul>
+          {% for phase in data.roadmap %}
+          <li><strong>{{ phase["status"] }} {{ phase["id"] }}</strong> — {{ phase["title"] }} <span class="muted">({{ phase["items"]|length }} items)</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Decisiones arquitectónicas (ADRs)</h3>
+        <ul>
+          {% for d in data.decisions %}
+          <li><strong>{{ d.id }}</strong> — {{ d.title }}<br><span class="muted">{{ d.body }}</span></li>
+          {% endfor %}
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Changelog (últimas entradas)</h3>
+        {% for entry in data.changelog[:3] %}
+        <details>
+          <summary><strong>{{ entry["version"] }}</strong> — {{ entry["date"] }} <span class="muted">({{ entry["items"]|length }} items)</span></summary>
+          <ul>{% for item in entry["items"] %}<li class="muted">{{ item }}</li>{% endfor %}</ul>
+        </details>
+        {% endfor %}
+      </div>
+    </section>
+
+    <!-- TAB: Índice -->
+    <section class="tab" id="tab-index" role="tabpanel">
+      <div class="card">
+        <h3>Tabla de contenidos</h3>
+        <input type="text" id="index-search" placeholder="Filtrar…">
+        <table id="index-table">
+          <thead><tr><th>path</th><th>título</th><th>sección</th><th>resumen</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Generado el {{ data.generated_at[:10] }} · catálogo {{ data.catalog_version }} ·
+      <code>python -m plantillas generate dossier</code> para regenerar.
+    </footer>
+  </main>
+</div>
+
+<script id="dossier-data" type="application/json">
+{{ data_json }}
+</script>
+
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('dossier-data').textContent);
+
+  // ── Tabs ──
+  const tabs = document.querySelectorAll('#tabs button');
+  const panels = document.querySelectorAll('section.tab');
+  const title = document.getElementById('title');
+  const tabTitles = {
+    config: '⚙️ Configurador',
+    catalog: '🗂️ Catálogo',
+    map: '🗺️ Mapa',
+    dossier: '📑 Dossier',
+    index: '🗒️ Índice'
+  };
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      const target = btn.dataset.tab;
+      panels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+      title.textContent = tabTitles[target] || target;
+    });
+  });
+
+  // ── Theme slider (sepia ↔ nocturno) ──
+  const slider = document.getElementById('theme-slider');
+  const html = document.documentElement;
+  const saved = localStorage.getItem('dossier-theme');
+  if (saved === 'nocturno') { slider.value = 100; html.dataset.theme = 'nocturno'; }
+  slider.addEventListener('input', () => {
+    const theme = slider.value > 50 ? 'nocturno' : 'sepia';
+    html.dataset.theme = theme;
+    localStorage.setItem('dossier-theme', theme);
+  });
+
+  // ── Configurador ──
+  const cfgList = document.getElementById('cfg-list');
+  const cfgCmd = document.getElementById('cfg-cmd');
+  const cfgAll = document.getElementById('cfg-all');
+  data.modules.forEach(m => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex; gap:0.5rem; align-items:flex-start; cursor:pointer;';
+    label.innerHTML = `<input type="checkbox" data-id="${m.id}" checked>
+      <span><span class="badge module">${m.id}</span> <span class="muted">${m.path}</span><br>${m.name}</span>`;
+    cfgList.appendChild(label);
+  });
+  function updateCmd() {
+    const selected = [...cfgList.querySelectorAll('input:checked')].map(i => i.dataset.id);
+    cfgCmd.textContent = selected.length
+      ? '# Pseudo-comando (plantillas new en desarrollo):\n' +
+        'mkdir -p my-scaffold && \\\n' +
+        'cp -r ' + selected.map(id => {
+          const m = data.modules.find(x => x.id === id);
+          return m ? m.path : id;
+        }).join(' ') + ' my-scaffold/'
+      : '(ningún módulo seleccionado)';
+  }
+  cfgList.addEventListener('change', updateCmd);
+  cfgAll.addEventListener('change', () => {
+    cfgList.querySelectorAll('input').forEach(i => i.checked = cfgAll.checked);
+    updateCmd();
+  });
+  updateCmd();
+
+  // ── Catálogo ──
+  const catalogTbody = document.querySelector('#catalog-table tbody');
+  function renderCatalog(filter) {
+    const f = (filter || '').toLowerCase();
+    catalogTbody.innerHTML = '';
+    data.modules
+      .filter(m => !f || JSON.stringify(m).toLowerCase().includes(f))
+      .forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><span class="badge module">${m.id}</span></td>
+          <td>${m.name}<br><span class="muted">${m.description}</span></td>
+          <td>${m.type}</td>
+          <td class="mono">${m.path}</td>
+          <td>${(m.tags || []).map(t => `<span class="badge tag">${t}</span>`).join(' ')}</td>`;
+        catalogTbody.appendChild(tr);
+      });
+  }
+  document.getElementById('catalog-search').addEventListener('input', e => renderCatalog(e.target.value));
+  renderCatalog('');
+
+  // ── Mapa (texto, simple pero regenerable) ──
+  const mapEl = document.getElementById('map-content');
+  const lines = [
+    '┌─ modules.yaml (catálogo canónico)',
+    '│   ├── ' + data.modules.map(m => m.id).join(', '),
+    '│',
+    '├─ src/plantillas/',
+    '│   ├── cli.py      → orquesta validate / sync / generate',
+    '│   ├── catalog.py  → Pydantic, carga modules.yaml',
+    '│   ├── registry.py → descubre validadores, timeout 30s',
+    '│   ├── sync.py     → push/pull/status contra ~/.config/opencode/',
+    '│   ├── validators/ → wrappers embebidos (agent_config)',
+    '│   └── generators/ → dossier (este SPA), parsers',
+    '│',
+    '├─ tests/          → 44+ tests pytest',
+    '├─ validadores/    → motor reusable legacy (checks, base, reporte)',
+    '├─ docs/adr/       → ' + data.stats.decisions_count + ' decisiones arquitectónicas',
+    '└─ docs/dossier-bloque2.html  ← este SPA (regenerable)'
+  ];
+  mapEl.textContent = lines.join('\n');
+
+  // ── Índice ──
+  const indexTbody = document.querySelector('#index-table tbody');
+  function renderIndex(filter) {
+    const f = (filter || '').toLowerCase();
+    indexTbody.innerHTML = '';
+    data.index_toc
+      .filter(i => !f || JSON.stringify(i).toLowerCase().includes(f))
+      .forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="mono">${i.path}</td>
+          <td>${i.title}</td>
+          <td class="muted">${i.section || ''}</td>
+          <td class="muted">${i.summary || ''}</td>`;
+        indexTbody.appendChild(tr);
+      });
+  }
+  document.getElementById('index-search').addEventListener('input', e => renderIndex(e.target.value));
+  renderIndex('');
+})();
+</script>
+</body>
+</html>

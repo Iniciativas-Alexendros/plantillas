@@ -1,7 +1,8 @@
 # ═══════════════════════════════════════════════════════════════════════════════
 # CI/CD · Validación del paquete Python plantillas (Bloque 2)
 #
-# Propósito: instalar el paquete en modo editable y ejecutar lint, tests y CLI.
+# Propósito: instalar el paquete en modo editable, correr lint, tests,
+# validar el catálogo y verificar que la SPA regenerable cumple el canon.
 # ═══════════════════════════════════════════════════════════════════════════════
 
 name: Validar Paquete plantillas
@@ -31,8 +32,12 @@ permissions:
 
 jobs:
   paquete:
-    name: Lint, tests y CLI
+    name: Lint + tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
         with:
@@ -40,7 +45,7 @@ jobs:
 
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
-          python-version: "3.12"
+          python-version: ${{ matrix.python-version }}
 
       - name: Instalar paquete editable
         run: pip install -e ".[dev]"
@@ -53,3 +58,9 @@ jobs:
 
       - name: Validar catálogo y módulos
         run: plantillas validate
+
+      - name: Generar SPA dossier (sanity check)
+        run: python -m plantillas generate dossier --output /tmp/dossier-test.html
+
+      - name: Lint de la SPA
+        run: pytest tests/test_generator.py -v

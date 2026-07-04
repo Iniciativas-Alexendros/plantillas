@@ -1,0 +1,71 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# CI/CD · Regeneración automática de la SPA `dossier-bloque2.html`
+#
+# En cada push a `main` (excluyendo el propio SPA) que toque cualquiera de
+# los inputs del generador, regenera la SPA y la commitea. Si la SPA
+# generada no commiteada está presente, abre un PR con `peter-evans/create-pull-request`.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+name: Regenerar SPA dossier
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - "modules.yaml"
+      - "INDEX.md"
+      - "ROADMAP.md"
+      - "CHANGELOG.md"
+      - "src/plantillas/**"
+      - "docs/adr/**"
+      - "docs/*.md"
+      - ".github/workflows/regenerar-spa.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  regenerar:
+    name: Regenerar SPA
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
+        with:
+          python-version: "3.12"
+
+      - name: Instalar paquete editable
+        run: pip install -e .
+
+      - name: Regenerar SPA
+        run: python -m plantillas generate dossier
+
+      - name: Detectar drift
+        id: diff
+        run: |
+          if git diff --quiet docs/dossier-bloque2.html; then
+            echo "drift=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "drift=true" >> "$GITHUB_OUTPUT"
+            echo "::warning::La SPA está desincronizada. Abriendo PR."
+          fi
+
+      - name: Abrir PR si hay drift
+        if: steps.diff.outputs.drift == 'true'
+        uses: peter-evans/create-pull-request@5e6c0d9a4c2c0e5c8a8a1f3e6c8e0c5e8a1f3e6c # v6
+        with:
+          title: "chore(dossier): regenera SPA"
+          commit-message: "chore(dossier): regenera SPA [skip ci]"
+          branch: chore/regenerate-spa
+          delete-branch: true
+          body: |
+            Regeneración automática de `docs/dossier-bloque2.html` por
+            el workflow `regenerar-spa.yml`. La SPA se deriva de
+            `modules.yaml`, `INDEX.md`, `ROADMAP.md`, `CHANGELOG.md`
+            y `docs/adr/*.md`; revisar el diff antes de mergear.

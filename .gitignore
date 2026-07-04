@@ -12,35 +12,31 @@ __pycache__/
 *$py.class
 *.so
 .pytest_cache/
+.ruff_cache/
+.venv/
+uv.lock
 
 # ─── Node ────────────────────────────────────────────────────────────────────
 node_modules/
 npm-debug.log*
+package-lock.json
 
 # ─── Editores / OS ───────────────────────────────────────────────────────────
-.DS_Store
-Thumbs.db
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+.DS_Store
+Thumbs.db
 
-# ─── Archivos personales del operador (no parte del sistema modular) ─────────
+# ─── Sistema de agentes / OpenCode legacy ────────────────────────────────────
+.claude/settings.local.json
+.claude/worktrees/
+
+# ─── Artefactos del portfolio / operadores / vap legacy ──────────────────────
 /vap/
 /cuaderno-plantilla/
 /artefactos/operador/
 
-# ─── Backups locales ─────────────────────────────────────────────────────────
-*.backup
-*.backup.*
-*.bak
-.backups-*/
-
-# ─── Claude Code (overrides personales y worktrees) ───────────────────────────
-.claude/settings.local.json
-.claude/worktrees/
-
-# ─── Dossier, entorno de desarrollo y artefactos de planificación ───────────
+# ─── Entorno de desarrollo y artefactos de planificación ────────────────────
 /.venv/
-/docs/dossier-bloque2.html

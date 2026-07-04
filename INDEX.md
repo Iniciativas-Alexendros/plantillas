@@ -10,7 +10,9 @@
 >
 > 🧱 **Bloque 2 en curso**: reestructura del repo como paquete Python con CLI
 > `plantillas` y catálogo `modules.yaml`. Ver [`ROADMAP.md`](./ROADMAP.md) y el
-> dossier visual `docs/dossier-bloque2.html` (no sincronizado en GitHub).
+> dossier visual regenerable [`docs/dossier-bloque2.html`](./docs/dossier-bloque2.html)
+> (single-file, 5 tabs, generado por `plantillas generate dossier`,
+> CI lo regenera en cada push a `main`).
 
 ---
 
