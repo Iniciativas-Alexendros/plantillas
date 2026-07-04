@@ -129,9 +129,6 @@ modules:
     example: skills/ejemplo_skill
     template: skills/plantilla_skill.md
     tags: [skill, atomic, reusable]
-    sync:
-      target: opencode
-      subdir: skills
 
   - id: docs
     name: Documentación del Bloque 2

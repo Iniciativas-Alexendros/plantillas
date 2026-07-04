@@ -60,7 +60,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          curl -sfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- v1.7.7 "$HOME/.local/bin"
+          curl -sfL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash | bash -s -- v1.7.12 "$HOME/.local/bin"
           "$HOME/.local/bin/actionlint" -no-color 2>&1 | \
             reviewdog -name=actionlint -reporter=github-check -level=warning -fail-on-error=false -f=actionlint || true
       - id: zz
@@ -70,7 +70,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          pipx install zizmor==1.6.0 || pip install --user zizmor==1.6.0
+          pipx install zizmor==1.26.1 || pip install --user zizmor==1.26.1
           zizmor --format sarif . > zizmor.sarif 2>/dev/null || true
           zizmor --format plain . 2>&1 | tail -60 >> "$GITHUB_STEP_SUMMARY" || true
       - uses: github/codeql-action/upload-sarif@b0c4fd77f6c559021d78430ec4d0d169ae74a4eb # v3
@@ -108,7 +108,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with: { python-version: "3.12" }
-      - run: pip install --quiet yamllint==0.33.0
+      - run: pip install --quiet yamllint==1.38.0
       - id: yl
         continue-on-error: true
         run: |
@@ -138,10 +138,10 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          # shellcheck v0.10.0 binario estático (evita apt + versiones flotantes)
-          curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.10.0/shellcheck-v0.10.0.linux.x86_64.tar.xz | \
+          # shellcheck v0.11.0 binario estático (evita apt + versiones flotantes)
+          curl -fsSL https://github.com/koalaman/shellcheck/releases/download/v0.11.0/shellcheck-v0.11.0.linux.x86_64.tar.xz | \
             tar -xJf - -C /tmp
-          install -m755 /tmp/shellcheck-v0.10.0/shellcheck "$HOME/.local/bin/shellcheck"
+          install -m755 /tmp/shellcheck-v0.11.0/shellcheck "$HOME/.local/bin/shellcheck"
           echo "$HOME/.local/bin" >> "$GITHUB_PATH"
           find . -type f \( -name '*.sh' -o -name '*.bash' \) -not -path './node_modules/*' -not -path './.git/*' \
             -print0 | xargs -0 -r shellcheck -f gcc 2>&1 | \
@@ -164,7 +164,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          curl -sfL https://github.com/hadolint/hadolint/releases/download/v2.12.0/hadolint-Linux-x86_64 -o "$HOME/.local/bin/hadolint"
+          curl -sfL https://github.com/hadolint/hadolint/releases/download/v2.14.0/hadolint-Linux-x86_64 -o "$HOME/.local/bin/hadolint"
           chmod +x "$HOME/.local/bin/hadolint"
           find . -name 'Dockerfile*' -not -path './node_modules/*' -not -path './.git/*' -print0 | \
             xargs -0 -r "$HOME/.local/bin/hadolint" --no-color --format=tty 2>&1 | \
@@ -234,7 +234,7 @@ jobs:
           # Prefer Biome si existe biome.json(c)
           if [ -f biome.json ] || [ -f biome.jsonc ]; then
             echo "[ts] Biome detectado"
-            npx --yes @biomejs/biome@1.8.3 ci . || true
+            npx --yes @biomejs/biome@2.5.1 ci . || true
           elif [ -f eslint.config.js ] || [ -f eslint.config.mjs ] || [ -f .eslintrc.json ] || [ -f .eslintrc.cjs ]; then
             echo "[ts] ESLint detectado"
             if [ -f package-lock.json ] || [ -f pnpm-lock.yaml ] || [ -f yarn.lock ]; then
@@ -243,7 +243,7 @@ jobs:
               ( npm ci 2>/dev/null ) || \
               ( npm install 2>/dev/null )
             fi
-            npx eslint@9.11.0 . --no-error-on-unmatched-pattern || true
+            npx eslint@9.39.4 . --no-error-on-unmatched-pattern || true
           else
             echo "[ts] sin config TS lint · skip"
           fi
@@ -267,7 +267,7 @@ jobs:
           REVIEWDOG_GITHUB_API_TOKEN: ${{ github.token }}
         run: |
           set -Eeuo pipefail
-          pip install --quiet ruff==0.11.0
+          pip install --quiet ruff==0.15.20
           ruff check --output-format=concise . 2>&1 | \
             reviewdog -name=ruff -reporter=github-check -level=warning -fail-on-error=false \
               -efm='%f:%l:%c: %m' || true
@@ -288,7 +288,7 @@ jobs:
       - id: cd
         continue-on-error: true
         run: |
-          cargo install --locked cargo-deny@2.0.16 --quiet || true
+          cargo install --locked cargo-deny@0.19.9 --quiet || true
           cargo deny check 2>&1 | tee deny.log
           {
             echo "### cargo-deny"
@@ -331,8 +331,8 @@ jobs:
           fi
           # Install CLI binario oficial
           curl -sfL -o /tmp/osv-scanner.tar.gz \
-            "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64.tar.gz" ||           curl -sfL -o /tmp/osv-scanner \
-            "https://github.com/google/osv-scanner/releases/download/v1.9.2/osv-scanner_linux_amd64"
+            "https://github.com/google/osv-scanner/releases/download/v2.4.0/osv-scanner_linux_amd64.tar.gz" ||           curl -sfL -o /tmp/osv-scanner \
+            "https://github.com/google/osv-scanner/releases/download/v2.4.0/osv-scanner_linux_amd64"
           if [ -f /tmp/osv-scanner.tar.gz ]; then
             tar -xzf /tmp/osv-scanner.tar.gz -C /tmp osv-scanner
           fi

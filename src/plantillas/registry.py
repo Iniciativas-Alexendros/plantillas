@@ -1,17 +1,12 @@
 """Registry de validadores compatibles con el catálogo modules.yaml."""
 
 import importlib
-import logging
 import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
 from plantillas.catalog import Catalog, Module
-
-log = logging.getLogger("plantillas.registry")
-
-DEFAULT_TIMEOUT = 30
 
 
 @dataclass
@@ -35,12 +30,9 @@ class ValidatorRegistry:
 
     def validate(self, module_id: str, module: Module, root: Path) -> ValidationResult:
         if module_id in self._funcs:
-            log.debug("validator: %s → embedded", module_id)
             return self._funcs[module_id](module, root)
         if module.validator:
-            log.debug("validator: %s → script %s", module_id, module.validator)
             return self._run_script(module.validator, module, root)
-        log.debug("validator: %s → none", module_id)
         return ValidationResult(
             module_id=module_id, ok=True, message="No validator configured"
         )
@@ -60,21 +52,13 @@ class ValidatorRegistry:
                 target = candidate
         cmd = ["python", str(script_path), str(target), "--strict"]
         try:
-            subprocess.run(
-                cmd, check=True, capture_output=True, text=True, timeout=DEFAULT_TIMEOUT
-            )
+            subprocess.run(cmd, check=True, capture_output=True, text=True)
             return ValidationResult(module_id=module.id, ok=True, message="OK")
-        except subprocess.TimeoutExpired:
-            return ValidationResult(
-                module_id=module.id,
-                ok=False,
-                message=f"Validator timeout after {DEFAULT_TIMEOUT}s: {script_path.name}",
-            )
         except subprocess.CalledProcessError as exc:
             return ValidationResult(
                 module_id=module.id,
                 ok=False,
-                message=f"Validation failed (exit {exc.returncode}):\n{exc.stdout}{exc.stderr}",
+                message=f"Validation failed:\n{exc.stdout}{exc.stderr}",
             )
 
 
@@ -93,8 +77,6 @@ def discover_validators(registry: ValidatorRegistry, catalog: Catalog) -> list[s
             fn = getattr(mod, "validate", None)
             if callable(fn):
                 registry.register(module.id, fn)
-                log.debug("discover: %s → %s.validate", module.id, mod.__name__)
-        except (ModuleNotFoundError, ImportError) as exc:
-            log.debug("discover: %s → skip (%s)", module.id, exc.__class__.__name__)
+        except ModuleNotFoundError:
             continue
     return catalog.canonical_ids()
