@@ -1,0 +1,988 @@
+<!doctype html>
+<!--
+  @name: dossier-bloque2
+  @category: playbook
+  @runtime: browser
+  @version: 2.0.0
+  @last_updated: 2026-06-30
+  @description: SPA single-file que proyecta modules.yaml, INDEX, ROADMAP, CHANGELOG
+    y ADRs del paquete `plantillas`. Regenerable por `python -m plantillas generate dossier`.
+-->
+<html lang="es" data-theme="sepia">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dossier · Bloque 2 — 2.0.0-dev</title>
+  <style>
+    :root {
+      --bg: #f4ecd8; --panel: #faf3e0; --text: #2b2418; --muted: #6e6354;
+      --border: #d4c7a5; --accent: #4a3c20; --accent-soft: #ebe0c2;
+      --primary: #8a5a1c; --primary-soft: #f1e3c5;
+      --ok: #4a7c2a; --ok-soft: #d8ebc4; --warn: #b5862b; --warn-soft: #f5e6c1;
+      --danger: #a13d2f; --danger-soft: #f1cfc8; --radius: 0.6rem;
+      --shadow: 0 1px 2px 0 rgb(0 0 0 / 0.06); --mono: ui-monospace, "JetBrains Mono", monospace;
+    }
+    html[data-theme="nocturno"] {
+      --bg: #14110d; --panel: #1c1812; --text: #e9dfc8; --muted: #8c8170;
+      --border: #2e2820; --accent: #e9dfc8; --accent-soft: #2a2418;
+      --primary: #d49a4a; --primary-soft: #3a2c18;
+      --ok: #7fb869; --ok-soft: #1f2a18; --warn: #e0b461; --warn-soft: #2e2516;
+      --danger: #d97a6c; --danger-soft: #2e1815;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, sans-serif;
+      background: var(--bg); color: var(--text); line-height: 1.55;
+      font-size: 15px;
+    }
+    code, pre, .mono { font-family: var(--mono); }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar {
+      width: 240px; border-right: 1px solid var(--border); background: var(--panel);
+      position: fixed; inset: 0 auto 0 0; padding: 1.25rem;
+      display: flex; flex-direction: column; gap: 1rem;
+    }
+    .brand h1 { font-size: 1rem; margin: 0; }
+    .brand p { font-size: 0.75rem; color: var(--muted); margin: 0.25rem 0 0; }
+    .nav { flex: 1; overflow-y: auto; }
+    .nav button {
+      display: block; width: 100%; text-align: left; padding: 0.5rem 0.75rem;
+      background: transparent; border: 0; border-radius: 0.4rem; cursor: pointer;
+      color: var(--muted); font-size: 0.9rem; font-weight: 500;
+    }
+    .nav button:hover, .nav button.active { background: var(--accent-soft); color: var(--text); }
+    .main { flex: 1; margin-left: 240px; padding: 2rem; max-width: 1200px; }
+    header.top {
+      display: flex; align-items: center; gap: 1.5rem; margin-bottom: 1.5rem;
+      padding-bottom: 1rem; border-bottom: 1px solid var(--border);
+    }
+    header.top h1 { font-size: 1.4rem; margin: 0; }
+    .theme-wrap { margin-left: auto; display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: var(--muted); }
+    .theme-wrap input[type=range] { width: 140px; }
+    section.tab { display: none; }
+    section.tab.active { display: block; }
+    .card { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem; }
+    .card h3 { margin: 0 0 0.5rem; font-size: 1.05rem; }
+    .muted { color: var(--muted); }
+    .grid { display: grid; gap: 1rem; }
+    .grid.cols-2 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+    .badge { display: inline-block; padding: 0.15rem 0.55rem; border-radius: 999px; font-size: 0.72rem; font-weight: 500; }
+    .badge.module { background: var(--primary-soft); color: var(--primary); }
+    .badge.tag { background: var(--accent-soft); color: var(--text); }
+    table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    th, td { text-align: left; padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border); }
+    th { background: var(--accent-soft); }
+    input[type=text], textarea, select {
+      width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border);
+      border-radius: 0.4rem; background: var(--bg); color: var(--text);
+      font: inherit;
+    }
+    .stat { display: flex; gap: 0.5rem; align-items: baseline; }
+    .stat .v { font-size: 1.6rem; font-weight: 600; }
+    .stat .l { font-size: 0.8rem; color: var(--muted); }
+    pre { background: var(--accent-soft); padding: 0.75rem 1rem; border-radius: var(--radius); overflow-x: auto; font-size: 0.82rem; }
+    footer { margin-top: 2rem; padding-top: 1rem; border-top: 1px solid var(--border); color: var(--muted); font-size: 0.78rem; }
+  </style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>📚 Dossier</h1>
+      <p>Bloque 2 · 2.0.0-dev</p>
+    </div>
+    <nav class="nav" role="tablist" id="tabs">
+      <button role="tab" data-tab="config" class="active" aria-selected="true">⚙️ Configurador</button>
+      <button role="tab" data-tab="catalog" aria-selected="false">🗂️ Catálogo</button>
+      <button role="tab" data-tab="map" aria-selected="false">🗺️ Mapa</button>
+      <button role="tab" data-tab="dossier" aria-selected="false">📑 Dossier</button>
+      <button role="tab" data-tab="index" aria-selected="false">🗒️ Índice</button>
+    </nav>
+    <div class="muted" style="font-size: 0.72rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
+      <div class="stat"><span class="v">13</span><span class="l">módulos</span></div>
+      <div class="stat"><span class="v">48</span><span class="l">docs</span></div>
+      <div class="stat"><span class="v">4</span><span class="l">fases</span></div>
+      <div class="stat"><span class="v">3</span><span class="l">ADRs</span></div>
+    </div>
+  </aside>
+  <main class="main">
+    <header class="top">
+      <h1 id="title">⚙️ Configurador</h1>
+      <div class="theme-wrap">
+        <span>sepia</span>
+        <input type="range" id="theme-slider" min="0" max="100" value="0" aria-label="Tema sepia ↔ nocturno">
+        <span>nocturno</span>
+      </div>
+    </header>
+
+    <!-- TAB: Configurador -->
+    <section class="tab active" id="tab-config" role="tabpanel">
+      <div class="card">
+        <h3>Filtros del catálogo</h3>
+        <p class="muted">Selecciona qué módulos quieres incluir en un scaffold `plantillas new` o un `cp -r` ad-hoc.</p>
+        <label><input type="checkbox" id="cfg-all" checked> Seleccionar todos</label>
+        <div id="cfg-list" class="grid cols-2" style="margin-top: 1rem;"></div>
+      </div>
+      <div class="card">
+        <h3>Comando generado</h3>
+        <pre id="cfg-cmd" class="mono"></pre>
+        <p class="muted">Copia y adapta. El CLI real <code>plantillas new &lt;name&gt;</code> está en desarrollo.</p>
+      </div>
+    </section>
+
+    <!-- TAB: Catálogo -->
+    <section class="tab" id="tab-catalog" role="tabpanel">
+      <div class="card">
+        <h3>Búsqueda</h3>
+        <input type="text" id="catalog-search" placeholder="Buscar por id, name, tag o descripción…">
+      </div>
+      <div class="card">
+        <table id="catalog-table">
+          <thead>
+            <tr><th>id</th><th>nombre</th><th>tipo</th><th>path</th><th>tags</th></tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- TAB: Mapa -->
+    <section class="tab" id="tab-map" role="tabpanel">
+      <div class="card">
+        <h3>Relaciones entre módulos</h3>
+        <p class="muted">Vista estática (regenerada en build-time). Los módulos comparten dependencias vía <code>validadores/</code> raíz, <code>modules.yaml</code> y <code>INTEGRACION.md</code>.</p>
+        <pre class="mono" id="map-content"></pre>
+      </div>
+    </section>
+
+    <!-- TAB: Dossier -->
+    <section class="tab" id="tab-dossier" role="tabpanel">
+      <div class="card">
+        <h3>Arquitectura</h3>
+        <p>El paquete <code>plantillas</code> (<code>2.0.0-dev</code>) tiene <strong>13 módulos canónicos</strong> en <code>modules.yaml</code>, <strong>4 fases</strong> en el ROADMAP y <strong>3 ADRs</strong> en <code>docs/adr/</code>.</p>
+        <p>El CLI expone <code>validate</code>, <code>sync</code>, <code>config</code>, <code>version</code> y <code>generate dossier</code>. El validador embebido <code>agent_config</code> corre en el registry; el resto delegan en scripts legacy <code>validar_&lt;x&gt;.py</code> vía subprocess con timeout 30s.</p>
+      </div>
+      <div class="card">
+        <h3>Roadmap (fases)</h3>
+        <ul>
+          <li><strong>⏳ FASE 1</strong> — MVP · Fundamentos (COMPLETADA) <span class="muted">(4 items)</span></li>
+          <li><strong>⏳ FASE 2</strong> — Robustecimiento · Calidad y Cobertura <span class="muted">(5 items)</span></li>
+          <li><strong>⏳ FASE 3</strong> — Ecosistema · Distribución y Colaboración <span class="muted">(12 items)</span></li>
+          <li><strong>⏳ FASE 4</strong> — Producción · Escalado y Mantenimiento <span class="muted">(0 items)</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Decisiones arquitectónicas (ADRs)</h3>
+        <ul>
+          <li><strong>0001-reestructura-paquete-python-bloque2</strong> — ADR 0001: Reestructura del repositorio como paquete Python (Bloque 2)<br><span class="muted">Aceptado — en implementación (Bloque 2).</span></li>
+          <li><strong>0002-agent-config-pydantic-jinja2</strong> — ADR 0002: Esquema Pydantic y plantillas Jinja2 para agent-config<br><span class="muted">Aceptado — en implementación (Bloque 2).</span></li>
+          <li><strong>0003-catalogo-modulos-yaml</strong> — ADR 0003: Catálogo central de módulos en `modules.yaml`<br><span class="muted">Aceptado — en implementación (Bloque 2).</span></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Changelog (últimas entradas)</h3>
+        <details>
+          <summary><strong>Unreleased</strong> — Consolidación de armonización y Bloque 2 en progreso <span class="muted">(63 items)</span></summary>
+          <ul><li class="muted">- Módulo agent-config/: fuente canónica YAML (plantilla_agent_config.yaml) que genera configuración para Claude Code (~/.claude/), OpenCode (~/AGENTS.md), Devin (~/.config/devin/) y Windsurf/Cascade (~/.codeium/windsurf/memories/global_rules.md).</li><li class="muted">- Generador agent-config/generar_agent_configs.py y validador agent-config/validar_agent_config.py con drift check entre la fuente y el directorio de ejemplo.</li><li class="muted">- Workflow agent-config/.github/workflows/validar-agent-config.yml y registro en validar-todos.yml y validar_repo.py.</li><li class="muted">- repositorios/docs-only/.markdownlint.json.tmpl — Configuración markdownlint para repos docs-only: default: true + desactiva MD013 (line-length), MD034 (no-bare-urls), MD041 (first-line-heading), y configura MD024 con siblings_only: true (permite headings duplicados en secciones distintas, compatible con CHANGELOG Keep-a-Changelog con múltiples secciones "Añadido"/"Fixed").</li><li class="muted">- tests/test_validadores.py — 12 tests nuevos para los checks reutilizables (TestCheckArchivosProhibidos, TestCheckTamanioMaximo, TestCheckMergeConflicts, TestCheckSecrets, TestCheckGitignoreMinimo).</li><li class="muted">- .github/workflows/README-post-merge.md — sección "Matriz de permisos" con tabla permiso × feature para que adoptantes puedan recortar a least-privilege estricto según los enable_* activos.</li><li class="muted">- Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.</li><li class="muted">- Paquete Python plantillas (pyproject.toml, src/plantillas/, modules.yaml) con CLI unificada (typer), registry de validadores y tests (pytest).</li><li class="muted">- Workflow .github/workflows/validar-paquete.yml para lint, tests y plantillas validate en CI.</li><li class="muted">- Validador embebido de ejemplo en src/plantillas/validators/agent_config.py.</li><li class="muted">- Composite action setup-validadores para setup DRY de Python + pyyaml.</li><li class="muted">- Script module-map.sh para mapeo módulo→validador→ejemplo→plantilla.</li><li class="muted">- Workflow release.yml para releases automáticas por tag semver.</li><li class="muted">- Workflow link-check.yml para detección semanal de enlaces rotos.</li><li class="muted">- Directorios faltantes en ejemplo_agente/tools/custom/ y ejemplo_dot_claude/.</li><li class="muted">- ruff.toml con configuración de linting para validadores.</li><li class="muted">- Módulo miniapps/ — canon nuevo para SPA single-file tipo Claude.ai artifact (categorías: dashboard, explorer, tool, playbook; runtimes: browser, electron, static). Incluye plantilla_miniapps.md, ejemplo_miniapps.md (KPI dashboard), validar_miniapps.py y workflow CI.</li><li class="muted">- validar_repo.py acepta plantilla_<base>.* y ejemplo_<base>.* (glob por extensión) además de directorios, habilitando los formatos single-file .md y .sh.template.</li><li class="muted">- Módulos autoresearch/, cuadernos/, knowledge/ y dot-claude/ (sustituidos por agent-config/ y el repo de plantillas en sí). Se ha preservado backup en .backups-YYYYMMDD-HHMMSS/ antes de borrar.</li><li class="muted">- agentes/_legacy_{plantilla,ejemplo}_agente_dir/, commands/_legacy_{plantilla,ejemplo}_command_dir/, hooks/_legacy_{plantilla,ejemplo}_hook_dir/ — Purgados los 6 directorios legacy de la estructura multi-archivo previa a la reforma Canon-Runtime. Estaban preservados como retrocompat pero ya no se validan activamente; el canon single-file (*.md / *.sh.template) los sustituye por completo. Referencias eliminadas del árbol visual de INDEX.md. El historial de la migración se conserva en las entradas previas de este CHANGELOG.</li><li class="muted">- mceod-overlays/ y .github/workflows/validar-mceod-overlays.yml — Eliminado el módulo MCEOD overlays (L0–L3 + validar_mceod_overlays.py) por estar deprecado/descatalogado. No estaba registrado en DIRECTORIOS_PERMITIDOS, por lo que hacía fallar validar_repo.py --strict (exit 1) en main. Todas las referencias estaban contenidas en su propio subárbol + el workflow; no quedan referencias colgantes en el repo. Nota operativa: el symlink local ~/.claude/templates → mceod-overlays queda obsoleto.</li><li class="muted">- agentes/ejemplo_agente/ — Eliminado un directorio fantasma (solo tools/custom/README.md) remanente de la estructura multi-archivo previa a Canon-Runtime, que coexistía con el fichero canónico ejemplo_agente.md y rompía tests/test_smoke.py al resolver el ejemplo al directorio en lugar del .md.</li><li class="muted">- INDEX.md: actualizado a 12 módulos canónicos, eliminadas referencias a módulos borrados y añadida sección de agent-config.</li><li class="muted">- .github/workflows/validar-todos.yml: matriz reducida a 12 módulos.</li><li class="muted">- validar_repo.py: listas de directorios permitidos, módulos canónicos y mapeo de singulares actualizados; eliminada lógica muerta del módulo borrado dot-claude y del directorio descatalogado mceod-overlays/.</li><li class="muted">- .pre-commit-config.yaml: eliminados hooks de módulos borrados (dot-claude, autoresearch, cuadernos, knowledge) y añadida validación de agent-config.</li><li class="muted">- agent-config/.github/workflows/validar-agent-config.yml: pines SHA de acciones y permisos mínimos.</li><li class="muted">- .github/scripts/module-map.sh, .github/workflows/pr-guardian.yml, .github/workflows/ci-global.yml: sincronizados a los 12 módulos canónicos actuales y eliminados filtros/mapeos legacy.</li><li class="muted">- CLAUDE.md, PROMPT_INICIO.md, CONTRIBUTING.md, ROADMAP.md, INTEGRACION.md: limpiadas todas las referencias a módulos descartados (dot-claude, autoresearch, cuadernos, knowledge, mceod-overlays) y actualizados conteos/nombres a 12 módulos.</li><li class="muted">- agent-config/generar_agent_configs.py: reescrito el descriptor de memory para evitar referencia al módulo knowledge.</li><li class="muted">- artefactos/README.md y repositorios/auditoria-canon-repo.sh: eliminadas referencias a cuadernos/.</li><li class="muted">- .gitignore: añadidos patrones *.backup, .venv/ y docs/dossier-bloque2.html.</li><li class="muted">- validar_repo.py: permite src/, docs/, pyproject.toml, modules.yaml y 12 módulos canónicos; marca artefactos y estandares como módulos especiales mientras migran a estructura canónica completa.</li><li class="muted">- validadores/checks.py — check_archivos_vacios excluye .git/ del escaneo (sus objetos se marcaban como falsos «ficheros vacíos»).</li><li class="muted">- repositorios/validar_repositorio.py — _check_readme exime a repos docs-only (sin manifiesto de código) de las secciones Stack/Instala, que no aplican; siguen exigiéndose Qué es/Estructura/Licencia. _check_empty_files ignora VERSIÓN/VERSION (versión semántica de pocos bytes, contenido válido por diseño).</li><li class="muted">- Pinea todas las acciones de terceros a SHA con comentario de versión.</li><li class="muted">- Añade permissions explícitos y persist-credentials: false en los workflows de submódulos.</li><li class="muted">- Añade actionlint y zizmor al CI global; zizmor reporta 0 findings.</li><li class="muted">- El hardening del bootstrap de dot-claude (cloud-env/bootstrap.sh con verificación SHA256 y versiones pinedas) se conserva en el backup histórico; el módulo ya no forma parte del canon de 12 módulos.</li><li class="muted">- Repos que consumen agentes/commands/hooks/dot-claude del canon viejo seguirán funcionando porque los dirs legacy quedan preservados como _legacy_*_dir/ y los validadores tienen modo retrocompatible (emiten warning y procesan el contenido legacy). Pasar a single-file recomendado, no obligatorio.</li><li class="muted">- claude-init debe actualizarse para emitir el formato single-file por defecto (out-of-scope de esta entrada; ver issue de seguimiento).</li><li class="muted">- Consumidores de settings.json deben migrar sus hooks: {enabled, sources} a hooks: {<Evento>: [{matcher, hooks}]}. Equivalencias documentadas en dot-claude/plantilla_dot_claude/settings.json.</li><li class="muted">- README.md: actualizado a 12 módulos y transición al paquete Python.</li><li class="muted">- INDEX.md: título genérico, nota de Bloque 2 y referencia al dossier.</li><li class="muted">- CONTRIBUTING.md: guía de modules.yaml, registry y validadores del Bloque 2.</li><li class="muted">- ROADMAP.md: sección del Bloque 2 con 7 fases y criterios de aceptación.</li><li class="muted">- CLAUDE.md y PROMPT_INICIO.md: stack y comandos del Bloque 2.</li><li class="muted">- INTEGRACION.md: referencias a plantillas sync agent-config y al dossier.</li><li class="muted">- docs/adr/: 3 ADRs (paquete Python, Pydantic+Jinja2, modules.yaml).</li><li class="muted">- docs/cli.md, docs/modules-yaml.md, docs/validators.md: documentación del Bloque 2.</li><li class="muted">- agent-config/README.md: esquema Pydantic, templates Jinja2 y CLI del Bloque 2.</li><li class="muted">- docs/dossier-bloque2.html: dossier visual interactivo (ignorado en GitHub).</li><li class="muted">- Sync bidireccional entre plantillas/ y ~/.config/opencode/ para</li><li class="muted">- Generador SPA docs/dossier-bloque2.html (single-file, 5 tabs:</li><li class="muted">- Registry robusto: logging DEBUG por validador (embedded/script/none),</li><li class="muted">- Validadores embebidos: validators/__init__.py con __all__</li><li class="muted">- Paridad catálogo↔INDEX: nuevo test</li><li class="muted">- CI matrix Python 3.11/3.12/3.13 en .github/workflows/validar-paquete.yml.</li><li class="muted">- Workflow de regeneración de SPA (.github/workflows/regenerar-spa.yml):</li><li class="muted">- tests/test_smoke.py: deriva MODULOS de modules.yaml en vez de la</li><li class="muted">- modules.yaml: añade bloque sync: { target: opencode, subdir: skills }</li><li class="muted">- INDEX.md: referencia al dossier ahora dice "single-file, 5 tabs,</li><li class="muted">- .gitignore: docs/dossier-bloque2.html deja de estar ignorado (sale</li></ul>
+        </details>
+        <details>
+          <summary><strong>1.0.0</strong> — 2026-05-23 <span class="muted">(15 items)</span></summary>
+          <ul><li class="muted">- Fase 1: MVP — 7 módulos base (agentes, skills, commands, hooks, plugins, mcp, dot-claude).</li><li class="muted">- Cada módulo con plantilla_X/ (playbook instructivo) y ejemplo_X/ (referencia funcional).</li><li class="muted">- Índice maestro INDEX.md con navegación a todos los módulos.</li><li class="muted">- ROADMAP.md con plan de 4 fases.</li><li class="muted">- Fase 2: Robustecimiento.</li><li class="muted">- Motor de validación reusable en validadores/ (BaseValidator, 5 checks reutilizables).</li><li class="muted">- Validador específico para cada módulo (7 validadores, todos pasan --strict).</li><li class="muted">- CI/CD individual por módulo + workflow central validar-todos.yml.</li><li class="muted">- Ejemplos enriquecidos: ≥2 ejemplos funcionales por módulo.</li><li class="muted">- INTEGRACION.md con mapa de relaciones, decision tree, anti-patrones, ejemplo completo.</li><li class="muted">- Iteración 2.4: Afinado de repositorios.</li><li class="muted">- Módulo repositorios/ con playbook completo (REPOSITORIO.md, METODOLOGIA.md, LLM_GUIDE.md, ESTRUCTURA.md).</li><li class="muted">- Ejemplo funcional con 20+ community health files.</li><li class="muted">- Scripts aplica-canon-repo.sh y auditoria-canon-repo.sh.</li><li class="muted">- Fuente de verdad repos.yaml con 14+ repositorios catalogados.</li></ul>
+        </details>
+      </div>
+    </section>
+
+    <!-- TAB: Índice -->
+    <section class="tab" id="tab-index" role="tabpanel">
+      <div class="card">
+        <h3>Tabla de contenidos</h3>
+        <input type="text" id="index-search" placeholder="Filtrar…">
+        <table id="index-table">
+          <thead><tr><th>path</th><th>título</th><th>sección</th><th>resumen</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>
+      Generado el 2026-07-04 · catálogo 2.0.0-dev ·
+      <code>python -m plantillas generate dossier</code> para regenerar.
+    </footer>
+  </main>
+</div>
+
+<script id="dossier-data" type="application/json">
+{
+  "catalog_version": "2.0.0-dev",
+  "changelog": [
+    {
+      "date": "Consolidación de armonización y Bloque 2 en progreso",
+      "items": [
+        "- Módulo agent-config/: fuente canónica YAML (plantilla_agent_config.yaml) que genera configuración para Claude Code (~/.claude/), OpenCode (~/AGENTS.md), Devin (~/.config/devin/) y Windsurf/Cascade (~/.codeium/windsurf/memories/global_rules.md).",
+        "- Generador agent-config/generar_agent_configs.py y validador agent-config/validar_agent_config.py con drift check entre la fuente y el directorio de ejemplo.",
+        "- Workflow agent-config/.github/workflows/validar-agent-config.yml y registro en validar-todos.yml y validar_repo.py.",
+        "- repositorios/docs-only/.markdownlint.json.tmpl — Configuración markdownlint para repos docs-only: default: true + desactiva MD013 (line-length), MD034 (no-bare-urls), MD041 (first-line-heading), y configura MD024 con siblings_only: true (permite headings duplicados en secciones distintas, compatible con CHANGELOG Keep-a-Changelog con múltiples secciones \"Añadido\"/\"Fixed\").",
+        "- tests/test_validadores.py — 12 tests nuevos para los checks reutilizables (TestCheckArchivosProhibidos, TestCheckTamanioMaximo, TestCheckMergeConflicts, TestCheckSecrets, TestCheckGitignoreMinimo).",
+        "- .github/workflows/README-post-merge.md — sección \"Matriz de permisos\" con tabla permiso × feature para que adoptantes puedan recortar a least-privilege estricto según los enable_* activos.",
+        "- Consolidación CI: 29 checks → 6 (4 propios + 2 externos) sin perder cobertura.",
+        "- Paquete Python plantillas (pyproject.toml, src/plantillas/, modules.yaml) con CLI unificada (typer), registry de validadores y tests (pytest).",
+        "- Workflow .github/workflows/validar-paquete.yml para lint, tests y plantillas validate en CI.",
+        "- Validador embebido de ejemplo en src/plantillas/validators/agent_config.py.",
+        "- Composite action setup-validadores para setup DRY de Python + pyyaml.",
+        "- Script module-map.sh para mapeo módulo→validador→ejemplo→plantilla.",
+        "- Workflow release.yml para releases automáticas por tag semver.",
+        "- Workflow link-check.yml para detección semanal de enlaces rotos.",
+        "- Directorios faltantes en ejemplo_agente/tools/custom/ y ejemplo_dot_claude/.",
+        "- ruff.toml con configuración de linting para validadores.",
+        "- Módulo miniapps/ — canon nuevo para SPA single-file tipo Claude.ai artifact (categorías: dashboard, explorer, tool, playbook; runtimes: browser, electron, static). Incluye plantilla_miniapps.md, ejemplo_miniapps.md (KPI dashboard), validar_miniapps.py y workflow CI.",
+        "- validar_repo.py acepta plantilla_<base>.* y ejemplo_<base>.* (glob por extensión) además de directorios, habilitando los formatos single-file .md y .sh.template.",
+        "- Módulos autoresearch/, cuadernos/, knowledge/ y dot-claude/ (sustituidos por agent-config/ y el repo de plantillas en sí). Se ha preservado backup en .backups-YYYYMMDD-HHMMSS/ antes de borrar.",
+        "- agentes/_legacy_{plantilla,ejemplo}_agente_dir/, commands/_legacy_{plantilla,ejemplo}_command_dir/, hooks/_legacy_{plantilla,ejemplo}_hook_dir/ — Purgados los 6 directorios legacy de la estructura multi-archivo previa a la reforma Canon-Runtime. Estaban preservados como retrocompat pero ya no se validan activamente; el canon single-file (*.md / *.sh.template) los sustituye por completo. Referencias eliminadas del árbol visual de INDEX.md. El historial de la migración se conserva en las entradas previas de este CHANGELOG.",
+        "- mceod-overlays/ y .github/workflows/validar-mceod-overlays.yml — Eliminado el módulo MCEOD overlays (L0–L3 + validar_mceod_overlays.py) por estar deprecado/descatalogado. No estaba registrado en DIRECTORIOS_PERMITIDOS, por lo que hacía fallar validar_repo.py --strict (exit 1) en main. Todas las referencias estaban contenidas en su propio subárbol + el workflow; no quedan referencias colgantes en el repo. Nota operativa: el symlink local ~/.claude/templates → mceod-overlays queda obsoleto.",
+        "- agentes/ejemplo_agente/ — Eliminado un directorio fantasma (solo tools/custom/README.md) remanente de la estructura multi-archivo previa a Canon-Runtime, que coexistía con el fichero canónico ejemplo_agente.md y rompía tests/test_smoke.py al resolver el ejemplo al directorio en lugar del .md.",
+        "- INDEX.md: actualizado a 12 módulos canónicos, eliminadas referencias a módulos borrados y añadida sección de agent-config.",
+        "- .github/workflows/validar-todos.yml: matriz reducida a 12 módulos.",
+        "- validar_repo.py: listas de directorios permitidos, módulos canónicos y mapeo de singulares actualizados; eliminada lógica muerta del módulo borrado dot-claude y del directorio descatalogado mceod-overlays/.",
+        "- .pre-commit-config.yaml: eliminados hooks de módulos borrados (dot-claude, autoresearch, cuadernos, knowledge) y añadida validación de agent-config.",
+        "- agent-config/.github/workflows/validar-agent-config.yml: pines SHA de acciones y permisos mínimos.",
+        "- .github/scripts/module-map.sh, .github/workflows/pr-guardian.yml, .github/workflows/ci-global.yml: sincronizados a los 12 módulos canónicos actuales y eliminados filtros/mapeos legacy.",
+        "- CLAUDE.md, PROMPT_INICIO.md, CONTRIBUTING.md, ROADMAP.md, INTEGRACION.md: limpiadas todas las referencias a módulos descartados (dot-claude, autoresearch, cuadernos, knowledge, mceod-overlays) y actualizados conteos/nombres a 12 módulos.",
+        "- agent-config/generar_agent_configs.py: reescrito el descriptor de memory para evitar referencia al módulo knowledge.",
+        "- artefactos/README.md y repositorios/auditoria-canon-repo.sh: eliminadas referencias a cuadernos/.",
+        "- .gitignore: añadidos patrones *.backup, .venv/ y docs/dossier-bloque2.html.",
+        "- validar_repo.py: permite src/, docs/, pyproject.toml, modules.yaml y 12 módulos canónicos; marca artefactos y estandares como módulos especiales mientras migran a estructura canónica completa.",
+        "- validadores/checks.py — check_archivos_vacios excluye .git/ del escaneo (sus objetos se marcaban como falsos «ficheros vacíos»).",
+        "- repositorios/validar_repositorio.py — _check_readme exime a repos docs-only (sin manifiesto de código) de las secciones Stack/Instala, que no aplican; siguen exigiéndose Qué es/Estructura/Licencia. _check_empty_files ignora VERSIÓN/VERSION (versión semántica de pocos bytes, contenido válido por diseño).",
+        "- Pinea todas las acciones de terceros a SHA con comentario de versión.",
+        "- Añade permissions explícitos y persist-credentials: false en los workflows de submódulos.",
+        "- Añade actionlint y zizmor al CI global; zizmor reporta 0 findings.",
+        "- El hardening del bootstrap de dot-claude (cloud-env/bootstrap.sh con verificación SHA256 y versiones pinedas) se conserva en el backup histórico; el módulo ya no forma parte del canon de 12 módulos.",
+        "- Repos que consumen agentes/commands/hooks/dot-claude del canon viejo seguirán funcionando porque los dirs legacy quedan preservados como _legacy_*_dir/ y los validadores tienen modo retrocompatible (emiten warning y procesan el contenido legacy). Pasar a single-file recomendado, no obligatorio.",
+        "- claude-init debe actualizarse para emitir el formato single-file por defecto (out-of-scope de esta entrada; ver issue de seguimiento).",
+        "- Consumidores de settings.json deben migrar sus hooks: {enabled, sources} a hooks: {<Evento>: [{matcher, hooks}]}. Equivalencias documentadas en dot-claude/plantilla_dot_claude/settings.json.",
+        "- README.md: actualizado a 12 módulos y transición al paquete Python.",
+        "- INDEX.md: título genérico, nota de Bloque 2 y referencia al dossier.",
+        "- CONTRIBUTING.md: guía de modules.yaml, registry y validadores del Bloque 2.",
+        "- ROADMAP.md: sección del Bloque 2 con 7 fases y criterios de aceptación.",
+        "- CLAUDE.md y PROMPT_INICIO.md: stack y comandos del Bloque 2.",
+        "- INTEGRACION.md: referencias a plantillas sync agent-config y al dossier.",
+        "- docs/adr/: 3 ADRs (paquete Python, Pydantic+Jinja2, modules.yaml).",
+        "- docs/cli.md, docs/modules-yaml.md, docs/validators.md: documentación del Bloque 2.",
+        "- agent-config/README.md: esquema Pydantic, templates Jinja2 y CLI del Bloque 2.",
+        "- docs/dossier-bloque2.html: dossier visual interactivo (ignorado en GitHub).",
+        "- Sync bidireccional entre plantillas/ y ~/.config/opencode/ para",
+        "- Generador SPA docs/dossier-bloque2.html (single-file, 5 tabs:",
+        "- Registry robusto: logging DEBUG por validador (embedded/script/none),",
+        "- Validadores embebidos: validators/__init__.py con __all__",
+        "- Paridad catálogo↔INDEX: nuevo test",
+        "- CI matrix Python 3.11/3.12/3.13 en .github/workflows/validar-paquete.yml.",
+        "- Workflow de regeneración de SPA (.github/workflows/regenerar-spa.yml):",
+        "- tests/test_smoke.py: deriva MODULOS de modules.yaml en vez de la",
+        "- modules.yaml: añade bloque sync: { target: opencode, subdir: skills }",
+        "- INDEX.md: referencia al dossier ahora dice \"single-file, 5 tabs,",
+        "- .gitignore: docs/dossier-bloque2.html deja de estar ignorado (sale"
+      ],
+      "version": "Unreleased"
+    },
+    {
+      "date": "2026-05-23",
+      "items": [
+        "- Fase 1: MVP — 7 módulos base (agentes, skills, commands, hooks, plugins, mcp, dot-claude).",
+        "- Cada módulo con plantilla_X/ (playbook instructivo) y ejemplo_X/ (referencia funcional).",
+        "- Índice maestro INDEX.md con navegación a todos los módulos.",
+        "- ROADMAP.md con plan de 4 fases.",
+        "- Fase 2: Robustecimiento.",
+        "- Motor de validación reusable en validadores/ (BaseValidator, 5 checks reutilizables).",
+        "- Validador específico para cada módulo (7 validadores, todos pasan --strict).",
+        "- CI/CD individual por módulo + workflow central validar-todos.yml.",
+        "- Ejemplos enriquecidos: ≥2 ejemplos funcionales por módulo.",
+        "- INTEGRACION.md con mapa de relaciones, decision tree, anti-patrones, ejemplo completo.",
+        "- Iteración 2.4: Afinado de repositorios.",
+        "- Módulo repositorios/ con playbook completo (REPOSITORIO.md, METODOLOGIA.md, LLM_GUIDE.md, ESTRUCTURA.md).",
+        "- Ejemplo funcional con 20+ community health files.",
+        "- Scripts aplica-canon-repo.sh y auditoria-canon-repo.sh.",
+        "- Fuente de verdad repos.yaml con 14+ repositorios catalogados."
+      ],
+      "version": "1.0.0"
+    }
+  ],
+  "decisions": [
+    {
+      "body": "Aceptado — en implementación (Bloque 2).",
+      "id": "0001-reestructura-paquete-python-bloque2",
+      "title": "ADR 0001: Reestructura del repositorio como paquete Python (Bloque 2)"
+    },
+    {
+      "body": "Aceptado — en implementación (Bloque 2).",
+      "id": "0002-agent-config-pydantic-jinja2",
+      "title": "ADR 0002: Esquema Pydantic y plantillas Jinja2 para agent-config"
+    },
+    {
+      "body": "Aceptado — en implementación (Bloque 2).",
+      "id": "0003-catalogo-modulos-yaml",
+      "title": "ADR 0003: Catálogo central de módulos en `modules.yaml`"
+    }
+  ],
+  "generated_at": "2026-07-04T05:57:29.545862+00:00",
+  "index_toc": [
+    {
+      "path": "ROADMAP.md",
+      "section": "",
+      "summary": "",
+      "title": "ROADMAP.md"
+    },
+    {
+      "path": "docs/dossier-bloque2.html",
+      "section": "",
+      "summary": "",
+      "title": "docs/dossier-bloque2.html"
+    },
+    {
+      "path": "agentes/plantilla_agente.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "Single-file con name/description/tools/model + 7 secciones canon",
+      "title": "agentes/plantilla_agente.md"
+    },
+    {
+      "path": "agentes/ejemplo_agente.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "Orquestador hub-and-spoke funcional (dev-arquitectura)",
+      "title": "agentes/ejemplo_agente.md"
+    },
+    {
+      "path": "commands/plantilla_command.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "Frontmatter description/argument-hint/allowed-tools + 6 secciones canon",
+      "title": "commands/plantilla_command.md"
+    },
+    {
+      "path": "commands/ejemplo_command.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "/test-cobertura multi-runner (Jest/Vitest/pytest)",
+      "title": "commands/ejemplo_command.md"
+    },
+    {
+      "path": "miniapps/plantilla_miniapps.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "Frontmatter category/runtime/version + estructura HTML reducida",
+      "title": "miniapps/plantilla_miniapps.md"
+    },
+    {
+      "path": "miniapps/ejemplo_miniapps.md",
+      "section": "Single-file `.md` con frontmatter runtime",
+      "summary": "kpi-mensual dashboard de KPIs financieros",
+      "title": "miniapps/ejemplo_miniapps.md"
+    },
+    {
+      "path": "hooks/plantilla_hook.sh.template",
+      "section": "Single-file `.sh.template`",
+      "summary": "Cabecera declarativa # matcher/# tool_pattern + body JSON {decision, reason}",
+      "title": "hooks/plantilla_hook.sh.template"
+    },
+    {
+      "path": "hooks/ejemplo_hook.sh.template",
+      "section": "Single-file `.sh.template`",
+      "summary": "pre-bash-secret-guard (escanea GH/OpenAI/AWS tokens)",
+      "title": "hooks/ejemplo_hook.sh.template"
+    },
+    {
+      "path": "hooks/HOOK.md",
+      "section": "Single-file `.sh.template`",
+      "summary": "Eventos soportados + cómo instalar y probar",
+      "title": "hooks/HOOK.md"
+    },
+    {
+      "path": "skills/plantilla_skill/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Estructura SKILL.md + progressive disclosure",
+      "title": "skills/plantilla_skill/"
+    },
+    {
+      "path": "skills/ejemplo_skill/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Skill operativa de diagramas Mermaid",
+      "title": "skills/ejemplo_skill/"
+    },
+    {
+      "path": "plugins/plantilla_plugin/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Estructura de plugin + marketplace",
+      "title": "plugins/plantilla_plugin/"
+    },
+    {
+      "path": "plugins/ejemplo_plugin/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Plugin de integración GitHub funcional",
+      "title": "plugins/ejemplo_plugin/"
+    },
+    {
+      "path": "mcp/plantilla_mcp/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Estructura de servidor MCP (Python/TS)",
+      "title": "mcp/plantilla_mcp/"
+    },
+    {
+      "path": "mcp/ejemplo_mcp/",
+      "section": "Dir canon multi-archivo",
+      "summary": "MCP server de filesystem funcional",
+      "title": "mcp/ejemplo_mcp/"
+    },
+    {
+      "path": "agent-config/plantilla_agent_config.yaml",
+      "section": "Dir canon multi-archivo",
+      "summary": "Fuente canónica YAML de reglas, skills, MCPs y modelos",
+      "title": "agent-config/plantilla_agent_config.yaml"
+    },
+    {
+      "path": "agent-config/ejemplo_agent_config/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Salidas generadas para las 4 plataformas",
+      "title": "agent-config/ejemplo_agent_config/"
+    },
+    {
+      "path": "repositorios/plantilla_repositorio/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Guía: metodología, estructura, flujo git",
+      "title": "repositorios/plantilla_repositorio/"
+    },
+    {
+      "path": "repositorios/ejemplo_repositorio/",
+      "section": "Dir canon multi-archivo",
+      "summary": "Repo completo con community health files, CI/CD, ADRs",
+      "title": "repositorios/ejemplo_repositorio/"
+    },
+    {
+      "path": "install.sh",
+      "section": "Scripts de bootstrap",
+      "summary": "`curl -fsSL .../install.sh \\",
+      "title": "install.sh"
+    },
+    {
+      "path": "claude-init",
+      "section": "Scripts de bootstrap",
+      "summary": "claude-init --modulo agentes --nombre mi-agente",
+      "title": "claude-init"
+    },
+    {
+      "path": "update.sh",
+      "section": "Scripts de bootstrap",
+      "summary": "./update.sh",
+      "title": "update.sh"
+    },
+    {
+      "path": "PROMPT_INICIO.md",
+      "section": "Scripts de bootstrap",
+      "summary": "",
+      "title": "PROMPT_INICIO.md"
+    },
+    {
+      "path": "INTEGRACION.md",
+      "section": "Integración entre módulos",
+      "summary": "",
+      "title": "INTEGRACION.md"
+    },
+    {
+      "path": "validadores/",
+      "section": "Validación y CI/CD",
+      "summary": "",
+      "title": "validadores/"
+    },
+    {
+      "path": "agentes/validar_agente.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-agentes.yml",
+      "title": "validar_agente.py"
+    },
+    {
+      "path": "skills/validar_skill.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-skills.yml",
+      "title": "validar_skill.py"
+    },
+    {
+      "path": "commands/validar_command.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-commands.yml",
+      "title": "validar_command.py"
+    },
+    {
+      "path": "hooks/validar_hook.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-hooks.yml",
+      "title": "validar_hook.py"
+    },
+    {
+      "path": "plugins/validar_plugin.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-plugins.yml",
+      "title": "validar_plugin.py"
+    },
+    {
+      "path": "mcp/validar_mcp.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-mcp.yml",
+      "title": "validar_mcp.py"
+    },
+    {
+      "path": "agent-config/validar_agent_config.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-agent-config.yml",
+      "title": "validar_agent_config.py"
+    },
+    {
+      "path": "repositorios/validar_repositorio.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-repositorios.yml",
+      "title": "validar_repositorio.py"
+    },
+    {
+      "path": "miniapps/validar_miniapps.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-miniapps.yml",
+      "title": "validar_miniapps.py"
+    },
+    {
+      "path": "modulo/validar_modulo.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-modulo.yml",
+      "title": "validar_modulo.py"
+    },
+    {
+      "path": "proyecto/validar_proyecto.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-proyecto.yml",
+      "title": "validar_proyecto.py"
+    },
+    {
+      "path": "estandares/validar_estandares.py",
+      "section": "Validación y CI/CD",
+      "summary": "validar-todos.yml",
+      "title": "validar_estandares.py"
+    },
+    {
+      "path": ".github/workflows/validar-todos.yml",
+      "section": "Validación y CI/CD",
+      "summary": "",
+      "title": "validar-todos.yml"
+    },
+    {
+      "path": ".github/workflows/ci-global.yml",
+      "section": "CI/CD Global (protección del repositorio)",
+      "summary": "ci-global.yml",
+      "title": "ci-global.yml"
+    },
+    {
+      "path": ".github/workflows/pr-guardian.yml",
+      "section": "CI/CD Global (protección del repositorio)",
+      "summary": "pr-guardian.yml",
+      "title": "pr-guardian.yml"
+    },
+    {
+      "path": ".github/workflows/security-scan.yml",
+      "section": "CI/CD Global (protección del repositorio)",
+      "summary": "security-scan.yml",
+      "title": "security-scan.yml"
+    },
+    {
+      "path": "validar_repo.py",
+      "section": "CI/CD Global (protección del repositorio)",
+      "summary": "validar_repo.py",
+      "title": "validar_repo.py"
+    },
+    {
+      "path": "docs/cli.md",
+      "section": "Documentación del Bloque 2",
+      "summary": "La CLI unificada del Bloque 2 orquesta validación, sincronización y creación de módulos.",
+      "title": "CLI `plantillas`"
+    },
+    {
+      "path": "docs/diagramas-bloque2.md",
+      "section": "Documentación del Bloque 2",
+      "summary": "Vista gráfica del paquete plantillas, su catálogo y el flujo de validación.",
+      "title": "Diagramas de arquitectura del Bloque 2"
+    },
+    {
+      "path": "docs/modules-yaml.md",
+      "section": "Documentación del Bloque 2",
+      "summary": "modules.yaml es la fuente de verdad del sistema de plantillas. Define los módulos canónicos, sus metadatos, validadores y comandos de inicialización.",
+      "title": "Catálogo `modules.yaml`"
+    },
+    {
+      "path": "docs/validators.md",
+      "section": "Documentación del Bloque 2",
+      "summary": "El sistema de validación se basa en un registro (ValidatorRegistry) que puede ejecutar validadores embebidos en Python o delegar en los scripts legacy de cada módulo.",
+      "title": "Motor de validación del Bloque 2"
+    }
+  ],
+  "modules": [
+    {
+      "description": "Fuente canónica YAML que genera configuración para Claude Code, OpenCode, Devin y Windsurf/Cascade.",
+      "example": "agent-config",
+      "id": "agent-config",
+      "name": "Configuración cross-platform para agentes",
+      "path": "agent-config",
+      "tags": [
+        "config",
+        "agents",
+        "cross-platform"
+      ],
+      "type": "module",
+      "validator": "agent-config/validar_agent_config.py"
+    },
+    {
+      "description": "Plantillas y ejemplos de agentes con roles, herramientas y flujos de trabajo.",
+      "example": "agentes/ejemplo_agente.md",
+      "id": "agentes",
+      "name": "Agentes conversacionales",
+      "path": "agentes",
+      "tags": [
+        "agent",
+        "claude",
+        "llm"
+      ],
+      "type": "module",
+      "validator": "agentes/validar_agente.py"
+    },
+    {
+      "description": "Plantillas reutilizables de prompts, system prompts y estructuras de salida.",
+      "example": "artefactos/ejemplo_artefacto.md",
+      "id": "artefactos",
+      "name": "Artefactos de prompts",
+      "path": "artefactos",
+      "tags": [
+        "prompt",
+        "artifact",
+        "template"
+      ],
+      "type": "module",
+      "validator": null
+    },
+    {
+      "description": "Definición de comandos slash o de voz para agentes, con ejemplos funcionales.",
+      "example": "commands/ejemplo_command.md",
+      "id": "commands",
+      "name": "Comandos de agente",
+      "path": "commands",
+      "tags": [
+        "command",
+        "slash",
+        "agent"
+      ],
+      "type": "module",
+      "validator": "commands/validar_command.py"
+    },
+    {
+      "description": "Catálogo canónico de estándares de repositorios, frontmatter y CI.",
+      "example": "estandares",
+      "id": "estandares",
+      "name": "Estándares del portfolio",
+      "path": "estandares",
+      "tags": [
+        "standards",
+        "canon",
+        "portfolio"
+      ],
+      "type": "module",
+      "validator": "estandares/validar_estandares.py"
+    },
+    {
+      "description": "Eventos y hooks para extender el comportamiento de agentes.",
+      "example": "hooks/ejemplo_hook.sh.template",
+      "id": "hooks",
+      "name": "Hooks del sistema de agentes",
+      "path": "hooks",
+      "tags": [
+        "hook",
+        "event",
+        "extension"
+      ],
+      "type": "module",
+      "validator": "hooks/validar_hook.py"
+    },
+    {
+      "description": "Plantillas para Model Context Protocol servers y herramientas.",
+      "example": "mcp/ejemplo_mcp",
+      "id": "mcp",
+      "name": "MCP Servers",
+      "path": "mcp",
+      "tags": [
+        "mcp",
+        "server",
+        "context"
+      ],
+      "type": "module",
+      "validator": "mcp/validar_mcp.py"
+    },
+    {
+      "description": "SPA single-file tipo Claude.ai artifact (dashboard, explorer, tool, playbook).",
+      "example": "miniapps/ejemplo_miniapps.md",
+      "id": "miniapps",
+      "name": "Miniaplicaciones single-file",
+      "path": "miniapps",
+      "tags": [
+        "spa",
+        "miniapp",
+        "ui"
+      ],
+      "type": "module",
+      "validator": "miniapps/validar_miniapps.py"
+    },
+    {
+      "description": "Esqueleto para crear nuevos módulos del sistema.",
+      "example": "modulo",
+      "id": "modulo",
+      "name": "Plantilla base de módulo",
+      "path": "modulo",
+      "tags": [
+        "template",
+        "skeleton",
+        "module"
+      ],
+      "type": "module",
+      "validator": "modulo/validar_modulo.py"
+    },
+    {
+      "description": "Extensiones desacoplables para agentes con contratos claros.",
+      "example": "plugins/ejemplo_plugin",
+      "id": "plugins",
+      "name": "Plugins de agentes",
+      "path": "plugins",
+      "tags": [
+        "plugin",
+        "extension",
+        "agent"
+      ],
+      "type": "module",
+      "validator": "plugins/validar_plugin.py"
+    },
+    {
+      "description": "Plantilla para bootstrapping de proyectos con el sistema de plantillas.",
+      "example": "proyecto",
+      "id": "proyecto",
+      "name": "Estructura de proyectos",
+      "path": "proyecto",
+      "tags": [
+        "project",
+        "bootstrap",
+        "scaffold"
+      ],
+      "type": "module",
+      "validator": "proyecto/validar_proyecto.py"
+    },
+    {
+      "description": "Playbooks, plantillas y auditoría de repositorios.",
+      "example": "repositorios/ejemplo_repositorio",
+      "id": "repositorios",
+      "name": "Repositórios y community health",
+      "path": "repositorios",
+      "tags": [
+        "repository",
+        "health",
+        "audit"
+      ],
+      "type": "module",
+      "validator": "repositorios/validar_repositorio.py"
+    },
+    {
+      "description": "Habilidades atómicas que los agentes pueden invocar.",
+      "example": "skills/ejemplo_skill",
+      "id": "skills",
+      "name": "Skills reutilizables",
+      "path": "skills",
+      "tags": [
+        "skill",
+        "atomic",
+        "reusable"
+      ],
+      "type": "module",
+      "validator": "skills/validar_skill.py"
+    }
+  ],
+  "roadmap": [
+    {
+      "id": "FASE 1",
+      "items": [
+        "- [x] Todo módulo tiene plantilla_* y ejemplo_*",
+        "- [x] ejemplo_agente pasa validación --strict",
+        "- [x] cp -r plantilla_* ~/.claude/... produce un componente funcional",
+        "- [x] Documentación de cada módulo incluye referencias oficiales"
+      ],
+      "status": "⏳",
+      "title": "MVP · Fundamentos (COMPLETADA)"
+    },
+    {
+      "id": "FASE 2",
+      "items": [
+        "- [x] Todo módulo tiene validador propio ejecutable con --strict",
+        "- [x] Todo módulo tiene workflow de CI/CD independiente",
+        "- [x] ejemplo_* de cada módulo tiene ≥2 ejemplos funcionales",
+        "- [x] Documentación de integración cruzada entre módulos",
+        "- [x] Módulo repositorios/ integrado con playbook, ejemplo, validador, CI/CD, metodología y guía LLM"
+      ],
+      "status": "⏳",
+      "title": "Robustecimiento · Calidad y Cobertura"
+    },
+    {
+      "id": "FASE 3",
+      "items": [
+        "- [x] Sistema versionado con semver (CHANGELOG.md con v1.0.0)",
+        "- [x] Script de instalación de 1 línea funciona en Linux/macOS",
+        "- [x] Suite de tests ejecutable con pytest (o runner manual si pytest no está instalado)",
+        "- [x] Pre-commit hooks aplican lint/validación automática",
+        "- [x] Un contribuidor externo puede añadir un módulo siguiendo CONTRIBUTING.md",
+        "- [x] pytest pasa en local y CI.",
+        "- [x] plantillas validate pasa en local y CI.",
+        "- [x] modules.yaml es la fuente de verdad de la CLI y tests.",
+        "- [ ] agent-config genera idéntica salida a ejemplo_agent_config/ (drift = 0).",
+        "- [x] validar_repo.py y validar_<modulo>.py siguen funcionando como validadores legacy.",
+        "- [x] pyproject.toml define entry point plantillas y dependencias.",
+        "- [x] ADRs y documentación actualizados."
+      ],
+      "status": "⏳",
+      "title": "Ecosistema · Distribución y Colaboración"
+    },
+    {
+      "id": "FASE 4",
+      "items": [],
+      "status": "⏳",
+      "title": "Producción · Escalado y Mantenimiento"
+    }
+  ],
+  "stats": {
+    "changelog_count": 2,
+    "decisions_count": 3,
+    "index_count": 48,
+    "modules_count": 13,
+    "phases_count": 4
+  }
+}
+</script>
+
+<script>
+(function() {
+  const data = JSON.parse(document.getElementById('dossier-data').textContent);
+
+  // ── Tabs ──
+  const tabs = document.querySelectorAll('#tabs button');
+  const panels = document.querySelectorAll('section.tab');
+  const title = document.getElementById('title');
+  const tabTitles = {
+    config: '⚙️ Configurador',
+    catalog: '🗂️ Catálogo',
+    map: '🗺️ Mapa',
+    dossier: '📑 Dossier',
+    index: '🗒️ Índice'
+  };
+  tabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabs.forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      const target = btn.dataset.tab;
+      panels.forEach(p => p.classList.toggle('active', p.id === 'tab-' + target));
+      title.textContent = tabTitles[target] || target;
+    });
+  });
+
+  // ── Theme slider (sepia ↔ nocturno) ──
+  const slider = document.getElementById('theme-slider');
+  const html = document.documentElement;
+  const saved = localStorage.getItem('dossier-theme');
+  if (saved === 'nocturno') { slider.value = 100; html.dataset.theme = 'nocturno'; }
+  slider.addEventListener('input', () => {
+    const theme = slider.value > 50 ? 'nocturno' : 'sepia';
+    html.dataset.theme = theme;
+    localStorage.setItem('dossier-theme', theme);
+  });
+
+  // ── Configurador ──
+  const cfgList = document.getElementById('cfg-list');
+  const cfgCmd = document.getElementById('cfg-cmd');
+  const cfgAll = document.getElementById('cfg-all');
+  data.modules.forEach(m => {
+    const label = document.createElement('label');
+    label.style.cssText = 'display:flex; gap:0.5rem; align-items:flex-start; cursor:pointer;';
+    label.innerHTML = `<input type="checkbox" data-id="${m.id}" checked>
+      <span><span class="badge module">${m.id}</span> <span class="muted">${m.path}</span><br>${m.name}</span>`;
+    cfgList.appendChild(label);
+  });
+  function updateCmd() {
+    const selected = [...cfgList.querySelectorAll('input:checked')].map(i => i.dataset.id);
+    cfgCmd.textContent = selected.length
+      ? '# Pseudo-comando (plantillas new en desarrollo):\n' +
+        'mkdir -p my-scaffold && \\\n' +
+        'cp -r ' + selected.map(id => {
+          const m = data.modules.find(x => x.id === id);
+          return m ? m.path : id;
+        }).join(' ') + ' my-scaffold/'
+      : '(ningún módulo seleccionado)';
+  }
+  cfgList.addEventListener('change', updateCmd);
+  cfgAll.addEventListener('change', () => {
+    cfgList.querySelectorAll('input').forEach(i => i.checked = cfgAll.checked);
+    updateCmd();
+  });
+  updateCmd();
+
+  // ── Catálogo ──
+  const catalogTbody = document.querySelector('#catalog-table tbody');
+  function renderCatalog(filter) {
+    const f = (filter || '').toLowerCase();
+    catalogTbody.innerHTML = '';
+    data.modules
+      .filter(m => !f || JSON.stringify(m).toLowerCase().includes(f))
+      .forEach(m => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td><span class="badge module">${m.id}</span></td>
+          <td>${m.name}<br><span class="muted">${m.description}</span></td>
+          <td>${m.type}</td>
+          <td class="mono">${m.path}</td>
+          <td>${(m.tags || []).map(t => `<span class="badge tag">${t}</span>`).join(' ')}</td>`;
+        catalogTbody.appendChild(tr);
+      });
+  }
+  document.getElementById('catalog-search').addEventListener('input', e => renderCatalog(e.target.value));
+  renderCatalog('');
+
+  // ── Mapa (texto, simple pero regenerable) ──
+  const mapEl = document.getElementById('map-content');
+  const lines = [
+    '┌─ modules.yaml (catálogo canónico)',
+    '│   ├── ' + data.modules.map(m => m.id).join(', '),
+    '│',
+    '├─ src/plantillas/',
+    '│   ├── cli.py      → orquesta validate / sync / generate',
+    '│   ├── catalog.py  → Pydantic, carga modules.yaml',
+    '│   ├── registry.py → descubre validadores, timeout 30s',
+    '│   ├── sync.py     → push/pull/status contra ~/.config/opencode/',
+    '│   ├── validators/ → wrappers embebidos (agent_config)',
+    '│   └── generators/ → dossier (este SPA), parsers',
+    '│',
+    '├─ tests/          → 44+ tests pytest',
+    '├─ validadores/    → motor reusable legacy (checks, base, reporte)',
+    '├─ docs/adr/       → ' + data.stats.decisions_count + ' decisiones arquitectónicas',
+    '└─ docs/dossier-bloque2.html  ← este SPA (regenerable)'
+  ];
+  mapEl.textContent = lines.join('\n');
+
+  // ── Índice ──
+  const indexTbody = document.querySelector('#index-table tbody');
+  function renderIndex(filter) {
+    const f = (filter || '').toLowerCase();
+    indexTbody.innerHTML = '';
+    data.index_toc
+      .filter(i => !f || JSON.stringify(i).toLowerCase().includes(f))
+      .forEach(i => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td class="mono">${i.path}</td>
+          <td>${i.title}</td>
+          <td class="muted">${i.section || ''}</td>
+          <td class="muted">${i.summary || ''}</td>`;
+        indexTbody.appendChild(tr);
+      });
+  }
+  document.getElementById('index-search').addEventListener('input', e => renderIndex(e.target.value));
+  renderIndex('');
+})();
+</script>
+</body>
+</html>

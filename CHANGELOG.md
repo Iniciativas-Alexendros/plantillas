@@ -84,6 +84,47 @@ y este proyecto se adhiere a [SemVer 2.0.0](https://semver.org/lang/es/).
 - `agent-config/README.md`: esquema Pydantic, templates Jinja2 y CLI del Bloque 2.
 - `docs/dossier-bloque2.html`: dossier visual interactivo (ignorado en GitHub).
 
+### Añadido (Bloque 2 · sync + SPA regenerable)
+
+- **Sync bidireccional** entre `plantillas/` y `~/.config/opencode/` para
+  `skills` / `agents` (alias de `agentes`) / `commands`. Tres direcciones:
+  `push` (plantillas → target), `pull` (target → `plantillas/<modulo>/_imported/`),
+  `status` (dry-run que reporta drift). Subcomando CLI:
+  `plantillas sync <module> --target opencode --direction {push,pull,status} [--yes]`.
+- **Generador SPA** `docs/dossier-bloque2.html` (single-file, 5 tabs:
+  Configurador, Catálogo, Mapa, Dossier, Índice; slider sepia↔nocturno;
+  ARIA tabs; sin CDNs externos). Subcomando CLI:
+  `plantillas generate dossier [--output PATH]`. 10 tests cubren render
+  mínimo, ausencia de CDNs, JSON embebido, presencia de los 12 módulos,
+  TOC con `docs/*.md`, tamaño <200KB, slider de tema, ARIA, ISO 8601
+  y determinismo.
+- **Registry robusto**: logging DEBUG por validador (embedded/script/none),
+  timeout de 30s en `_run_script`, captura `TimeoutExpired` y exit code
+  en `CalledProcessError`. Silencia `ImportError` además de
+  `ModuleNotFoundError` en `discover_validators`.
+- **Validadores embebidos**: `validators/__init__.py` con `__all__`
+  reexportando `validate_agent_config`.
+- **Paridad catálogo↔INDEX**: nuevo test
+  `tests/test_catalog_yaml_index_parity.py` que garantiza que todo módulo
+  canónico tenga referencia en `INDEX.md` y viceversa.
+- **CI matrix Python 3.11/3.12/3.13** en `.github/workflows/validar-paquete.yml`.
+- **Workflow de regeneración de SPA** (`.github/workflows/regenerar-spa.yml`):
+  en cada push a `main` que cambie inputs del generador, regenera la SPA
+  y abre un PR automático si hay drift.
+
+### Cambiado
+
+- `tests/test_smoke.py`: deriva `MODULOS` de `modules.yaml` en vez de la
+  lista hardcodeada. FIXME documenta el fallo pre-existente en
+  `agent-config/ejemplo_agent_config/AGENTS.md` (deuda no relacionada
+  con este cambio).
+- `modules.yaml`: añade bloque `sync: { target: opencode, subdir: skills }`
+  al módulo `skills` declarando el target y subdirectorio canónico.
+- `INDEX.md`: referencia al dossier ahora dice "single-file, 5 tabs,
+  generado por `plantillas generate dossier`, CI lo regenera".
+- `.gitignore`: `docs/dossier-bloque2.html` deja de estar ignorado (sale
+  de la lista, ahora commiteable y regenerado por CI).
+
 ---
 
 ## [1.0.0] — 2026-05-23
