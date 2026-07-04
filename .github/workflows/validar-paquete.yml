@@ -53,8 +53,8 @@ jobs:
       - name: Lint con ruff
         run: ruff check src/plantillas tests
 
-      - name: Tests con pytest (sin smoke legacy)
-        run: pytest tests --ignore=tests/test_smoke.py -v
+      - name: Tests con pytest
+        run: pytest tests -v
 
       - name: Validar catálogo y módulos
         run: plantillas validate

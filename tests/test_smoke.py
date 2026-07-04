@@ -46,7 +46,7 @@ def _resolve_ejemplo(modulo: str, base: str) -> Path:
     extensión.
     """
     mod_dir = PLANTILLAS / modulo
-    if modulo in {"modulo", "proyecto", "agent-config"}:
+    if modulo in {"modulo", "proyecto", "agent-config", "estandares", "artefactos"}:
         return mod_dir
     legacy = mod_dir / base
     if legacy.is_dir():
@@ -63,16 +63,7 @@ def _resolve_ejemplo(modulo: str, base: str) -> Path:
 
 class TestSmoke:
     def test_todos_los_ejemplos_pasan_strict(self, tmp_path):
-        """Cada ejemplo debe pasar su validador en modo strict.
-
-        FIXME: este test falla actualmente para `agent-config` porque
-        `agent-config/ejemplo_agent_config/AGENTS.md` está borrado del
-        working tree (deuda pre-existente, no relacionada con esta
-        refactorización). Restaurar ese archivo o reescribir el ejemplo
-        canónico para que el validador strict pase. Mientras tanto, se
-        ejecuta bajo `tests/test_smoke.py` y se excluye del flujo
-        principal con `pytest --ignore=tests/test_smoke.py`.
-        """
+        """Cada ejemplo debe pasar su validador en modo strict."""
         for modulo, script, ejemplo in _modulos_con_validador():
             script_path = PLANTILLAS / modulo / script
             ejemplo_path = _resolve_ejemplo(modulo, ejemplo)
