@@ -7,7 +7,15 @@ import typer
 
 from plantillas import __version__
 from plantillas.catalog import load_catalog
+from plantillas.generators.dossier import render_dossier
 from plantillas.registry import ValidatorRegistry, discover_validators
+from plantillas.sync import (
+    SYNCABLE_MODULE_IDS,
+    SyncDirection,
+    SyncTarget,
+    execute_sync,
+    resolve_module_id,
+)
 
 app = typer.Typer(
     name="plantillas",
@@ -20,7 +28,9 @@ app = typer.Typer(
 def validate(
     module: Optional[str] = typer.Argument(None, help="ID del módulo a validar."),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Modo estricto."),
-    catalog_path: Optional[Path] = typer.Option(None, "--catalog", help="Ruta a modules.yaml."),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
 ) -> None:
     """Valida uno o todos los módulos registrados."""
 
@@ -49,20 +59,80 @@ def validate(
 
 @app.command()
 def sync(
-    module: str = typer.Argument(..., help="ID del módulo a sincronizar."),
-    catalog_path: Optional[Path] = typer.Option(None, "--catalog", help="Ruta a modules.yaml."),
+    module: str = typer.Argument(
+        ...,
+        help=(
+            f"ID del módulo a sincronizar. Sincronizables: {', '.join(SYNCABLE_MODULE_IDS)}."
+        ),
+    ),
+    target: SyncTarget = typer.Option(
+        "opencode", "--target", help="Destino de la sincronización."
+    ),
+    direction: SyncDirection = typer.Option(
+        "status",
+        "--direction",
+        help="push: plantillas→target · pull: target→plantillas · status: dry-run.",
+    ),
+    yes: bool = typer.Option(
+        False, "--yes", "-y", help="Sobrescribe sin pedir confirmación (pull/push)."
+    ),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
 ) -> None:
-    """Sincroniza un módulo (por ejemplo, agent-config) desde su fuente canónica."""
+    """Sincroniza un módulo entre `plantillas/` y un target externo."""
 
-    catalog = load_catalog(catalog_path)
-    entry = catalog.by_id(module)
-    if entry is None:
-        typer.echo(f"❌ Módulo desconocido: {module}", err=True)
+    if module not in SYNCABLE_MODULE_IDS and module not in {
+        "agents",
+        "agent",
+    }:
+        typer.echo(
+            f"❌ Módulo {module!r} no sincronizable. "
+            f"Usa uno de: {', '.join(SYNCABLE_MODULE_IDS)} (o alias: agents)",
+            err=True,
+        )
         raise typer.Exit(code=1)
 
-    typer.echo(f"🔄 Sincronizando {module}...")
-    typer.echo("ℹ️  Comando en desarrollo. Usa el script legacy del módulo mientras tanto.")
-    raise typer.Exit(code=0)
+    catalog = load_catalog(catalog_path)
+    root = Path(__file__).resolve().parents[2]
+
+    def _display(p: Path) -> str:
+        try:
+            return str(p.relative_to(root.parent))
+        except ValueError:
+            return str(p)
+
+    canonical_id = resolve_module_id(module)
+    report = execute_sync(
+        module_id=canonical_id,
+        target=target,
+        direction=direction,
+        catalog=catalog,
+        root=root,
+        assume_yes=yes,
+    )
+
+    if not report.ok:
+        for err in report.errors:
+            typer.echo(f"❌ {err}", err=True)
+        raise typer.Exit(code=1)
+
+    arrow = {
+        "push": "plantillas →",
+        "pull": "→ plantillas",
+        "status": "·",
+    }[report.direction]
+    typer.echo(f"🔄 {canonical_id} {arrow} {report.target}")
+
+    for p in report.promoted:
+        typer.echo(f"  ✅ {_display(p)}")
+    for p in report.skipped:
+        typer.echo(f"  ⏭️  ya existe, omitido: {_display(p)}")
+    for p in report.drifted:
+        typer.echo(f"  ⚠️  drift: {_display(p)}")
+
+    if not (report.promoted or report.skipped or report.drifted):
+        typer.echo("  (sin cambios)")
 
 
 @app.command()
@@ -73,7 +143,9 @@ def new(
     """Crea un nuevo módulo a partir de la plantilla base."""
 
     typer.echo(f"🆕 Creando módulo {type}/{name}...")
-    typer.echo("ℹ️  Comando en desarrollo. Copia manualmente `modulo/` como scaffold mientras tanto.")
+    typer.echo(
+        "ℹ️  Comando en desarrollo. Copia manualmente `modulo/` como scaffold mientras tanto."
+    )
     raise typer.Exit(code=0)
 
 
@@ -91,3 +163,38 @@ def version() -> None:
     """Muestra la versión del paquete."""
 
     typer.echo(__version__)
+
+
+@app.command()
+def generate(
+    artifact: str = typer.Argument(
+        "dossier", help="Artefacto a generar. Hoy: 'dossier'."
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Ruta de salida. Por defecto, docs/<artifact>.html."
+    ),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
+) -> None:
+    """Genera artefactos derivados del catálogo (SPA, informes, …)."""
+
+    if artifact != "dossier":
+        typer.echo(
+            f"❌ Artefacto {artifact!r} desconocido. Disponibles: dossier",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    catalog = load_catalog(catalog_path)
+    root = Path(__file__).resolve().parents[2]
+    out = output or (root / "docs" / "dossier-bloque2.html")
+
+    html = render_dossier(root, catalog)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    try:
+        display = out.relative_to(root.parent)
+    except ValueError:
+        display = out
+    typer.echo(f"✅ SPA generada: {display} ({len(html):,} bytes)")

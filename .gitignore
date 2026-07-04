@@ -33,5 +33,10 @@ Thumbs.db
 .claude/settings.local.json
 .claude/worktrees/
 
+# ─── Artefactos del portfolio / operadores / vap legacy ──────────────────────
+/vap/
+/cuaderno-plantilla/
+/artefactos/operador/
+
 # ─── Entorno de desarrollo y artefactos de planificación ────────────────────
 /.venv/
