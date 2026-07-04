@@ -7,6 +7,7 @@ import typer
 
 from plantillas import __version__
 from plantillas.catalog import load_catalog
+from plantillas.generators.dossier import render_dossier
 from plantillas.registry import ValidatorRegistry, discover_validators
 from plantillas.sync import (
     SYNCABLE_MODULE_IDS,
@@ -162,3 +163,34 @@ def version() -> None:
     """Muestra la versión del paquete."""
 
     typer.echo(__version__)
+
+
+@app.command()
+def generate(
+    artifact: str = typer.Argument(
+        "dossier", help="Artefacto a generar. Hoy: 'dossier'."
+    ),
+    output: Optional[Path] = typer.Option(
+        None, "--output", "-o", help="Ruta de salida. Por defecto, docs/<artifact>.html."
+    ),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
+) -> None:
+    """Genera artefactos derivados del catálogo (SPA, informes, …)."""
+
+    if artifact != "dossier":
+        typer.echo(
+            f"❌ Artefacto {artifact!r} desconocido. Disponibles: dossier",
+            err=True,
+        )
+        raise typer.Exit(code=1)
+
+    catalog = load_catalog(catalog_path)
+    root = Path(__file__).resolve().parents[2]
+    out = output or (root / "docs" / "dossier-bloque2.html")
+
+    html = render_dossier(root, catalog)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    out.write_text(html, encoding="utf-8")
+    typer.echo(f"✅ SPA generada: {out.relative_to(root.parent)} ({len(html):,} bytes)")
