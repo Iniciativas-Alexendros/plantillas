@@ -73,7 +73,9 @@ def discover_validators(registry: ValidatorRegistry, catalog: Catalog) -> list[s
         if module.type != "module":
             continue
         try:
-            mod = importlib.import_module(f"plantillas.validators.{_module_name(module.id)}")
+            mod = importlib.import_module(
+                f"plantillas.validators.{_module_name(module.id)}"
+            )
             fn = getattr(mod, "validate", None)
             if callable(fn):
                 registry.register(module.id, fn)

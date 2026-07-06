@@ -20,7 +20,9 @@ app = typer.Typer(
 def validate(
     module: Optional[str] = typer.Argument(None, help="ID del módulo a validar."),
     strict: bool = typer.Option(True, "--strict/--no-strict", help="Modo estricto."),
-    catalog_path: Optional[Path] = typer.Option(None, "--catalog", help="Ruta a modules.yaml."),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
 ) -> None:
     """Valida uno o todos los módulos registrados."""
 
@@ -50,7 +52,9 @@ def validate(
 @app.command()
 def sync(
     module: str = typer.Argument(..., help="ID del módulo a sincronizar."),
-    catalog_path: Optional[Path] = typer.Option(None, "--catalog", help="Ruta a modules.yaml."),
+    catalog_path: Optional[Path] = typer.Option(
+        None, "--catalog", help="Ruta a modules.yaml."
+    ),
 ) -> None:
     """Sincroniza un módulo (por ejemplo, agent-config) desde su fuente canónica."""
 
@@ -61,7 +65,9 @@ def sync(
         raise typer.Exit(code=1)
 
     typer.echo(f"🔄 Sincronizando {module}...")
-    typer.echo("ℹ️  Comando en desarrollo. Usa el script legacy del módulo mientras tanto.")
+    typer.echo(
+        "ℹ️  Comando en desarrollo. Usa el script legacy del módulo mientras tanto."
+    )
     raise typer.Exit(code=0)
 
 
@@ -73,7 +79,9 @@ def new(
     """Crea un nuevo módulo a partir de la plantilla base."""
 
     typer.echo(f"🆕 Creando módulo {type}/{name}...")
-    typer.echo("ℹ️  Comando en desarrollo. Copia manualmente `modulo/` como scaffold mientras tanto.")
+    typer.echo(
+        "ℹ️  Comando en desarrollo. Copia manualmente `modulo/` como scaffold mientras tanto."
+    )
     raise typer.Exit(code=0)
 
 

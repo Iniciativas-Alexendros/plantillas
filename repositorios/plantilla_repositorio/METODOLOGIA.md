@@ -51,19 +51,19 @@ main (protegida, siempre desplegable)
 
 ### Tipos
 
-| Tipo | Cuándo usar | Ejemplo |
-|---|---|---|
-| `feat` | Nueva funcionalidad | `feat(api): añade endpoint de login JWT` |
-| `fix` | Corrección de bug | `fix(auth): corrige race condition en logout` |
-| `docs` | Documentación | `docs(readme): actualiza instrucciones de install` |
-| `style` | Formateo (sin cambio de lógica) | `style: aplica prettier a src/` |
+| Tipo       | Cuándo usar                           | Ejemplo                                                |
+| ---------- | ------------------------------------- | ------------------------------------------------------ |
+| `feat`     | Nueva funcionalidad                   | `feat(api): añade endpoint de login JWT`               |
+| `fix`      | Corrección de bug                     | `fix(auth): corrige race condition en logout`          |
+| `docs`     | Documentación                         | `docs(readme): actualiza instrucciones de install`     |
+| `style`    | Formateo (sin cambio de lógica)       | `style: aplica prettier a src/`                        |
 | `refactor` | Refactor sin cambio de comportamiento | `refactor(db): extrae lógica de queries a repositorio` |
-| `test` | Tests | `test(auth): añade tests para login edge cases` |
-| `chore` | Tareas de mantenimiento | `chore(deps): actualiza next.js a 15.2` |
-| `ci` | CI/CD | `ci: añade job de seguridad con gha-scanner` |
-| `build` | Sistema de build | `build: configura esbuild para workers` |
-| `perf` | Mejora de rendimiento | `perf(db): añade índice compuesto en users_email` |
-| `security` | Fix de seguridad | `security(auth): sanitiza input en login` |
+| `test`     | Tests                                 | `test(auth): añade tests para login edge cases`        |
+| `chore`    | Tareas de mantenimiento               | `chore(deps): actualiza next.js a 15.2`                |
+| `ci`       | CI/CD                                 | `ci: añade job de seguridad con gha-scanner`           |
+| `build`    | Sistema de build                      | `build: configura esbuild para workers`                |
+| `perf`     | Mejora de rendimiento                 | `perf(db): añade índice compuesto en users_email`      |
+| `security` | Fix de seguridad                      | `security(auth): sanitiza input en login`              |
 
 ### Reglas
 
@@ -80,12 +80,14 @@ main (protegida, siempre desplegable)
 ```
 
 Ejemplos:
+
 - `feat/api-jwt-auth`
 - `fix/ui-mobile-nav`
 - `docs/adr-database-migration`
 - `chore/deps-update-eslint`
 
 Prohibido:
+
 - `main`, `master`, `develop` (reservadas)
 - Nombres sin tipo
 - Mayúsculas o underscores
@@ -141,11 +143,11 @@ Prohibido:
 vMAJOR.MINOR.PATCH
 ```
 
-| Cambio | Versión | Ejemplo |
-|---|---|---|
-| Breaking change | MAJOR | `v1.2.3` → `v2.0.0` |
-| Nueva feature (backward compatible) | MINOR | `v1.2.3` → `v1.3.0` |
-| Bugfix | PATCH | `v1.2.3` → `v1.2.4` |
+| Cambio                              | Versión | Ejemplo             |
+| ----------------------------------- | ------- | ------------------- |
+| Breaking change                     | MAJOR   | `v1.2.3` → `v2.0.0` |
+| Nueva feature (backward compatible) | MINOR   | `v1.2.3` → `v1.3.0` |
+| Bugfix                              | PATCH   | `v1.2.3` → `v1.2.4` |
 
 - Tag en Git: `git tag -a v1.3.0 -m "Release v1.3.0"`
 - Release en GitHub con notas automáticas desde CHANGELOG.
@@ -179,4 +181,10 @@ vMAJOR.MINOR.PATCH
 - [ ] Lint/format pasan
 - [ ] PR usa plantilla
 - [ ] CI verde antes de pedir review
+- [ ] Generar contrato OpenAPI (v3.1.0)
+- [ ] Crear scaffold hexagonal (ports, adapters, impl)
+- [ ] Implementar lógica de negocio (ping service)
+- [ ] Generar pruebas unitarias
+- [ ] Ejecutar lint y test suite
+- [ ] Verificar contrato con OpenAPI validator
 ```
