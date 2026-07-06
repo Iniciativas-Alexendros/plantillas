@@ -41,7 +41,7 @@ def test_data_json_parses(html):
         html,
         re.DOTALL,
     )
-    assert match, "Falta el bloque <script id=\"dossier-data\">"
+    assert match, 'Falta el bloque <script id="dossier-data">'
     data = json.loads(match.group(1))
     assert "modules" in data
     assert "index_toc" in data
@@ -105,12 +105,15 @@ def test_generated_at_is_iso8601(html):
     data = json.loads(match.group(1))
     # El parser emite YYYY-MM-DD; el generador sobreescribe con ISO 8601 completo.
     assert re.match(r"\d{4}-\d{2}-\d{2}", data["generated_at"]), data["generated_at"]
-    assert "T" in data["generated_at"], f"generated_at sin tiempo: {data['generated_at']}"
+    assert "T" in data["generated_at"], (
+        f"generated_at sin tiempo: {data['generated_at']}"
+    )
 
 
 def test_determinism(catalog):
     """Dos invocaciones consecutivas producen el mismo output (excepto timestamp)."""
     import time
+
     html1 = render_dossier(Path(__file__).resolve().parents[1], catalog)
     time.sleep(1.1)  # cruza el segundo para que el timestamp cambie
     html2 = render_dossier(Path(__file__).resolve().parents[1], catalog)

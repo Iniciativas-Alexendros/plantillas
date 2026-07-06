@@ -1,4 +1,3 @@
-
 from plantillas.catalog import load_catalog
 
 

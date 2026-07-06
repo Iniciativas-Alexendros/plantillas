@@ -301,7 +301,12 @@ class ValidadorGlobal(BaseValidator):
                         ".github/workflows/ci.yml",
                     ]
                 elif mod == "estandares":
-                    req_files = ["README.md", "ESTANDARES.md", "validar_estandares.py", "ejemplo_estandares/"]
+                    req_files = [
+                        "README.md",
+                        "ESTANDARES.md",
+                        "validar_estandares.py",
+                        "ejemplo_estandares/",
+                    ]
                 elif mod == "artefactos":
                     req_files = ["README.md", "validar_artefactos.py"]
                 for rf in req_files:

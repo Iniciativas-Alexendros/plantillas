@@ -218,7 +218,9 @@ def build_dossier_data(root: Path, catalog: Catalog) -> DossierData:
     index_toc = parse_index(index_path)
     # Complementa el TOC con los docs/ transversales
     for doc_path in sorted((root / "docs").glob("*.md")):
-        if index_toc and any(item.path == f"docs/{doc_path.name}" for item in index_toc):
+        if index_toc and any(
+            item.path == f"docs/{doc_path.name}" for item in index_toc
+        ):
             continue
         text = doc_path.read_text(encoding="utf-8")
         title_match = re.search(r"^#\s+(.+)$", text, re.MULTILINE)

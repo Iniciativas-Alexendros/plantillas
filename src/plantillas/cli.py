@@ -171,7 +171,10 @@ def generate(
         "dossier", help="Artefacto a generar. Hoy: 'dossier'."
     ),
     output: Optional[Path] = typer.Option(
-        None, "--output", "-o", help="Ruta de salida. Por defecto, docs/<artifact>.html."
+        None,
+        "--output",
+        "-o",
+        help="Ruta de salida. Por defecto, docs/<artifact>.html.",
     ),
     catalog_path: Optional[Path] = typer.Option(
         None, "--catalog", help="Ruta a modules.yaml."

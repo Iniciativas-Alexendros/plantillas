@@ -45,7 +45,9 @@ def test_index_exists():
 
 def test_every_canonical_module_in_index(catalog, index_text):
     missing = [
-        mid for mid in catalog.canonical_ids() if not _index_links_to_module(index_text, mid)
+        mid
+        for mid in catalog.canonical_ids()
+        if not _index_links_to_module(index_text, mid)
     ]
     assert not missing, f"Módulos canónicos sin referencia en INDEX.md: {missing}"
 

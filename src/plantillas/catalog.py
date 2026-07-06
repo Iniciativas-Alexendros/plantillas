@@ -50,7 +50,9 @@ class Catalog(BaseModel):
 
 def _default_catalog_path() -> Path:
     candidates = [
-        Path(os.environ["PLANTILLAS_CATALOG"]) if os.environ.get("PLANTILLAS_CATALOG") else None,
+        Path(os.environ["PLANTILLAS_CATALOG"])
+        if os.environ.get("PLANTILLAS_CATALOG")
+        else None,
         Path.cwd() / "modules.yaml",
         Path(__file__).resolve().parents[2] / "modules.yaml",
     ]

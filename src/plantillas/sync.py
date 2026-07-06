@@ -82,9 +82,7 @@ def _target_subdir(target: SyncTarget, module_id: str) -> str:
     try:
         return TARGET_LAYOUTS[module_id][target]
     except KeyError as exc:
-        raise ValueError(
-            f"módulo {module_id!r} no sincronizable a {target!r}"
-        ) from exc
+        raise ValueError(f"módulo {module_id!r} no sincronizable a {target!r}") from exc
 
 
 def _list_instances(source: Path) -> list[Path]:
