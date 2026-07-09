@@ -69,4 +69,4 @@ jobs:
         with:
           persist-credentials: false
       - id: s
-        uses: Alexendros/plantillas/.github/actions/detect-stack@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+        uses: Iniciativas-Alexendros/plantillas/.github/actions/detect-stack@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)

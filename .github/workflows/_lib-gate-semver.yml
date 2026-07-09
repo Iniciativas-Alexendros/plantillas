@@ -11,7 +11,7 @@
 #       tags: ['v*']
 #   jobs:
 #     gate:
-#       uses: Alexendros/plantillas/.github/workflows/_lib-gate-semver.yml@main
+#       uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-gate-semver.yml@main
 #       with:
 #         ref: ${{ github.ref_name }}
 #     publish:

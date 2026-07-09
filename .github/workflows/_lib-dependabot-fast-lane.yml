@@ -14,7 +14,7 @@
 #   jobs:
 #     fast-lane:
 #       if: github.actor == 'dependabot[bot]'
-#       uses: Alexendros/plantillas/.github/workflows/_lib-dependabot-fast-lane.yml@main
+#       uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-dependabot-fast-lane.yml@main
 #       with:
 #         allow-update-types: "patch,minor"
 #         require-checks: "lint,unit-tests"
