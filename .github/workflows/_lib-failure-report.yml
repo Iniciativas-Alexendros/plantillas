@@ -149,7 +149,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Sticky commit-comment
-        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-commit-comment@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-commit-comment@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
         with:
           marker: post-merge-sticky
           sha: ${{ github.sha }}
@@ -181,7 +181,7 @@ jobs:
       - id: open
         name: Abrir/actualizar issue si racha >= threshold_open (solo fail, no warn)
         if: steps.classify.outputs.overall == 'fail' && fromJSON(steps.streak.outputs.prev_fail) >= inputs.streak_threshold_open
-        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-issue@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-issue@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
         with:
           action: create-or-update
           marker: post-merge:auto
@@ -192,7 +192,7 @@ jobs:
       - id: close
         name: Cerrar issue si racha verde/amarilla >= threshold_close
         if: (steps.classify.outputs.overall == 'ok' || steps.classify.outputs.overall == 'warn') && fromJSON(steps.streak.outputs.prev_ok) >= inputs.streak_threshold_close
-        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-issue@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+        uses: Iniciativas-Alexendros/plantillas/.github/actions/sticky-issue@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
         with:
           action: close-if-streak
           marker: post-merge:auto

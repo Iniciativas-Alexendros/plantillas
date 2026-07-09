@@ -68,12 +68,12 @@ permissions:
 
 jobs:
   detect:
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-detect-stack.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-detect-stack.yml@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
 
   lint:
     if: inputs.enable_linters
     needs: detect
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-lint-aggregate.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-lint-aggregate.yml@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
     with:
       has_ts: ${{ needs.detect.outputs.has_ts }}
       has_rust: ${{ needs.detect.outputs.has_rust }}
@@ -84,7 +84,7 @@ jobs:
 
   supply-chain:
     needs: detect
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-supply-chain.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-supply-chain.yml@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
     with:
       enable_sbom: ${{ inputs.enable_sbom }}
       enable_attest: ${{ inputs.enable_attest }}
@@ -92,7 +92,7 @@ jobs:
   release:
     if: inputs.enable_release
     needs: detect
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-release-please.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-release-please.yml@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
     with:
       release_type: ${{ inputs.release_type }}
       release_type_auto: ${{ needs.detect.outputs.release_type }}
@@ -100,7 +100,7 @@ jobs:
   report:
     if: always()
     needs: [detect, lint, supply-chain, release]
-    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-failure-report.yml@d55b5d5c2a2ac460b50608f2d503b4bd619e8fe2 # pinned SHA (main)
+    uses: Iniciativas-Alexendros/plantillas/.github/workflows/_lib-failure-report.yml@e260a4500e76d74a5e9ca04b4794a54e9b5affac # pinned SHA (main)
     with:
       lint_outcome: ${{ needs.lint.outputs.outcome_json || '{}' }}
       sbom_outcome: ${{ needs.supply-chain.outputs.sbom_outcome || 'skipped' }}
